@@ -1,0 +1,19 @@
+=== 2.0.1 / 2014-01-15 (external GitHub)
+
+* 2.0.1 minor testing
+
+  * first working release (tested on internal cookbooks)
+
+=== 2.0.0 / 2014-01-15 (external GitHub)
+
+* 2 major enhancement
+
+  * initial preparation for release as a ruby gem 
+
+=== 1.0.0 / 2012-02-01 (internal)
+
+* 1 major enhancement
+
+  * Birthday!
+
+

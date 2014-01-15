@@ -16,3 +16,6 @@ tmp
 .yardoc
 _yardoc
 doc/
+
+# Not required when using Hoe ruby gem
+Manifest.txt
