@@ -1,0 +1,200 @@
+% LaTeX source for the diSimplexEngine document
+%
+
+\documentclass[a4paper,openany]{amsbook}
+\usepackage{perceptisys}
+\usepackage{perceptisysChapter}
+\usepackage{perceptisysSymbols}
+
+\begin{document}
+\frontmatter
+\sloppy
+
+\title[DiSimplicial Proof Theory]{Testing Mathematical Proofs: The details of
+Directed Simplicial Proof Theory}
+\collectionTitle{A Mathematical Theory of Reality}
+\input{frontMatter}
+\subjclass[2010]{Primary unknown; Secondary unknown} %
+\keywords{Keyword one, keyword two etc.}%
+
+\begin{abstract}
+This is the abstract.
+\end{abstract}
+
+\maketitle
+\tableofcontents
+\mainmatter
+
+\chapter*{Preface}
+
+\begin{quotation}
+We shall not cease from exploration \\
+And the end of all our exploring \\
+Will be to arrive where we started \\
+And know the place for the first time.
+
+\href{http://www.davidgorman.com/4Quartets/4-gidding.htm}{T. S. Eliot,
+\textit{Little Gidding}, section `V'}
+\end{quotation}
+
+\vspace{0.5cm}
+
+\begin{quotation}
+Alice laughed. ``There's no use trying,'' she said: ``one can't believe
+impossible things.'' \\ 
+``I daresay you haven't had much practice,'' said the Queen. \\
+``When I was your age, I always did it for half-an-hour a day. Why, sometimes
+I've believed as many as six impossible things before breakfast.''
+
+\begin{quote}
+\href{http://en.wikiquote.org/wiki/Through_the_Looking-Glass#Chapter_5:_Wool_and_Water}{Lewis
+Carroll (Charles Lutwidge Dodgeson), \textit{Through the Looking-Glass, and
+What Alice Found There}, Chapter 5: \textit{Wool and Water}}
+\end{quote}
+\end{quotation}
+
+\vspace{0.5cm}
+
+\begin{quotation}
+When you are a Bear of Very Little Brain, and you Think of Things, you find
+sometimes that a Thing which seemed very Thingish inside you is quite different
+when it gets out into the open and has other people looking at it.
+
+\begin{quote}
+\href{https://en.wikiquote.org/wiki/A._A._Milne#The_House_at_Pooh_Corner_.281928.29}{A. A. Milne,
+\textit{House at Pooh Corner}, Chapter 6: \textit{In which Pooh invents a new
+game and Eeyore joins in}}
+\end{quote}
+\end{quotation}
+
+\vspace{0.5cm}
+
+I \emph{am} a Bear of Very Little Brain, unless things are spelt out in great
+detail, I am never quite sure if they are `correct'.  Being mildly dyslexic,
+unless I can get a computer to keep track of these details, I am never sure if
+\emph{I} might have got the details mixed-up.
+
+This book is an attempt to spell out all of the details in sufficient detail
+required to get computers to `check' \emph{informal} mathematical proofs as
+typically written in standard research mathematical papers. The companion
+papers, \cite{diSimplexTheory} and \cite{usingDiSimplexTheory}, provide a good
+overview of the required theory and process respectively. It is highly likely
+that the average reader will want to check the companion papers \emph{before}
+diving into the details contained in this book\footnote{ Assuming the reader even
+feels compelled to read this book at all}.
+
+Most mathematicians regard providing every last detail required for a computer
+to check a proof, as possible in principle, but essentially impossible in
+practice. As an avid self-publicist, in that I do not intend to `publish' any of
+my papers in a `traditional' `peer-reviewed' `journal', I need to be doubly sure
+that my `proofs' are correct and not simply `wishful thinking'.
+
+This cycle of work, of which this book and its companion papers is the
+foundation, is intended to provide a \emph{Mathematical} theory of
+\emph{Reality}. Essentially, this mathematical theory of reality, is an
+exploration of the mathematics which a finite entity can compute in a finite
+amount of time. As such, it is doubly important that the correctness of this
+theory should be, both, \emph{checkable} and, moreover, \emph{be checked}, by a
+finite entity such as a computer.
+
+While I have, for many years, been planning on computationally checking all of
+my proofs, it wasn't until discovering the recent work on Homotopy Type Theory
+\cite{HoTT}, that I realized just how possible it might be. Unfortunately, as
+will become obvious from this cycle of work, neither Per Martin-L\"of's
+Dependent Type Theory, nor \emph{Homotopic} Type Theory are sufficient for my
+purposes. Hence the need for this book to refound mathematics on \emph{Directed
+Simplicial} Type Theory.  When the `dust settles' it will be obvious that both
+\emph{Dependent} Type Theory and \emph{Homotopic} Type Theory will be
+sub-theories of \emph{Directed Simplicial} Type Theory.
+
+One of the key concepts of a mathematical theory of Reality, is that it is
+\emph{critically} important to keep track of the informational complexity of a
+mathematical object. The realization is that finite entities, such as ourselves,
+can only \TODO{find correct word} with locally finite (mathematical) objects or
+proceedures. This is the essential source of non-action at a distance in
+Physics.
+
+Classical mathematics, as well as most mathematical proof tools, ignore this
+informational complexity. Indeed a real number has infinite complexity. 
+Classical mathematical analysis, tends to allow itself to rely on woefully
+non-locally finite tools. Directed Simplicial Type Theory and its associated
+Proof engine are required to keep track of this informational complexity.
+
+Members of the species \textit{Homeo Spaiens}, (as of this writting, ``you'' and
+``me''), \emph{are} able to reason about mathematical objects of inifite
+complexity.  Hence Directed Simplicial Type Theory \emph{must} be capable of
+proving \emph{all} of mathematics. However, what is critical, is how the
+constructive, locally-finite, mathematics is embedded in the classical,
+non-locally-finite, mathematics. So we explicitly extend Per Martin-L\"of's
+dependent type theory with impredicative, non-constructivist additions. As will
+equally become clear in this work, Categorical thought, as opposed to classical
+Zermelo–Fraenkel set theory, is the most `natural' way to found
+mathematics\footnote{In my days in Nortel, the groups I worked with were
+repeatedly asked why we did not use ``simple'' computer languages to takle our
+Artificial Intelligent tasks. Our reply was always the same, while we
+\emph{could} program in the language of a `raw' Turing machine, the complexity
+of the code base would make our tools impossible to maintain. The point is that
+different problems have `natural' languages in which humans can more easily
+understand them. My argument for useing Directed Simplicial Category theory is
+essentially the same. It is easier to think in a language which mimics
+mathematic's focus on objects and transformations between objects than it is to
+use ZFC. In fact, as we will see, Category theory is really topology \emph{as
+well as} algebra, making the fundamentally topological Directed Simplicial
+Category theory even more natural to an analysis of the space-time of
+`Reality'.}.
+
+\chapter{Introduction}
+
+\section{Mathematics from a modipotent point of view}
+
+Modipotent is `school girl' Latin derived from \emph{modi} meaning limited, and
+\emph{potent} meaning power. Finite entities such as `you' and `me', are not
+`gods'. We can only interact with `Reality' in locally-finite ways. While we are
+not impotent, we have no omnipotent abilities to see all of reality or to
+measure or sense things to inifinite precision. Some finite beings evidently
+have more power then others, however we are all limited. Ignoring the nature of
+these limitations in our mathematics is the source of the continuing paradoxical
+nature of Quantum Mechanics as well as our current inability to unify
+Realitivity with Quantum physics in a theory of Quantum Gravity.
+
+Classical mathematics is essentially mathematics from an omnipotent point of
+view. (Real) Magnitiudes can be measured to infinite precision. (Euclidian)
+Points have no extension but, again, can be located in a Cartesian space to
+inifinte precision.
+
+Directed Simplicial Theory is an attempt to found mathematics in ways which
+reflect our evident lack of omnipotence. 
+
+\section{Type Theory}
+
+We follow HoTT, \cite{HoTT}, by considering \emph{Types} as potentially having
+more `structure' than a `simple' \emph{proposition}.  Instead of assuming a type
+to be an abstract homotopic space, we define a \define{Directed Simplicial
+Type}{Type} to be a Directed Simplicial Complex.
+
+\section{Mathematical objectives}
+
+One of our primary objectives as part of the mathematical theory of Reality, is
+to be able to state and prove the imprecise Bayesian Theorem for
+(predicative) Topos.  To do this we need to show the existence of imprecise
+measures in (predicative) Topos. Any foundation of Topos theory requires among
+other things the Yoneda lemma and Sheaf theory. So we start by sketching enough
+Category theory to state and prove the Yoneda lemma.
+
+However our first attainable goal is to prove
+
+\begin{theorem}
+The following conditions are equivalent:
+\begin{itemize}
+  \item $f$ is an isomorphism
+  \item $f$ is epic and split monic
+  \item $f$ is monic and split epic
+\end{itemize}
+\end{theorem}
+
+
+\bibliographystyle{amsalpha}
+\bibliography{diSimplexEngine}
+
+\end{document}
+
