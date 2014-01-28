@@ -1,4 +1,6 @@
 
+// To use sbt with Eclipse see: https://github.com/typesafehub/sbteclipse
+
 // set the name of the project
 name := "LaTeXMarkdown"
 
