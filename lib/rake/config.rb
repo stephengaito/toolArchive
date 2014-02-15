@@ -93,6 +93,7 @@ class Conf
   @@passPhrase = nil;
   @@configFileNames = Array.new();
   @@recipePaths = Array.new();
+  @@globalCookbookDirectories = Array.new();
 
   def self.get_pass_phrase(check = false)
     if @@passPhrase.nil? then
@@ -236,6 +237,27 @@ class Conf
     end
   end
 
+  def self.add_global_cookbook_directory(globalCookbookDirectory)
+    Rake::Application.mesg "Adding global cookbook: [#{globalCookbookDirectory}]";
+    @@globalCookbookDirectories.push(globalCookbookDirectory)
+  end
+
+  def self.add_global_cookbooks()
+    if @@globalCookbookDirectories.empty?() then
+      if ENV.has_key?('HOME') then
+        if not ENV['HOME'].empty?() then
+          @@globalCookbookDirectories.push(ENV['HOME']+'/.cookbook');
+        end
+      end
+    end
+    @@globalCookbookDirectories.each() do | aGlobalCookbookDir |
+      if Dir.exists?(aGlobalCookbookDir) then
+        Rake::Application.mesg "Adding global cookbook #{aGlobalCookbookDir}";
+        Conf.add_cookbook(aGlobalCookbookDir);
+      end
+    end
+  end
+
   def self.add_cookbook(aCookbookPath)
     $LOAD_PATH.unshift(aCookbookPath+'/lib');
     Conf.add_recipes_path(aCookbookPath+'/');
@@ -335,6 +357,14 @@ module Rake
             end
           }
         ]);
+      options.push(
+        ['--global-cookbook', '-C GLOBAL-COOKBOOK-DIRECTORY', "Load global Cookbook from the GLOBAL-COOKBOOK-DIRECTORY if it exists", 
+          lambda { |value|
+            confDirValues = value.split(/,/).each do | aValue |
+              Conf.add_global_cookbook_directory(aValue);
+            end
+          }
+        ]);
       return options;
     end
 
@@ -359,6 +389,7 @@ module Rake
       FileUtils.mkdir_p('logs');
       Rake::Application.openLogger('logs/'+Conf.log_file_name.gsub(/\//,'_')+'-buildLog');
       Rake::Application.logger.level = Logger::DEBUG;
+      Conf.add_global_cookbooks();
       Rake::Application.mesg "Building in #{myCookbookDir}";
       Conf.add_cookbook(myCookbookDir);
     end
