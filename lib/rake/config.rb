@@ -8,6 +8,7 @@ end
 require 'construct';
 require 'yaml';
 require 'fileutils';
+require 'cook';
 #require 'regexp';
 
 class Construct
@@ -259,6 +260,7 @@ class Conf
   end
 
   def self.add_cookbook(aCookbookPath)
+    Rake::Application.mesg "Loading cookbook: [#{aCookbookPath}]";
     $LOAD_PATH.unshift(aCookbookPath+'/lib');
     Conf.add_recipes_path(aCookbookPath+'/');
     Conf.add_recipes_path(aCookbookPath+'/recipes/');
@@ -389,6 +391,7 @@ module Rake
       FileUtils.mkdir_p('logs');
       Rake::Application.openLogger('logs/'+Conf.log_file_name.gsub(/\//,'_')+'-buildLog');
       Rake::Application.logger.level = Logger::DEBUG;
+      Rake::Application.mesg "Cook version: #{Cook::VERSION}";
       Conf.add_global_cookbooks();
       Rake::Application.mesg "Building in #{myCookbookDir}";
       Conf.add_cookbook(myCookbookDir);
