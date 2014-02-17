@@ -11,6 +11,107 @@ require 'fileutils';
 require 'cook';
 #require 'regexp';
 
+class ConfStack
+
+  def initialize(object, method, *args)
+    @confStack = Array.new;
+    calling(object, method, args);
+  end
+
+  def calling(object, method, where, *args)
+    @confStack.push([object, method, where, args]) unless
+      !@confStack.empty? && 
+      @confStack.last[0] == object && 
+      @confStack.last[1] == method;
+  end
+
+  def reportNoMethodError(errorObject)
+
+    # Take off the base object (Conf) so that we can use it later to 
+    # get the missingKey messages
+    #
+    confObj = @confStack.shift()[0];
+
+    # Take of the top of the configure stack so we can treat it as the 
+    # message which was not found.
+    #
+    top     = @confStack.pop();
+
+    # Compute the full configuration path to report to the user
+    #
+    confPath = "Conf";
+    @confStack.each do | aStackLevel |
+      confPath << '.' + aStackLevel[1].to_s;
+    end
+    
+    # Start by dumping the problem together with the FULL backtrace for 
+    # any experienced user.
+    #
+    Rake::Application.mesg ""
+    Rake::Application.mesg "Could not find the key [#{top[1].to_s}]";
+    Rake::Application.mesg "in the configuration path [#{confPath}]\n\n";
+
+    Rake::Application.mesg errorObject.backtrace.join("\n");
+
+    # Now construct a more user friendly discussion of the problem for 
+    # novice users.
+    #
+    # Start with the problem...
+    #
+    Rake::Application.mesg ""
+    Rake::Application.mesg "=================================================================";
+    Rake::Application.mesg ""
+    Rake::Application.mesg "Could not find the key [#{top[1].to_s}]";
+    Rake::Application.mesg "in the configuration path [#{confPath}]\n\n";
+
+    # Now collect the parameter lines they will need to specify 
+    # together with any missingKey messages (in reverse order) that the 
+    # configuration might have specified.
+    #
+    missingKey = confObj.missingKey;
+    messages = Array.new;
+    parameterLines = Array.new;
+    indent = "";
+    @confStack.each do | aStackLevel |
+      parameterLines.push(indent + aStackLevel[1].to_s + ':');
+      indent += "  ";
+      missingKey = missingKey[aStackLevel[1]] if missingKey.has_key?(aStackLevel[1]);
+      messages.unshift(missingKey.delete(:message)) if missingKey.has_key?(:message);
+    end
+
+    # Start by printing out any missingKey messages for the missing key 
+    # itself.
+    #
+    missingKey = missingKey[top[1]] if missingKey.has_key?(top[1]);
+    Rake::Application.mesg missingKey[:message] if missingKey.has_key?(:message);
+
+    # Now provide a template of the configuration path that seems to be 
+    # missing together with any specific valueMessage associated with 
+    # the missing key.
+    #
+    Rake::Application.mesg ""
+    Rake::Application.mesg "Please ensure your configuration contains the following lines"
+    parameterLines.push(indent + top[1].to_s + ': <<value>>');
+    Rake::Application.mesg "-----------------------------------------------------------------";
+    Rake::Application.mesg parameterLines.join("\n");
+    Rake::Application.mesg "-----------------------------------------------------------------";
+    Rake::Application.mesg missingKey[:valueMessage] if missingKey.has_key?(:valueMessage);
+
+    # Now provide any additional configuration messages found most 
+    # specific first.
+    #
+    Rake::Application.mesg ""
+    Rake::Application.mesg messages.join("\n\n");
+    Rake::Application.mesg ""
+
+    # Now exit since there is nothing else we can usefully do to 
+    # recover
+    #
+    exit(-1);
+  end
+
+end
+
 class Construct
 
   def empty?()
@@ -27,6 +128,23 @@ class Construct
 
   def each_key(*args, &block)
     @data.each_key(*args, &block)
+  end
+
+  alias_method :orig_method_missing, :method_missing;
+  def method_missing(meth, *args)
+    Thread.current[:confStack].calling(self, meth, :method_missing, args);
+    begin
+      resultObject = orig_method_missing(meth, *args);
+    rescue NoMethodError => errorObject
+      Thread.current[:confStack].reportNoMethodError(errorObject);
+    end
+    resultObject
+  end
+
+  alias_method :orig_key_lookup, :[] ;
+  def [](key)
+    Thread.current[:confStack].calling(self, key, :key_lookup);
+    orig_key_lookup(key)
   end
 
   alias_method :orig_key_value_assignment, :[]= ;
@@ -114,10 +232,14 @@ class Conf
   end
 
   def self.data
+    Thread.current[:confStack] = ConfStack.new(self, :Conf);
+    Thread.current[:confStack].calling(@@data, :data, :data);
     return @@data;
   end
 
   def self.encryptedData
+    Thread.current[:confStack] = ConfStack.new(self, :Conf);
+    Thread.current[:confStack].calling(@@encryptedData, :encryptedData, :encryptedData);
     return @@encryptedData;
   end
 
@@ -175,6 +297,7 @@ class Conf
   end
 
   def self.method_missing(meth, *args)
+    Thread.current[:confStack] = ConfStack.new(self, :Conf, args);
     meth_s = meth.to_s
     if @@data.respond_to?(meth) ||
       @@data.data.has_key?(meth) ||
@@ -182,7 +305,8 @@ class Conf
       meth_s[-1..-1] == '='then
       @@data.method_missing(meth, *args);
     else 
-      raise ConfigurationError, "No configuation value specified for Conf[#{meth.to_s}]";
+      self.reportNoMethodError();
+#raise ConfigurationError, "No configuation value specified for Conf[#{meth.to_s}]";
     end
   end
 
@@ -649,6 +773,22 @@ self.extend Rake::DSL
 #Conf.rsync.command = "rsync";
 #Conf.rsync.cmdOptions = Array.new;
 set_command_options(:all);
+
+# Ensure we have the basic missingKey error messages
+Conf.missingKey = Hash.new;
+Conf.missingKey.global = Hash.new;
+Conf.missingKey.global.message = <<END_OF_MESSAGE
+Global parameters are usually set in the cookbook.conf YAML file 
+contained in the .cookbook directory in your home directory.
+END_OF_MESSAGE
+Conf.missingKey.global.cookbook = Hash.new;
+Conf.missingKey.global.cookbook.message = <<END_OF_MESSAGE
+The cookbook configuration parameter needs to be set to the location of 
+the appropriate cookbook.
+END_OF_MESSAGE
+Conf.missingKey.global.cookbook.valueMessage = <<END_OF_MESSAGE
+where <<value>> is the full path to the approprate cookbook directory.
+END_OF_MESSAGE
 
 # Ensure the gpg hash exists (but may be empty)
 Conf.gpg = Hash.new;
