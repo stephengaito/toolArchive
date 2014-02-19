@@ -11,6 +11,20 @@ Maven/Ivy accessible archive. Until they do I have cloned the project,
 built the required sbt-antlr4-0.7.jar file and then placed it into this 
 directory.
 
+To do this, inside the root of the cloned project type:
+
+> sbt package
+
+Then copy the resulting jar file from 
+
+> target/scala-2.10/sbt-0.13/sbt-antlr4-X.Y.Z.jar
+
+to
+
+> project/lib
+
+(and remove any old versions)
+
 # Adding jar based plugins (from GitHub?) 
 
 1. Obtain the required jar file.
