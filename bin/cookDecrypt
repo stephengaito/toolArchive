@@ -45,7 +45,7 @@ end
 
 # check to ensure the file name conforms to our naming conventions...
 #
-if ARGV[0] !~ /\.dec$/ then
+if ARGV[0] !~ /\.enc$/ then
   puts "The file to be decrypted (#{ARGV[0]}) MUST have the file extension '.enc'";
   exit(-1);
 end
