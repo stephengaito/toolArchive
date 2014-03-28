@@ -421,6 +421,10 @@ class Conf
 
   def self.load_recipe_dir(recipeDir)
     #
+    # Make sure the recipeDir is in the load path
+    #
+    $LOAD_PATH.unshift(recipeDir);
+    #
     # extract the last directory name in the path to use as the 
     # recipeName
     #
