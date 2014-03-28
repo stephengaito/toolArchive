@@ -1,6 +1,7 @@
 require 'logger';
-require 'pp'
-require 'stringio'
+require 'pp';
+require 'yaml';
+require 'stringio';
 require 'greenletters';
 
 module Greenletters
@@ -135,6 +136,13 @@ module Rake
       $stderr.puts(s.string) if @logToStderr;
     end
 
+    def self.mesg_yaml(*args)
+      args.each do | anArg |
+        str = YAML.dump(anArg);
+        @logger.info(str);
+        $stderr.puts(str) if @logToStderr;
+    end
+
   end
 
   module DSL
@@ -147,6 +155,9 @@ module Rake
       Rake::Application.mesg_pp(*args);
     end
 
+    def mesg_yaml(*args)
+      Rake::Application.mesg_yaml(*args);
+    end
   end
 
   class Task

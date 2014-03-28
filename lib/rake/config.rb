@@ -809,7 +809,7 @@ config :cookPostConfig do
     Rake::Application.mesg "--------------------\nTasks defined\n\n";
     Rake::Application.mesg_pp Rake.application.tasks;
     Rake::Application.mesg "--------------------\nConfiguration data\n\n";
-    Rake::Application.mesg_pp Conf.data;
+    Rake::Application.mesg_yaml Conf.data;
     Rake::Application.mesg "--------------------\n\n";
   end
 end
