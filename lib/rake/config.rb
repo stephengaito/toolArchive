@@ -832,6 +832,8 @@ config :cookPostConfig do
     Rake::Application.mesg_pp Rake.application.tasks;
     Rake::Application.mesg "--------------------\nConfiguration data\n\n";
     Rake::Application.mesg_conf # Conf.data;
+    Rake::Application.mesg "--------------------\nRecipe paths\n\n";
+    Rake::Application.mesg_pp Conf.get_recipe_paths
     Rake::Application.mesg "--------------------\n\n";
   end
 end

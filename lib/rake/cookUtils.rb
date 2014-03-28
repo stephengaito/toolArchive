@@ -251,6 +251,14 @@ end
 #############################################################################
 # Apply templates and/or copy resources
 
+def apply_partial(aPartialResourcePath)
+  require 'erubis'
+  templateFileName = find_resource(aPartialResourcePath);
+  mesg "Applying erubis partial template: [#{templateFileName}]";
+  eruby = Erubis::Eruby.new(IO.read(templateFileName));
+  eruby.result(binding()).chomp();
+end
+
 def applyTemplate(templateFileName, resultFileName, mode = nil, owner = nil, group = nil)
   require 'erubis'
   mesg "Applying erubis template: [#{templateFileName}]\nto produce: [#{resultFileName}]";
