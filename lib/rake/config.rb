@@ -198,8 +198,7 @@ class Construct
   end
 
   def prettyPrint(result, prefix)
-    sortedKeys = data.keys.sort{ |x,y| x.to_s <=> y.to_s };
-    sortedKeys.each do | aKey |
+    data.keys.sort{ |x,y| x.to_s <=> y.to_s }.each do | aKey |
       aValue = data[aKey];
       if aValue.respond_to?(:prettyPrint) then
         aValue.prettyPrint(result, prefix+'.'+aKey.to_s);

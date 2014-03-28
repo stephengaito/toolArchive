@@ -6,8 +6,7 @@ require 'greenletters';
 
 class Hash
   def prettyPrint(result, prefix)
-    sortedKeys = keys.sort{ |x,y| x.to_s <=> y.to_s };
-    sortedKeys.each do | aKey |
+    keys.sort{ |x,y| x.to_s <=> y.to_s }.each do | aKey |
       aValue = self[aKey];
       if aValue.respond_to?(:prettyPrint) then
         aValue.prettyPrint(result, prefix+'.'+aKey.to_s);
