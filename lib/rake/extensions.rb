@@ -4,6 +4,40 @@ require 'yaml';
 require 'stringio';
 require 'greenletters';
 
+class Hash
+  def prettyPrint(result, prefix)
+    sortedKeys = keys.sort{ |x,y| x.to_s <=> y.to_s };
+    sortedKeys.each do | aKey |
+      aValue = self[aKey];
+      if aValue.respond_to?(:prettyPrint) then
+        aValue.prettyPrint(result, prefix+'.'+aKey.to_s);
+      else
+        result.puts(prefix+'.'+aKey.to_s+"="+aValue.to_s);
+      end
+    end
+  end
+end
+
+class Array
+  def prettyPrint(result, prefix)
+    index = 0;
+    each do | aValue |
+      if aValue.respond_to?(:prettyPrint) then
+        aValue.prettyPrint(result, prefix+'['+index.to_s+']');
+      else
+        result.puts(prefix+'['+index.to_s+']='+aValue.to_s);
+      end
+      index += 1;
+    end
+  end
+end
+
+class String
+  def prettyPrint(result, prefix)
+    result.puts(prefix+'="'+to_s+'"');
+  end
+end
+
 module Greenletters
   #
   # We need to add the Greenletters::Process#result method to return the 
@@ -87,36 +121,46 @@ module Rake
     def self.logger()
       return @logger;
     end
+
     def self.logFile()
       return @logFile;
     end
+
     def self.logData(someData)
       @logFile.write(someData) if @logFile;
     end
+
     def self.set_logger(aLogger, aLogFile=nil)
       @logFile = aLogFile;
       oldLogger = @logger;
       @logger = aLogger;
       return oldLogger;
     end
+
     def self.log(*args)
       @logger.log(*args) if @logger;
     end
+
     def self.fatal(*args)
       @logger.fatal(*args) if @logger;
     end
+
     def self.error(*args)
       @logger.error(*args) if @logger;
     end
+
     def self.warn(*args)
       @logger.warn(*args) if @logger;
     end
+
     def self.info(*args)
       @logger.info(*args) if @logger;
     end
+
     def self.debug(*args)
       @logger.debug(*args) if @logger;
     end
+
     def self.mesg(*args)
       @logger.info(*args) if @logger;
       $stderr.puts(*args) if @logToStderr;
@@ -141,6 +185,13 @@ module Rake
         str = YAML.dump(anArg);
         @logger.info(str);
         $stderr.puts(str) if @logToStderr;
+      end
+    end
+
+    def self.mesg_conf
+      str = Conf.prettyPrint;
+      @logger.info(str);
+      $stderr.puts(str) if @logToStderr;
     end
 
   end
@@ -158,6 +209,10 @@ module Rake
     def mesg_yaml(*args)
       Rake::Application.mesg_yaml(*args);
     end
+
+    def mesg_conf
+      Rake::Application.mesg_conf;
+    end
   end
 
   class Task
@@ -167,7 +222,7 @@ module Rake
     def invoke_with_call_chain(task_args, invocation_chain) # :nodoc:
       new_chain = InvocationChain.append(self, invocation_chain)
       @lock.synchronize do
-        if application.options.trace
+        if application.options.trace then
           Rake::Application.mesg "** Invoke #{name} #{format_trace_flags}"
         end
         return if @already_invoked
@@ -183,11 +238,11 @@ module Rake
     # Execute the actions associated with this task.
     def execute(args=nil)
       args ||= EMPTY_TASK_ARGS
-      if application.options.dryrun
+      if application.options.dryrun then
         Rake::Application.mesg "** Execute (dry run) #{name}"
         return
       end
-      if application.options.trace
+      if application.options.trace then
         Rake::Application.mesg "** Execute #{name}"
       end
       application.enhance_with_matching_rule(name) if @actions.empty?
@@ -200,11 +255,10 @@ module Rake
         end
       end
     end
-
   end
 
 end
 
-self.extend Rake::DSL
+#self.extend Rake::DSL
 
 

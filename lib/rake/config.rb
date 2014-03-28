@@ -196,6 +196,18 @@ class Construct
     end
     return result;
   end
+
+  def prettyPrint(result, prefix)
+    sortedKeys = data.keys.sort{ |x,y| x.to_s <=> y.to_s };
+    sortedKeys.each do | aKey |
+      aValue = data[aKey];
+      if aValue.respond_to?(:prettyPrint) then
+        aValue.prettyPrint(result, prefix+'.'+aKey.to_s);
+      else
+        result.puts(prefix+'.'+aKey.to_s+"="+aValue.to_s);
+      end
+    end
+  end
   
 end
 
@@ -456,6 +468,13 @@ class Conf
     @@recipePaths.reverse.each do | aRecipePath |
       load_config_files(aRecipePath.sub(/\/$/,''));
     end
+  end
+
+  def self.prettyPrint
+    result = StringIO.new;
+#    result.puts("Conf:");
+    @@data.prettyPrint(result, "Conf");
+    result.string;
   end
 
 end
@@ -809,7 +828,7 @@ config :cookPostConfig do
     Rake::Application.mesg "--------------------\nTasks defined\n\n";
     Rake::Application.mesg_pp Rake.application.tasks;
     Rake::Application.mesg "--------------------\nConfiguration data\n\n";
-    Rake::Application.mesg_yaml Conf.data;
+    Rake::Application.mesg_conf # Conf.data;
     Rake::Application.mesg "--------------------\n\n";
   end
 end
