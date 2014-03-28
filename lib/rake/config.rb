@@ -350,6 +350,13 @@ class Conf
   end
 
   def self.add_recipes_path(aRecipesPath)
+    #
+    # Make sure the recipeDir is in the load path
+    #
+    $LOAD_PATH.unshift(aRecipesPath);
+    #
+    # Add this path to the collection of recipe paths to search
+    #
     @@recipePaths.push(aRecipesPath);
   end
 
@@ -420,10 +427,6 @@ class Conf
   end
 
   def self.load_recipe_dir(recipeDir)
-    #
-    # Make sure the recipeDir is in the load path
-    #
-    $LOAD_PATH.unshift(recipeDir);
     #
     # extract the last directory name in the path to use as the 
     # recipeName
@@ -834,6 +837,8 @@ config :cookPostConfig do
     Rake::Application.mesg_conf # Conf.data;
     Rake::Application.mesg "--------------------\nRecipe paths\n\n";
     Rake::Application.mesg_pp Conf.get_recipe_paths
+    Rake::Application.mesg "--------------------\nRuby load paths\n\n";
+    Rake::Application.mesg_pp $LOAD_PATH
     Rake::Application.mesg "--------------------\n\n";
   end
 end
