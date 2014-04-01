@@ -5,6 +5,10 @@ require 'stringio';
 require 'greenletters';
 
 class Hash
+
+  def cloneData()
+  end
+
   def prettyPrint(result, prefix)
     if empty? then
       result.puts(prefix+'=emptyHash');

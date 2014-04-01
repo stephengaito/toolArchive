@@ -114,6 +114,10 @@ end
 
 class Construct
 
+  def cloneData()
+    @data = @data.clone;
+  end
+
   def empty?()
     @data.empty?();
   end
