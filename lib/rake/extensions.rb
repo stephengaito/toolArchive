@@ -6,12 +6,16 @@ require 'greenletters';
 
 class Hash
   def prettyPrint(result, prefix)
-    keys.sort{ |x,y| x.to_s <=> y.to_s }.each do | aKey |
-      aValue = self[aKey];
-      if aValue.respond_to?(:prettyPrint) then
-        aValue.prettyPrint(result, prefix+'.'+aKey.to_s);
-      else
-        result.puts(prefix+'.'+aKey.to_s+"="+aValue.to_s);
+    if empty? then
+      result.puts(prefix+'=emptyHash');
+    else 
+      keys.sort{ |x,y| x.to_s <=> y.to_s }.each do | aKey |
+        aValue = self[aKey];
+        if aValue.respond_to?(:prettyPrint) then
+          aValue.prettyPrint(result, prefix+'.'+aKey.to_s);
+        else
+          result.puts(prefix+'.'+aKey.to_s+"="+aValue.to_s);
+        end
       end
     end
   end
@@ -19,14 +23,18 @@ end
 
 class Array
   def prettyPrint(result, prefix)
-    index = 0;
-    each do | aValue |
-      if aValue.respond_to?(:prettyPrint) then
-        aValue.prettyPrint(result, prefix+'['+index.to_s+']');
-      else
-        result.puts(prefix+'['+index.to_s+']='+aValue.to_s);
+    if empty? then
+      result.puts(prefix+'=emptyArray');
+    else
+      index = 0;
+      each do | aValue |
+        if aValue.respond_to?(:prettyPrint) then
+          aValue.prettyPrint(result, prefix+'['+index.to_s+']');
+        else
+          result.puts(prefix+'['+index.to_s+']='+aValue.to_s);
+        end
+        index += 1;
       end
-      index += 1;
     end
   end
 end

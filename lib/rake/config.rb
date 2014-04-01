@@ -198,12 +198,16 @@ class Construct
   end
 
   def prettyPrint(result, prefix)
-    data.keys.sort{ |x,y| x.to_s <=> y.to_s }.each do | aKey |
-      aValue = data[aKey];
-      if aValue.respond_to?(:prettyPrint) then
-        aValue.prettyPrint(result, prefix+'.'+aKey.to_s);
-      else
-        result.puts(prefix+'.'+aKey.to_s+"="+aValue.to_s);
+    if empty? then
+      result.puts(prefix+'=emptyConstruct');
+    else
+      data.keys.sort{ |x,y| x.to_s <=> y.to_s }.each do | aKey |
+        aValue = data[aKey];
+        if aValue.respond_to?(:prettyPrint) then
+          aValue.prettyPrint(result, prefix+'.'+aKey.to_s);
+        else
+          result.puts(prefix+'.'+aKey.to_s+"="+aValue.to_s);
+        end
       end
     end
   end
@@ -478,7 +482,6 @@ class Conf
 
   def self.prettyPrint
     result = StringIO.new;
-#    result.puts("Conf:");
     @@data.prettyPrint(result, "Conf");
     result.string;
   end
