@@ -526,9 +526,9 @@ module Rake
       return options;
     end
 
-    alias_method :rake_config_original_collect_tasks, :collect_tasks
-    def collect_tasks
-      rake_config_original_collect_tasks;
+    alias_method :rake_config_original_collect_command_line_tasks, :collect_command_line_tasks
+    def collect_command_line_tasks
+      rake_config_original_collect_command_line_tasks;
       @top_level_tasks.unshift("cookPostConfig");
       @top_level_tasks.unshift("cookConfig");
       @top_level_tasks.unshift("cookPreConfig");
