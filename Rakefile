@@ -34,7 +34,7 @@ end
 
 Hoe.spec 'cook' do
   developer('Stephen Gaito', 'stephen@perceptisys.co.uk')
-  dependency('rake', '~> 0.9.2');
+  dependency('rake', '~> 10.3.1');
   dependency('construct', '~> 0.1.7');
   dependency('erubis', '~> 2.7');
   dependency('greenletters', '~> 0.2');
