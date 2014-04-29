@@ -668,6 +668,7 @@ module Rake
       end
 
       Rake::Application.mesg args.join(' ') if $TRACE
+      Rake::Application.mesg "Timeout: #{options[:timeout]}" if $TRACE
       Rake::Application.mesg "#{options}" if $TRACE && !options.empty?() && options.has_key?(:verbose);
 
       asyncTriggersBlocks = Array.new;
