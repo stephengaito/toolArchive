@@ -22,13 +22,13 @@ maxErrors := 20
 // SBT-ANTLR4 plugin
 //
 // see: https://github.com/ihji/sbt-antlr4
-antlr4Settings
+//antlr4Settings
 
-antlr4PackageName in Antlr4 := Some("org.fandianpf.latexmarkdown.parser")
+//antlr4PackageName in Antlr4 := Some("org.fandianpf.latexmarkdown.parser")
 
-antlr4GenListener in Antlr4 := true // default: true
+//antlr4GenListener in Antlr4 := true // default: true
 
-antlr4GenVisitor in Antlr4 := true  // default: false
+//antlr4GenVisitor in Antlr4 := true  // default: false
 
 ////////////////////////////////////////////////////////////////////////////
 //
