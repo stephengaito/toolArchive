@@ -17,18 +17,35 @@ maxErrors := 20
 // append -deprecation to the options passed to the Scala compiler
 //scalacOptions += "-deprecation"
 
+
+///////////////////////////////////////////////////////////////////////////
+// Dependencies
+//
+libraryDependencies += "org.yaml" % "snakeyaml" % "1.13"
+
+// Required for the project/Build.scala (TestDocs)
+// The following MUST be manuall placed into project/lib directory
+//libraryDependencies += "org.antlr" % "antlr4-runtime" % "4.2.2"
+
+///////////////////////////////////////////////////////////////////////////
+// Tasks
+lazy val testDocs = taskKey[Unit]("Runs ANTLR4's testRig against approriate files in the testDocs directory")
+
+//testDocs := TestDocs.walk("testDocs")
+testDocs in Test := TestDocs.walk((fullClasspath in Test).value)
+
 ///////////////////////////////////////////////////////////////////////////
 //
 // SBT-ANTLR4 plugin
 //
 // see: https://github.com/ihji/sbt-antlr4
-//antlr4Settings
+antlr4Settings
 
-//antlr4PackageName in Antlr4 := Some("org.fandianpf.latexmarkdown.parser")
+antlr4PackageName in Antlr4 := Some("org.fandianpf.latexmarkdown.parser")
 
-//antlr4GenListener in Antlr4 := true // default: true
+antlr4GenListener in Antlr4 := true // default: true
 
-//antlr4GenVisitor in Antlr4 := true  // default: false
+antlr4GenVisitor in Antlr4 := true  // default: false
 
 ////////////////////////////////////////////////////////////////////////////
 //
