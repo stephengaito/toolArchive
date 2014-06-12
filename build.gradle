@@ -1,34 +1,95 @@
 // This is my first attempt at a gradle project description
 
 buildscript {
-    repositories {
-        maven {
-            name 'JFrog OSS snapshot repo'
-            url  'https://oss.jfrog.org/oss-snapshot-local/'
-        }
-        mavenCentral()
+  repositories {
+    ivy {
+      url fandianpfDownloadRepo
     }
+    maven {
+      name 'JFrog OSS snapshot repo'
+      url 'https://oss.jfrog.org/oss-snapshot-local/'
+    }
+    mavenCentral()
+  }
 
-    dependencies {
-        classpath 'me.champeau.gradle:antlr4-gradle-plugin:0.1-SNAPSHOT'
-    }
+  dependencies {
+    classpath 'me.champeau.gradle:antlr4-gradle-plugin:0.1-SNAPSHOT'
+    classpath 'org.fandianpf:antlr4-gradle-regressionTestPlugin:0.1'        
+  }
 }
 
 apply plugin: 'antlr4'
+apply plugin: 'antlr4test'
 apply plugin: 'java'
 apply plugin: 'scala'
 apply plugin: 'ivy-publish'
 
 repositories {
+  ivy {
+    url fandianpfDownloadRepo
+  }
   mavenCentral()
   jcenter()
 }
 
+task helloTree {
+  FileTree tree = fileTree(dir: 'testDocs',
+                           include: ['**/*.md', '**/*.tex'])
+  doLast {
+    tree.each { file -> println file }
+  }
+}
+
 dependencies {
+  compile 'org.antlr:antlr4:4.2.2'
+  compile 'org.fandianpf:antlr4-regressionTestRig:0.1'
   testCompile group: 'org.scalatest',
               name: 'scalatest_2.11', 
               version: '2.1.6'
+}
 
+antlr4 {
+  
+  extraArgs = ["-package", "org.fandianpf.latexmarkdown.parser"]
+ 
+  // make the Java compile task depend on the antlr4 task
+  compileJava.dependsOn antlr4
+
+  // add the generated source files to the list of java sources
+  sourceSets.main.java.srcDirs += antlr4.output
+
+  // add antlr4 to classpath
+  configurations {
+     compile.extendsFrom antlr4
+  }
+}
+
+antlr4test {
+  
+  grammarPackage = 'org.fandianpf.latexmarkdown.parser'
+  grammarName    = 'LaTeX'
+  startRuleName  = 'document'
+  testDocs       = fileTree(dir: 'src/test/resources/testDocs',
+                            include: ['**/*.md', '**/*.tex'])
+
+  source = antlr4.source
+  
+  antlr4test.getOutputs().upToDateWhen {
+    false
+  }
+  
+  trace = false                            
+  dependsOn compileJava
+  
+  antlr4test.classpath(files("$buildDir/classes/main"))
+  
+  configurations {
+    compile.extendsFrom antlr4test
+  }
+}
+
+test {
+  dependsOn antlr4test
 }
 
 publishing {
@@ -37,7 +98,7 @@ publishing {
   publications {
     repositories {
       ivy {
-        url "$fandianpfRepo/$archivesBaseName/ivyRepo/"
+        url fandianpfPublishRepo
       }
     }
 
@@ -56,20 +117,3 @@ publishing {
   }
 }
 
-antlr4 {
-  // The package structure for our ANTLR4 sources
-//  source = "org/org/fandianpf/latexmarkdown/parser"
-  
-  // make the Java compile task depend on the antlr4 task
-  compileJava.dependsOn antlr4
-
-  // add the generated source files to the list of java sources
-  sourceSets.main.java.srcDirs += antlr4.output
-
-  // add antlr4 to classpath
-  configurations {
-     compile.extendsFrom antlr4
-  }
-}
-
-task compile(dependsOn: [compileJava, compileScala]) 
