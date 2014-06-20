@@ -16,3 +16,5 @@ target/
 # My SBT script links $HOME/.ivy2 -> .ivyCache IF .ivyCache does not exist
 # AND adds the additional JAVA option: -Dsbt.ivy.home=.ivyCache
 .ivyCache
+
+metricsTable.csv

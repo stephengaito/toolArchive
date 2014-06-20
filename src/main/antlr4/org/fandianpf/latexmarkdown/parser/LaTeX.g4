@@ -8,7 +8,7 @@ latexContents :
     environment
   | COMMENT
   | command
-  | ( WORD | SUPERSCRIPT | SUBSCRIPT | HASH | AMPERSAND | TILDE | MATH )+;
+  | ( WORD | SUPERSCRIPT | SUBSCRIPT | HASH | AMPERSAND | TILDE | MATH | LINEBREAK );
 
 environment : BEGIN_CMD optArg* begName=envName argument* 
   latexContents+ 
@@ -17,11 +17,11 @@ environment : BEGIN_CMD optArg* begName=envName argument*
 
 envName : BEGIN_ARG WORD END_ARG ;
 
-command : CMD optArg* argument* ;
+command : CMD ( optArg | argument )* ;
 
-argument : BEGIN_ARG latexContents+ END_ARG ;
+argument : BEGIN_ARG latexContents* END_ARG ;
 
-optArg : BEGIN_OPT latexContents+ END_OPT ;
+optArg : BEGIN_OPT latexContents* END_OPT ;
 
 COMMENT : BEGIN_COMMENT ~( '\n' | '\r' )* [\n\r]+ ;
 
@@ -52,6 +52,8 @@ AMPERSAND : '&';
 HASH : '#';
 
 MATH : '$';
+
+LINEBREAK : '\\\\';
 
 WORD : ~(' ' | '\t' | '\n' | '\r' 
   | '\\' | '%' 
