@@ -37,4 +37,8 @@ require 'rake/extensions.rb'; # provides mesg used by others
 require 'rake/config.rb';
 require 'rake/cookUtils.rb';
 
+# simulate the --trace option
+Rake.application.options.trace = true;
+Rake.verbose(true);
+
 Rake.application.run

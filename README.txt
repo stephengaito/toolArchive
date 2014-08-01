@@ -48,6 +48,9 @@ or
 to cook the update task with the additional dev or prod
 configurations.
 
+(The alternate command cookTrace is equivilant to "cook --trace -v" and 
+provides considerably more output).
+
 == REQUIREMENTS:
 
 * rake 
