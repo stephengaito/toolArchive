@@ -666,10 +666,13 @@ module Rake
       else
         options[:timeout] = 10;
       end
+      Conf.retries = 5 unless Conf.has_key?(:retries)
+      options[:retries] = Conf.retries unless options.has_key?(:retries)
 
       Rake::Application.mesg args.join(' ') if $TRACE
       Rake::Application.mesg "Timeout: #{options[:timeout]}" if $TRACE
       Rake::Application.mesg "#{options}" if $TRACE && !options.empty?() && options.has_key?(:verbose);
+      Rake::Application.mesg "Retries: #{options[:retries]}" if $TRACE
 
       asyncTriggersBlocks = Array.new;
       if options.has_key? :asyncTriggersBlocks then
@@ -684,18 +687,31 @@ module Rake
       options[:env] = ENV unless options.has_key?(:env);
       options[:transcript] = Rake::Application.logger unless options.has_key?(:transcript);
 
-      cmdProcess = Greenletters::Process.new(*args, options);
-      cmdProcess.start!;
+      attempt = 0
+      tryAgain = true
+      cmdProcess = nil
+      while(tryAgain) do 
+        attempt += 1
+        tryAgain = false
+        begin
+          cmdProcess = Greenletters::Process.new(*args, options);
+          cmdProcess.start!;
 
-      asyncTriggersBlocks.each do | asyncTriggersBlock |
-        if asyncTriggersBlock.kind_of? Proc then
-          asyncTriggersBlock.call(cmdProcess);
+          asyncTriggersBlocks.each do | asyncTriggersBlock |
+            if asyncTriggersBlock.kind_of? Proc then
+              asyncTriggersBlock.call(cmdProcess);
+            end
+          end
+
+          aBlock.call(cmdProcess) unless aBlock.nil?;
+
+          cmdProcess.wait_for(:exit, exitStatus);
+        rescue StandardError => se
+          Rake::Application.mesg "Failed attempt #{attempt}" if $TRACE
+          tryAgain = true
+          raise se unless attempt < options[:retries]
         end
       end
-
-      aBlock.call(cmdProcess) unless aBlock.nil?;
-
-      cmdProcess.wait_for(:exit, exitStatus);
 
       cmdProcess
     end

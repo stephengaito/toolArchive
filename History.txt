@@ -1,3 +1,17 @@
+=== 2.0.9 / 2014-09-16 (external GitHub)
+
+* Added Conf.retries to allow gl_run (GreenLetters based) processes 
+which throw an exception to be retried a number of times. 
+
+  * This allows processes conducted over noisy internet connections to 
+    be automatically retried a number of times.
+
+  * Each failed attempt is log if tracing is enabled
+
+  * The current default retry number is 5. This can be overridden by 
+    either Conf.retries (globally) or options[:retries] (locally for a 
+    given gl_run call).
+ 
 === 2.0.1 / 2014-01-15 (external GitHub)
 
 * 2.0.1 minor testing
