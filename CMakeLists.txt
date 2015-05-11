@@ -13,6 +13,7 @@ include("CMakeUtils.txt")
 project (DynamicUTF8Parser)
 
 loadLLVM()
+configureDoxygen()
 
 add_subdirectory(HAT-trie)
 
