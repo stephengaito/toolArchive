@@ -13,28 +13,38 @@ endmacro(loadLLVM)
 
 # DEFINE tests
 #
-function(defineTestsFor libraryName testDirectories )
+function(defineTestsFor libraryName sourceDirectory
+         includeDirectories testDirectories testLibraries)
   file(GLOB_RECURSE testSources 
     "${testDirectories}/*.h" 
     "${testDirectories}/*.c*"
   )
-  add_executable("${libraryName}Tests" 
-    ${testSources} 
-  )
-  target_compile_options("${libraryName}Tests" PRIVATE "-Wall" "-std=c++11")
+  add_executable("${libraryName}Tests" ${testSources})
+  foreach(includeDir IN LISTS includeDirectories)
+    target_compile_options("${libraryName}Tests"
+      PRIVATE "-I${CMAKE_SOURCE_DIR}/${includeDir}")
+  endforeach(includeDir)
+  target_compile_options("${libraryName}Tests" 
+    PRIVATE "-I${CMAKE_SOURCE_DIR}/${sourceDirectory}" "-Wall" "-std=c++11")
   target_link_libraries("${libraryName}Tests" ${libraryName})
+  foreach(testLibrary IN LISTS testLibraries)
+    target_link_libraries("${libraryName}Tests" ${testLibrary})
+  endforeach(testLibrary)
   target_link_libraries("${libraryName}Tests" ${llvm_libs})
   add_test(${libraryName} "${libraryName}Tests")
 endfunction(defineTestsFor)
 
 # DEFINE library
 #
-function(defineLibrary libraryName sourceDirectories)
+function(defineLibrary libraryName sourceDirectory includeDirectories)
   file(GLOB_RECURSE librarySources
-     "${sourceDirectories}/*.h" 
-     "${sourceDirectories}/*.c*"
+    "${sourceDirectory}/*.h"
+    "${sourceDirectory}/*.c*"
   )
   add_library(${libraryName} ${librarySources})
+  foreach(includeDir IN LISTS includeDirectories)
+    target_compile_options(${libraryName} PRIVATE "-I${CMAKE_SOURCE_DIR}/${includeDir}")
+  endforeach(includeDir)
 endfunction(defineLibrary)
 
 # DEFINE executable

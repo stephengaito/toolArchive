@@ -6,7 +6,7 @@ enable_testing()
 
 project(HATTrie)
 
-defineLibrary(   hattrie  "src")
+defineLibrary(   hattrie  "src" "src")
 
 # We need to describe each test individually
 function(hatTrieTest testName testSource)

@@ -33,8 +33,8 @@ must be installed and in your build's include path.
 The Dynamic UTF8 Parser can make use of LLVM's link time optimiztion. 
 To do this we use the CMake build system.
 
-To build this the Dynamic UTF8 Parser, git clone a copy of the project 
-into a directory, for example "dynamicUTF8Parser"
+To build the Dynamic UTF8 Parser, git clone a copy of the project into 
+a directory, for example "dynamicUTF8Parser"
 
     git clone https://github.com/stephengaito/dynamicUTF8Parser
 

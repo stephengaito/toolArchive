@@ -16,5 +16,5 @@ loadLLVM()
 
 add_subdirectory(HAT-trie)
 
-defineLibrary(  dynUtf8Parser "src")
-defineTestsFor( dynUtf8Parser "tests")
+defineLibrary(  dynUtf8Parser "src" "HAT-trie/src")
+defineTestsFor( dynUtf8Parser "src" "HAT-trie/src" "tests" "hattrie")
