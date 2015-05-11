@@ -20,6 +20,49 @@ whitespace, special characters, etc, *must* be loaded into the lexer's
 character classifier. (Semi-)standard classes are provided in a form 
 that can be loaded if desired.
 
+## Dependencies
+
+All tests (except those provided by the HAT-Trie library) make use of 
+Joakim Karlsson's [bandit C++ BDD testing 
+framework](https://github.com/joakimkarlsson/bandit). Bandit is a 
+header only collection of test tools. This means that the bandit files 
+must be installed and in your build's include path.
+
+## Building
+
+The Dynamic UTF8 Parser can make use of LLVM's link time optimiztion. 
+To do this we use the CMake build system.
+
+To build this the Dynamic UTF8 Parser, git clone a copy of the project 
+into a directory, for example "dynamicUTF8Parser"
+
+    git clone https://github.com/stephengaito/dynamicUTF8Parser
+
+then make a sister directory (*beside* the dynamicUTF8Parser sources) 
+for the build, for example "dynamicUTF8ParserBUILD"
+
+    mkdir dynamicUTF8ParserBUILD
+
+then in the build directory use CMake to configure and make to build 
+the project
+
+    cd dynamicUTF8ParserBUILD
+    cmake ../dynamicUTF8Parser
+    make
+
+Note that compiling the hat-trie.c source issues an -Wabsolute-value 
+warning. This can be safely ignored.
+
+To run all tests type:
+
+    ctest
+
+(The HAT-Trie test "bench_sorted_iter" *will* take a couple of minutes)
+
+To only run the Dynamic UTF8 Parser tests type:
+
+    ./dynUtf8ParserTests
+
 ## LICENSES
 
 The core project uses the MIT license for all code unless otherwise 
