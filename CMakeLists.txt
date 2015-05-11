@@ -15,3 +15,6 @@ project (DynamicUTF8Parser)
 loadLLVM()
 
 add_subdirectory(HAT-trie)
+
+defineLibrary(  dynUtf8Parser "src")
+defineTestsFor( dynUtf8Parser "tests")
