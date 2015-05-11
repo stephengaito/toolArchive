@@ -1,0 +1,53 @@
+# This is a collection of utilities used by the main CMake file
+
+# Load the LLVM utilities
+#
+macro(loadLLVM)
+  find_package(LLVM REQUIRED CONFIG)
+  include_directories(${LLVM_INCLUDE_DIRS})
+  add_definitions(${LLVM_DEFINITIONS})
+  llvm_map_components_to_libnames(llvm_libs support core irreader)
+  message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+  message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+endmacro(loadLLVM)
+
+# DEFINE tests
+#
+function(defineTestsFor libraryName testDirectories )
+  file(GLOB_RECURSE testSources 
+    "${testDirectories}/*.h" 
+    "${testDirectories}/*.c*"
+  )
+  add_executable("${libraryName}Tests" 
+    ${testSources} 
+  )
+  target_compile_options("${libraryName}Tests" PRIVATE "-Wall" "-std=c++11")
+  target_link_libraries("${libraryName}Tests" ${libraryName})
+  target_link_libraries("${libraryName}Tests" ${llvm_libs})
+  add_test(${libraryName} "${libraryName}Tests")
+endfunction(defineTestsFor)
+
+# DEFINE library
+#
+function(defineLibrary libraryName sourceDirectories)
+  file(GLOB_RECURSE librarySources
+     "${sourceDirectories}/*.h" 
+     "${sourceDirectories}/*.c*"
+  )
+  add_library(${libraryName} ${librarySources})
+endfunction(defineLibrary)
+
+# DEFINE executable
+#
+function(defineExecutable executableName sourceDirectories libraries)
+  file(GLOB_RECURSE executableSources
+    "${sourceDirectories}/*.h"
+    "${sourceDirectories}/*.c*"
+  )
+  add_executable(${executableName} 
+    ${executableSources} 
+  )
+  target_link_libraries(${executableName} ${libraries})
+  target_link_libraries(${executableName} ${llvm_libs})
+endfunction(defineExecutable)
+
