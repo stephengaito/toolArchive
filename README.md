@@ -26,7 +26,8 @@ The core project uses the MIT license for all code unless otherwise
 noted. The MIT license can be found in the file LICENSE.
 
 This project uses git subtree to include code taken from Daniel C. 
-Jones's [HAT-Trie](https://github.com/dcjones/hat-trie) implementation, 
-its license can be found in the file HAT-Trie/COPYING. Currently this 
-code is used unchanged from commit 
-[25f9e94659db94e1e5fa13dc83b82c6f5d801d1f](https://github.com/dcjones/hat-trie/commit/25f9e94659db94e1e5fa13dc83b82c6f5d801d1f).
+Jones's [HAT-Trie](https://github.com/dcjones/hat-trie) implementation. 
+A local copy of HAT-Trie's license can be found in the file 
+HAT-Trie/COPYING. Currently this code is used unchanged from commit 
+[25f9e94659db94e1e5fa13dc83b82c6f5d801d1f](https://github.com/dcjones/hat-trie/commit/25f9e94659db94e1e5fa13dc83b82c6f5d801d1f) 
+merged April 2 2015.
