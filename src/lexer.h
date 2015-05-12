@@ -28,6 +28,9 @@ over UTF8 characters.
 class Utf8CharStr {
   public:
 
+    /// \brief A list of UTF8 white space charaters
+    static const char whiteSpaceChars[];
+
     /// \brief Create an instance of the Utf8CharStr...
     ///
     /// using the byte array someUtf8Chars.
@@ -45,6 +48,17 @@ class Utf8CharStr {
     ///
     /// If there are no more characters, returns the null character.
     utf8Char_t nextUtf8Char();
+
+    /// \brief Returns true if the Utf8CharStr contians the given UTF8 char
+    ///
+    /// **NOTE** containsUtf8Char restarts the nextUtf8Char pointer
+    /// *and* if the expectedUtf8Char is found, leaves the nextUtf8Char
+    /// pointer pointing at the *next* character in the string.
+    bool containsUtf8Char(utf8Char_t expectedUtf8Char);
+
+
+    /// \brief Convert an integer code point into a UTF8 character
+    static utf8Char_t codePoint2utf8Char(uint64_t codePoint);
 
   private:
     const char* utf8Chars;

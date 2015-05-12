@@ -69,6 +69,7 @@ function(defineLibrary libraryName sourceDirectory includeDirectories)
   foreach(includeDir IN LISTS includeDirectories)
     target_compile_options(${libraryName} PRIVATE "-I${CMAKE_SOURCE_DIR}/${includeDir}")
   endforeach(includeDir)
+#  target_compile_options(${libraryName} PRIVATE "-Wall" "-std=c++11")
 endfunction(defineLibrary)
 
 # DEFINE executable
