@@ -1,48 +1,47 @@
 #include <bandit/bandit.h>
-#include "bandit/localHelpers.h"
 using namespace bandit;
 
 #include <string.h>
 #include <stdio.h>
 
-#include <lexer.h>
+#include <utf8chars.h>
 
 go_bandit([](){
 
-  describe("Utf8CharStr buffer", [](){
+  describe("Utf8Chars buffer", [](){
 
-    it("create a utf8CharStr buffer", [&](){
-      Utf8CharStr *someChars = new Utf8CharStr("silly");
-      AssertThat(someChars, Is().Not().EqualTo((Utf8CharStr*)0));
+    it("create a Utf8Chars buffer", [&](){
+      Utf8Chars *someChars = new Utf8Chars("silly");
+      AssertThat(someChars, Is().Not().EqualTo((Utf8Chars*)0));
     });
 
     it("convert code points to utf8Char_t", [&](){
       utf8Char_t expectedChar;
       expectedChar.u = 0;
       expectedChar.c[0] = ' ';
-      AssertThat(Utf8CharStr::codePoint2utf8Char(0x20).u, Is().EqualTo(expectedChar.u));
+      AssertThat(Utf8Chars::codePoint2utf8Char(0x20).u, Is().EqualTo(expectedChar.u));
       expectedChar.u = 0;
       expectedChar.c[0] = 0xDF;
       expectedChar.c[1] = 0xBF;
-      AssertThat(Utf8CharStr::codePoint2utf8Char(0x7FF).u, Is().EqualTo(expectedChar.u));
+      AssertThat(Utf8Chars::codePoint2utf8Char(0x7FF).u, Is().EqualTo(expectedChar.u));
       expectedChar.u = 0;
       expectedChar.c[0] = 0xEF;
       expectedChar.c[1] = 0xBF;
       expectedChar.c[2] = 0xBF;
-      AssertThat(Utf8CharStr::codePoint2utf8Char(0xFFFF).u, Is().EqualTo(expectedChar.u));
+      AssertThat(Utf8Chars::codePoint2utf8Char(0xFFFF).u, Is().EqualTo(expectedChar.u));
       expectedChar.u = 0;
       expectedChar.c[0] = 0xF7;
       expectedChar.c[1] = 0xBF;
       expectedChar.c[2] = 0xBF;
       expectedChar.c[3] = 0xBF;
-      AssertThat(Utf8CharStr::codePoint2utf8Char(0x1FFFFF).u, Is().EqualTo(expectedChar.u));
+      AssertThat(Utf8Chars::codePoint2utf8Char(0x1FFFFF).u, Is().EqualTo(expectedChar.u));
       expectedChar.u = 0;
       expectedChar.c[0] = 0xFB;
       expectedChar.c[1] = 0xBF;
       expectedChar.c[2] = 0xBF;
       expectedChar.c[3] = 0xBF;
       expectedChar.c[4] = 0xBF;
-      AssertThat(Utf8CharStr::codePoint2utf8Char(0x3FFFFFF).u, Is().EqualTo(expectedChar.u));
+      AssertThat(Utf8Chars::codePoint2utf8Char(0x3FFFFFF).u, Is().EqualTo(expectedChar.u));
       expectedChar.u = 0;
       expectedChar.c[0] = 0xFD;
       expectedChar.c[1] = 0xBF;
@@ -50,13 +49,13 @@ go_bandit([](){
       expectedChar.c[3] = 0xBF;
       expectedChar.c[4] = 0xBF;
       expectedChar.c[5] = 0xBF;
-      AssertThat(Utf8CharStr::codePoint2utf8Char(0x7FFFFFFF).u, Is().EqualTo(expectedChar.u));
+      AssertThat(Utf8Chars::codePoint2utf8Char(0x7FFFFFFF).u, Is().EqualTo(expectedChar.u));
       expectedChar.u = 0;
-      AssertThat(Utf8CharStr::codePoint2utf8Char(0x7FFFFFFFF).u, Is().EqualTo(expectedChar.u));
+      AssertThat(Utf8Chars::codePoint2utf8Char(0x7FFFFFFFF).u, Is().EqualTo(expectedChar.u));
     });
 
     it("iterate over a simple ascii string", [&](){
-      Utf8CharStr *someChars = new Utf8CharStr("s");
+      Utf8Chars *someChars = new Utf8Chars("s");
       utf8Char_t expectedChar;
       expectedChar.u    = 0;
       expectedChar.c[0] = 's';
@@ -71,7 +70,7 @@ go_bandit([](){
     });
 
     it("iterate over a long ascii string", [&](){
-      Utf8CharStr *someChars = new Utf8CharStr("silly");
+      Utf8Chars *someChars = new Utf8Chars("silly");
       utf8Char_t expectedChar;
       expectedChar.u    = 0;
       expectedChar.c[0] = 's';
@@ -93,7 +92,7 @@ go_bandit([](){
     });
 
     it("iterate over a simple utf8 string", [&](){
-      Utf8CharStr *someChars = new Utf8CharStr("€");
+      Utf8Chars *someChars = new Utf8Chars("€");
       utf8Char_t expectedChar;
       expectedChar.u    = 0;
       expectedChar.c[0] = 0xE2;
@@ -110,7 +109,7 @@ go_bandit([](){
     });
 
     it("iterate over a long utf8 string", [&](){
-      Utf8CharStr *someChars = new Utf8CharStr("$¢€[");
+      Utf8Chars *someChars = new Utf8Chars("$¢€[");
       utf8Char_t expectedChar;
       expectedChar.u    = 0;
       expectedChar.c[0] = '$';
@@ -154,22 +153,22 @@ go_bandit([](){
       utf8Char_t aChar;
       aChar.u = 0;
       aChar.c[0] = 0xFF;
-      Utf8CharStr *someChars = new Utf8CharStr(aChar.c);
+      Utf8Chars *someChars = new Utf8Chars(aChar.c);
       AssertThat(someChars->nextUtf8Char().u, Is().EqualTo(nullChar.u));
       aChar.u = 0;
       aChar.c[0] = 0xC0;
       aChar.c[1] = 0xFF;
-      someChars = new Utf8CharStr(aChar.c);
+      someChars = new Utf8Chars(aChar.c);
       AssertThat(someChars->nextUtf8Char().u, Is().EqualTo(nullChar.u));
       aChar.u = 0;
       aChar.c[0] = 0xC0;
       aChar.c[1] = 0x00;
-      someChars = new Utf8CharStr(aChar.c);
+      someChars = new Utf8Chars(aChar.c);
       AssertThat(someChars->nextUtf8Char().u, Is().EqualTo(nullChar.u));
       aChar.u = 0;
       aChar.c[0] = 0xC0;
       aChar.c[1] = 0x80;
-      someChars = new Utf8CharStr(aChar.c);
+      someChars = new Utf8Chars(aChar.c);
       AssertThat(someChars->nextUtf8Char().u, Is().EqualTo(aChar.u));
     });
 
@@ -220,7 +219,7 @@ go_bandit([](){
       fprintf(stdout, "\nWhite space codePoint -> UTF8 character table:\n");
       utf8Char_t utf8Char;
       for(int i = 0; 0 < whiteSpaceCodePoints[i].cp; i++) {
-        utf8Char = Utf8CharStr::codePoint2utf8Char(whiteSpaceCodePoints[i].cp);
+        utf8Char = Utf8Chars::codePoint2utf8Char(whiteSpaceCodePoints[i].cp);
         fprintf(stdout, "  0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, // 0x%04lX %s\n",
           utf8Char.c[0] & 0xFF, utf8Char.c[1] & 0xFF, utf8Char.c[2] & 0xFF,
           utf8Char.c[3] & 0xFF, utf8Char.c[4] & 0xFF, utf8Char.c[5] & 0xFF,
@@ -228,7 +227,7 @@ go_bandit([](){
         );
       }
 */
-      Utf8CharStr *whiteSpace = new Utf8CharStr(Utf8CharStr::whiteSpaceChars);
+      Utf8Chars *whiteSpace = new Utf8Chars(Utf8Chars::whiteSpaceChars);
       utf8Char_t expectedChar;
       expectedChar.u = 0;
       expectedChar.c[0] = ' ';
@@ -236,66 +235,15 @@ go_bandit([](){
       expectedChar.u = 0;
       expectedChar.c[0] = '\x1f';
       AssertThat(whiteSpace->containsUtf8Char(expectedChar), Is().True());
-      expectedChar = Utf8CharStr::codePoint2utf8Char(0x2004);
+      expectedChar = Utf8Chars::codePoint2utf8Char(0x2004);
       AssertThat(whiteSpace->containsUtf8Char(expectedChar), Is().True());
-      expectedChar = Utf8CharStr::codePoint2utf8Char(0x2005);
+      expectedChar = Utf8Chars::codePoint2utf8Char(0x2005);
       AssertThat(whiteSpace->nextUtf8Char().u, Is().EqualTo(expectedChar.u));
-      expectedChar = Utf8CharStr::codePoint2utf8Char(0x2025);
+      expectedChar = Utf8Chars::codePoint2utf8Char(0x2025);
       AssertThat(whiteSpace->containsUtf8Char(expectedChar), Is().False());
     });
 
-  }); // Utf8CharStr buffer
-
-  describe("Character classification", [](){
-
-    it("create classifier", [&](){
-      Classifier *classifier = new Classifier();
-      AssertThat(classifier, Is().Not().EqualTo((Classifier*)0));
-    }); // create classifier
-
-    it("register a class", [&](){
-      Classifier *classifier = new Classifier();
-
-      // show that unknown classes have the empty set
-      uint64_t classSet = classifier->findClassSet("silly");
-      AssertThat(classSet, Is().EqualTo(0));
-
-      // now register a new class
-      uint64_t newClassSet = classifier->registerClassSet("silly", 1);
-      AssertThat(newClassSet, Is().EqualTo(0));
-
-      // show that we can find the recently registered class
-      classSet = classifier->findClassSet("silly");
-      AssertThat(classSet,    Is().EqualTo(1));
-
-      // now re-register existing class with new value
-      newClassSet = classifier->registerClassSet("silly", 2);
-      AssertThat(newClassSet, Is().EqualTo(1));
-      classSet = classifier->findClassSet("silly");
-      AssertThat(classSet, Is().EqualTo(2));
-    });
-
-    it("register a class with a utf8 name", [&](){
-      Classifier *classifier = new Classifier();
-      // show that naive classifier does not understand whitespace class
-      AssertThat(classifier->getClassSet(" "), Is().EqualTo(0));
-      // now classify a string of utf8 charaters
-      classifier->registerClassSet("white€space", 1);
-      classifier->classifyUtf8CharsAs(" ", "white€space");
-      AssertThat(classifier->getClassSet(" "), Is().EqualTo(1));
-    }); // create classifier
-
-    it("classify characters", [&](){
-      Classifier *classifier = new Classifier();
-      // show that naive classifier does not understand whitespace class
-      AssertThat(classifier->getClassSet(" "), Is().EqualTo(0));
-      // now classify a string of utf8 charaters
-      classifier->registerClassSet("whitespace", 1);
-      classifier->classifyUtf8CharsAs(" ", "whitespace");
-      AssertThat(classifier->getClassSet(" "), Is().EqualTo(1));
-    }); // create classifier
-
-  }); // Character classification
+  }); // Utf8Chars buffer
 
 });
 

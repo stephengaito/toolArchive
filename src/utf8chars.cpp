@@ -1,14 +1,14 @@
 #include <string.h>
-//#include <stdio.h>
 #include <stdbool.h>
-#include "lexer.h"
+
+#include "utf8chars.h"
 
 //
 // This list of whitespace has been taken from
 // [In Python, how to listall characters matched by POSIX extended regex
 // `[:space:]`?](http://stackoverflow.com/a/8922773)
 //
-const char Utf8CharStr::whiteSpaceChars[] = {
+const char Utf8Chars::whiteSpaceChars[] = {
   0x09, // 0x0009 tab
   0x0A, // 0x000A new line
   0x0B, // 0x000B vertical tab
@@ -41,20 +41,20 @@ const char Utf8CharStr::whiteSpaceChars[] = {
   0xE3, 0x80, 0x80  // 0x3000 IDEOGRAPHIC SPACE
 };
 
-Utf8CharStr::Utf8CharStr(const char* someUtf8Chars) {
+Utf8Chars::Utf8Chars(const char* someUtf8Chars) {
   utf8Chars = someUtf8Chars;
   numBytes  = strlen(someUtf8Chars);
   restart();
 }
 
-void Utf8CharStr::restart(void) {
+void Utf8Chars::restart(void) {
   nextByte  = utf8Chars;
 }
 
 // We use the Wikipedia
 // [UTF-8::Description](http://en.wikipedia.org/wiki/UTF-8#Description)
 //
-void Utf8CharStr::backup(void) {
+void Utf8Chars::backup(void) {
   // ensure we have not walked off the end of the string
   if (utf8Chars + numBytes < nextByte) nextByte = utf8Chars + numBytes;
   while(true) {
@@ -76,7 +76,7 @@ void Utf8CharStr::backup(void) {
 // We use the Wikipedia
 // [UTF-8::Description](http://en.wikipedia.org/wiki/UTF-8#Description)
 //
-utf8Char_t Utf8CharStr::nextUtf8Char(void) {
+utf8Char_t Utf8Chars::nextUtf8Char(void) {
   utf8Char_t nullChar;
   nullChar.u = 0;
 
@@ -133,7 +133,7 @@ utf8Char_t Utf8CharStr::nextUtf8Char(void) {
   return result;
 }
 
-bool Utf8CharStr::containsUtf8Char(utf8Char_t expectedUtf8Char) {
+bool Utf8Chars::containsUtf8Char(utf8Char_t expectedUtf8Char) {
   restart();
   while( nextByte < utf8Chars+numBytes) {
     utf8Char_t actualUtf8Char = nextUtf8Char();
@@ -146,7 +146,7 @@ bool Utf8CharStr::containsUtf8Char(utf8Char_t expectedUtf8Char) {
 // We use the Wikipedia
 // [UTF-8::Description](http://en.wikipedia.org/wiki/UTF-8#Description)
 //
-utf8Char_t Utf8CharStr::codePoint2utf8Char(uint64_t codePoint) {
+utf8Char_t Utf8Chars::codePoint2utf8Char(uint64_t codePoint) {
   utf8Char_t result;
   result.u = 0;
   if (codePoint < 0x80) {                    // 1 byte char
@@ -209,61 +209,3 @@ utf8Char_t Utf8CharStr::codePoint2utf8Char(uint64_t codePoint) {
   return result;
 }
 
-Classifier::Classifier(void) {
-  // create the className2classSet mapping of characters to HAT-trie value_t
-  className2classSet = hattrie_create();
-
-  // create the utf8Char2classSet mapping of characters to HAT-trie value_t
-  utf8Char2classSet = hattrie_create();
-}
-
-classSet_t Classifier::findClassSet(const char* aClassName) {
-  value_t *classSetPtr = hattrie_tryget(className2classSet,
-                                        aClassName,
-                                        strlen(aClassName));
-  if (!classSetPtr) return 0;
-  return *classSetPtr;
-}
-
-classSet_t Classifier::registerClassSet(const char* aClassName,
-                                      uint64_t aClassSet) {
-  value_t *classSetPtr = hattrie_get(className2classSet,
-                                     aClassName,
-                                     strlen(aClassName));
-  if (!classSetPtr) return 0;
-  classSet_t oldClassSet = *classSetPtr;
-  *classSetPtr = aClassSet;
-  return oldClassSet;
-}
-
-void Classifier::classifyUtf8CharsAs(const char* someUtf8Chars,
-                                     const char* aClassName) {
-
-  classSet_t newClassSet = findClassSet(aClassName);
-
-  Utf8CharStr *utf8Chars = new Utf8CharStr(someUtf8Chars);
-  utf8Char_t aUtf8Char = utf8Chars->nextUtf8Char();
-  while(aUtf8Char.u != 0) {
-    classSet_t *classSetPtr = hattrie_get(utf8Char2classSet,
-                                       aUtf8Char.c, strlen(aUtf8Char.c));
-    if (!classSetPtr) return;
-    *classSetPtr = newClassSet;
-    aUtf8Char = utf8Chars->nextUtf8Char();
-  }
-}
-
-classSet_t Classifier::getClassSet(const char* someUtf8Chars) {
-  Utf8CharStr *utf8Chars = new Utf8CharStr(someUtf8Chars);
-  utf8Char_t aUtf8Char = utf8Chars->nextUtf8Char();
-  return getClassSet(aUtf8Char);
-}
-
-classSet_t Classifier::getClassSet(utf8Char_t aUtf8Char) {
-  classSet_t *classSetPtr = hattrie_tryget(utf8Char2classSet,
-                                           aUtf8Char.c, strlen(aUtf8Char.c));
-
-  // if this is an unclassified character return the empty class set
-  if (!classSetPtr) return 0;
-
-  return *classSetPtr;
-}
