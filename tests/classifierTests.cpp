@@ -8,6 +8,13 @@ using namespace bandit;
 
 go_bandit([](){
 
+  printf("\n----------------------------------\n");
+  printf(  "classifiers\n");
+  printf(  "   value_t = %lu bytes (%lu bits)\n", sizeof(value_t),    sizeof(value_t)*8);
+  printf(  "classSet_t = %lu bytes (%lu bits)\n", sizeof(classSet_t), sizeof(classSet_t)*8);
+  printf(  "----------------------------------\n");
+
+
   describe("Character classification", [](){
 
     it("create classifier", [&](){
