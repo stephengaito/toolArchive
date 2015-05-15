@@ -23,46 +23,61 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "lexer.h"
+#include "nfaFragments.h"
 
-Lexer::Lexer(void) {
-  nfaStates = NULL;
-  curNFAState  = NULL;
-  lastNFAState = NULL;
-  curNFAStateVector  = -1;
-  numNFAStateVectors = 0;
+NFA::NFA(void) {
+  states    = NULL;
+  curState  = NULL;
+  lastState = NULL;
+  curStateVector  = -1;
+  numStateVectors = 0;
 }
 
-void Lexer::preAddNFAStates(size_t reLength) {
-  curNFAStateVector++;
-  // Ensure there are enough NFA State vectors for this additional collection
-  if (numNFAStateVectors <= curNFAStateVector) {
-    NFAState **oldNFAStates = nfaStates;
-    nfaStates = (NFAState**) calloc(numNFAStateVectors + 10, sizeof(NFAState*));
-    if (oldNFAStates) {
-      memcpy(nfaStates, oldNFAStates, numNFAStateVectors);
+NFA::~NFA(void) {
+  if (states) {
+    for (size_t i = 0; i < numStateVectors; i++) {
+      if (states[i]) free(states[i]);
+      states[i] = NULL;
     }
-    numNFAStateVectors += 10;
+    free(states);
+    states = NULL;
+  }
+  curState = NULL;
+  lastState = NULL;
+  curStateVector = 0;
+  numStateVectors = 0;
+}
+
+void NFA::preAddStates(size_t reLength) {
+  curStateVector++;
+  // Ensure there are enough NFA State vectors for this additional collection
+  if (numStateVectors <= curStateVector) {
+    State **oldStates = states;
+    states = (State**) calloc(numStateVectors + 10, sizeof(State*));
+    if (oldStates) {
+      memcpy(states, oldStates, numStateVectors);
+    }
+    numStateVectors += 10;
   }
 
-  nfaStates[curNFAStateVector] = (NFAState*) calloc(2*reLength, sizeof(NFAState));
-  curNFAState = nfaStates[curNFAStateVector];
-  lastNFAState = curNFAState + 2*reLength;
-  curNFAState--;
+  states[curStateVector] = (State*) calloc(2*reLength, sizeof(State));
+  curState = states[curStateVector];
+  lastState = curState + 2*reLength;
+  curState--;
 }
 
-Lexer::NFAState *Lexer::addNFAState(Lexer::MatchType aMatchType,
-                                    Lexer::MatchData someMatchData,
-                                    Lexer::NFAState *out,
-                                    Lexer::NFAState *out1)
+NFA::State *NFA::addState(NFA::MatchType aMatchType,
+                          NFA::MatchData someMatchData,
+                          NFA::State *out,
+                          NFA::State *out1)
   throw (LexerException*) {
-  if (lastNFAState < curNFAState) throw new LexerException("run out of NFA states");
-  curNFAState++;
-  curNFAState->matchType = aMatchType;
-  curNFAState->matchData = someMatchData;
-  curNFAState->out       = out;
-  curNFAState->out1      = out1;
-  return curNFAState;
+  if (lastState < curState) throw new LexerException("run out of NFA states");
+  curState++;
+  curState->matchType = aMatchType;
+  curState->matchData = someMatchData;
+  curState->out       = out;
+  curState->out1      = out1;
+  return curState;
 }
 
 /*
@@ -70,11 +85,11 @@ Lexer::NFAState *Lexer::addNFAState(Lexer::MatchType aMatchType,
  * Insert . as explicit concatenation operator.
  * Cheesy parser, return static buffer.
  */
-Lexer::NFAState* Lexer::regularExpression2NFA(const char *aUtf8RegExp)
+NFA::State* NFA::compileRegularExpression(const char *aUtf8RegExp)
   throw (LexerException*) {
 
   size_t reLen = strlen(aUtf8RegExp);
-  preAddNFAStates(reLen);
+  preAddStates(reLen);
   Utf8Chars *re = new Utf8Chars(aUtf8RegExp);
   int nalt, natom;
   NFAFragments *fragments = new NFAFragments(this, reLen);
@@ -149,25 +164,10 @@ Lexer::NFAState* Lexer::regularExpression2NFA(const char *aUtf8RegExp)
 
 #ifdef NOT_DEFINED
 
-/* Allocate and initialize State */
-State* state(int c, State *out, State *out1) {
-  State *s;
-
-  nstate++;
-  s = malloc(sizeof *s);
-  s->lastlist = 0;
-  s->c = c;
-  s->out = out;
-  s->out1 = out1;
-  return s;
-}
-
-typedef struct List List;
-struct List
-{
+typedef struct List {
 	State **s;
 	int n;
-};
+} List;
 List l1, l2;
 static int listid;
 
@@ -175,41 +175,34 @@ void addstate(List*, State*);
 void step(List*, int, List*);
 
 /* Compute initial state list */
-List*
-startlist(State *start, List *l)
-{
-	l->n = 0;
-	listid++;
-	addstate(l, start);
-	return l;
+List* startlist(State *start, List *l) {
+  l->n = 0;
+  listid++;
+  addstate(l, start);
+  return l;
 }
 
 /* Check whether state list contains a match. */
-int
-ismatch(List *l)
-{
-	int i;
+bool ismatch(List *l) {
+  int i;
 
-	for(i=0; i<l->n; i++)
-		if(l->s[i] == &matchstate)
-			return 1;
-	return 0;
+  for (i=0; i<l->n; i++) {
+    if(l->s[i] == &matchstate) return true;
+  }
+  return false;
 }
 
 /* Add s to l, following unlabeled arrows. */
-void
-addstate(List *l, State *s)
-{
-	if(s == NULL || s->lastlist == listid)
-		return;
-	s->lastlist = listid;
-	if(s->c == Split){
-		/* follow unlabeled arrows */
-		addstate(l, s->out);
-		addstate(l, s->out1);
-		return;
-	}
-	l->s[l->n++] = s;
+void addstate(List *l, State *s) {
+  if(s == NULL || s->lastlist == listid) return;
+  s->lastlist = listid;
+  if (s->c == Split) {
+    /* follow unlabeled arrows */
+    addstate(l, s->out);
+    addstate(l, s->out1);
+    return;
+  }
+  l->s[l->n++] = s;
 }
 
 /*
@@ -217,104 +210,84 @@ addstate(List *l, State *s)
  * past the character c,
  * to create next NFA state set nlist.
  */
-void
-step(List *clist, int c, List *nlist)
-{
-	int i;
-	State *s;
+void step(List *clist, int c, List *nlist) {
+  int i;
+  State *s;
 
-	listid++;
-	nlist->n = 0;
-	for(i=0; i<clist->n; i++){
-		s = clist->s[i];
-		if(s->c == c)
-			addstate(nlist, s->out);
-	}
+  listid++;
+  nlist->n = 0;
+  for (i=0; i<clist->n; i++) {
+    s = clist->s[i];
+    if(s->c == c) addstate(nlist, s->out);
+  }
 }
 
 /*
  * Represents a DFA state: a cached NFA state list.
  */
-typedef struct DState DState;
-struct DState
-{
-	List l;
-	DState *next[256];
-	DState *left;
-	DState *right;
-};
+//typedef struct DState DState;
+typedef struct DState {
+  List l;
+  DState *next[256];
+  DState *left;
+  DState *right;
+} DState;
 
 /* Compare lists: first by length, then by members. */
-static int
-listcmp(List *l1, List *l2)
-{
-	int i;
+static int listcmp(List *l1, List *l2) {
+  int i;
 
-	if(l1->n < l2->n)
-		return -1;
-	if(l1->n > l2->n)
-		return 1;
-	for(i=0; i<l1->n; i++)
-		if(l1->s[i] < l2->s[i])
-			return -1;
-		else if(l1->s[i] > l2->s[i])
-			return 1;
-	return 0;
+  if (l1->n < l2->n) return -1;
+  if (l1->n > l2->n) return 1;
+  for (i=0; i<l1->n; i++) {
+    if (l1->s[i] < l2->s[i]) return -1;
+    else if (l1->s[i] > l2->s[i]) return 1;
+  }
+  return 0;
 }
 
 /* Compare pointers by address. */
-static int
-ptrcmp(const void *a, const void *b)
-{
-	if(a < b)
-		return -1;
-	if(a > b)
-		return 1;
-	return 0;
+static int ptrcmp(const void *a, const void *b) {
+  if(a < b) return -1;
+  if(a > b) return 1;
+  return 0;
 }
 
 DState *freelist;
 
 /* Allocate DStates from a cached list. */
-DState*
-allocdstate(void)
-{
-	DState *d;
-	
-	if((d = freelist) != NULL)
-		freelist = d->left;
-	else{
-		d = malloc(sizeof *d + nstate*sizeof(State*));
-		d->l.s = (State**)(d+1);
-	}
-	d->left = NULL;
-	d->right = NULL;
-	memset(d->next, 0, sizeof d->next);
-	return d;
+DState* allocdstate(void) {
+  DState *d;
+
+  if ((d = freelist) != NULL) {
+    freelist = d->left;
+  } else {
+    d = malloc(sizeof *d + nstate*sizeof(State*));
+    d->l.s = (State**)(d+1);
+  }
+  d->left = NULL;
+  d->right = NULL;
+  memset(d->next, 0, sizeof d->next);
+  return d;
 }
 
 /* Free the tree of states rooted at d. */
-void
-freestates(DState *d)
-{
-	if(d == NULL)
-		return;
-	freestates(d->left);
-	freestates(d->right);
-	d->left = freelist;
-	freelist = d;
+void freestates(DState *d) {
+  if (d == NULL) return;
+  freestates(d->left);
+  freestates(d->right);
+  d->left = freelist;
+  freelist = d;
 }
 
 static DState *alldstates;
 static int nstates;
 
 /* Throw away the cache and start over. */
-void
-freecache(void)
-{
-	freestates(alldstates);
-	alldstates = NULL;
-	nstates = 0;
+void freecache(void) {
+  freestates(alldstates);
+  alldstates = NULL;
+  nstates = 0;
 }
 
 /*
@@ -322,108 +295,91 @@ freecache(void)
  * creating a new one if needed.
  */
 int maxstates = 32;
-DState*
-dstate(List *l, DState **nextp)
-{
-	int i;
-	DState **dp, *d;
+DState* dstate(List *l, DState **nextp) {
+  int i;
+  DState **dp, *d;
 
-	qsort(l->s, l->n, sizeof l->s[0], ptrcmp);
-	dp = &alldstates;
-	while((d = *dp) != NULL){
-		i = listcmp(l, &d->l);
-		if(i < 0)
-			dp = &d->left;
-		else if(i > 0)
-			dp = &d->right;
-		else
-			return d;
-	}
+  qsort(l->s, l->n, sizeof l->s[0], ptrcmp);
+  dp = &alldstates;
+  while ((d = *dp) != NULL) {
+    i = listcmp(l, &d->l);
+    if (i < 0) dp = &d->left;
+    else if (i > 0) dp = &d->right;
+    else return d;
+  }
 
-	if(nstates >= maxstates){
-		freecache();
-		dp = &alldstates;
-		nextp = NULL;
-	}
-	
-	d = allocdstate();
-	memmove(d->l.s, l->s, l->n*sizeof l->s[0]);
-	d->l.n = l->n;
-	*dp = d;
-	nstates++;
-	if(nextp != NULL)
-		*nextp = d;
-	return d;
+  if (nstates >= maxstates) {
+    freecache();
+    dp = &alldstates;
+    nextp = NULL;
+  }
+
+  d = allocdstate();
+  memmove(d->l.s, l->s, l->n*sizeof l->s[0]);
+  d->l.n = l->n;
+  *dp = d;
+  nstates++;
+  if (nextp != NULL) *nextp = d;
+  return d;
 }
 
-void
-startnfa(State *start, List *l)
-{
-	l->n = 0;
-	listid++;
-	addstate(l, start);
+void startnfa(State *start, List *l) {
+  l->n = 0;
+  listid++;
+  addstate(l, start);
 }
 
-DState*
-startdstate(State *start)
-{
-	return dstate(startlist(start, &l1), NULL);
+DState* startdstate(State *start) {
+  return dstate(startlist(start, &l1), NULL);
 }
 
-DState*
-nextstate(DState *d, int c)
-{
-	step(&d->l, c, &l1);
-	return dstate(&l1, &d->next[c]);
+DState* nextstate(DState *d, int c) {
+  step(&d->l, c, &l1);
+  return dstate(&l1, &d->next[c]);
 }
 
 /* Run DFA to determine whether it matches s. */
-int
-match(DState *start, char *s)
-{
-	DState *d, *next;
-	int c, i;
-	
-	d = start;
-	for(; *s; s++){
-		c = *s & 0xFF;
-		if((next = d->next[c]) == NULL)
-			next = nextstate(d, c);
-		d = next;
-	}
-	return ismatch(&d->l);
+int match(DState *start, char *s) {
+  DState *d, *next;
+  int c, i;
+
+  d = start;
+  for (; *s; s++) {
+    c = *s & 0xFF;
+    if ((next = d->next[c]) == NULL) next = nextstate(d, c);
+    d = next;
+  }
+  return ismatch(&d->l);
 }
 
-int
-main(int argc, char **argv)
-{
-	int i;
-	char *post;
-	State *start;
+int main(int argc, char **argv) {
+  int i;
+  char *post;
+  State *start;
 
-	if(argc < 3){
-		fprintf(stderr, "usage: nfa regexp string...\n");
-		return 1;
-	}
-	
-	post = re2post(argv[1]);
-	if(post == NULL){
-		fprintf(stderr, "bad regexp %s\n", argv[1]);
-		return 1;
-	}
+  if (argc < 3) {
+    fprintf(stderr, "usage: nfa regexp string...\n");
+    return 1;
+  }
 
-	start = post2nfa(post);
-	if(start == NULL){
-		fprintf(stderr, "error in post2nfa %s\n", post);
-		return 1;
-	}
-	
-	l1.s = malloc(nstate*sizeof l1.s[0]);
-	l2.s = malloc(nstate*sizeof l2.s[0]);
-	for(i=2; i<argc; i++)
-		if(match(startdstate(start), argv[i]))
-			printf("%s\n", argv[i]);
-	return 0;
+  post = re2post(argv[1]);
+  if (post == NULL) {
+    fprintf(stderr, "bad regexp %s\n", argv[1]);
+    return 1;
+  }
+
+  start = post2nfa(post);
+  if (start == NULL) {
+    fprintf(stderr, "error in post2nfa %s\n", post);
+    return 1;
+  }
+
+  l1.s = malloc(nstate*sizeof l1.s[0]);
+  l2.s = malloc(nstate*sizeof l2.s[0]);
+  for (i=2; i<argc; i++) {
+    if (match(startdstate(start), argv[i])) printf("%s\n", argv[i]);
+  }
+  return 0;
 }
 #endif
 
@@ -436,11 +392,11 @@ main(int argc, char **argv)
  * sublicense, and/or sell copies of the Software, and to
  * permit persons to whom the Software is furnished to do so,
  * subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall
  * be included in all copies or substantial portions of the
  * Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
  * KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
  * WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR

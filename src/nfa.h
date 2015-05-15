@@ -1,0 +1,55 @@
+#ifndef NFA_H
+#define NFA_H
+
+#include "classifier.h"
+
+class LexerException {
+  public:
+    LexerException(const char* aMessage) { message = aMessage; };
+    const char* message;
+};
+
+class NFA {
+
+  public:
+    NFA(void);
+    ~NFA(void);
+    /*
+     * Represents an NFA state plus zero or one or two arrows exiting.
+     * if c == Match, no arrows out; matching state.
+     * If c == Split, unlabeled arrows to out and out1 (if != NULL).
+     * If c < 256, labeled arrow with character c to out.
+     */
+    enum MatchType { Character, ClassSet, Split, Token };
+    typedef  union MatchData {
+        utf8Char_t c;
+        classSet_t s;
+        value_t    t;
+      } MatchData;
+    typedef struct State {
+      MatchType matchType;
+      MatchData matchData;
+      State *out;
+      State *out1;
+      //int lastlist;
+    } State;
+
+    State *compileRegularExpression(const char *re) throw (LexerException*) ;
+    State *addState(MatchType aMatchType, MatchData someMatchData,
+                          State *out, State *out1)
+                          throw (LexerException*);
+    void preAddStates(size_t reLength);
+    size_t getNumberStates() {
+      return curState - states[curStateVector] + 1;
+    }
+
+  private:
+    State **states;
+    State *curState;
+    State *lastState;
+    size_t curStateVector;
+    size_t numStateVectors;
+};
+
+
+#endif
