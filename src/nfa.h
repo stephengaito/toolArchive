@@ -20,7 +20,13 @@ class NFA {
      * If c == Split, unlabeled arrows to out and out1 (if != NULL).
      * If c < 256, labeled arrow with character c to out.
      */
-    enum MatchType { Character, ClassSet, Split, Token };
+    enum MatchType {
+      Empty     = 0,
+      Character = 1,
+      ClassSet  = 2,
+      Split     = 3,
+      Token     = 4
+    };
     typedef  union MatchData {
         utf8Char_t c;
         classSet_t s;
@@ -42,9 +48,12 @@ class NFA {
     size_t getNumberStates() {
       return curState - states[curStateVector] + 1;
     }
+    State *getNFAStartState() { return nfaStartState; }
+
 
   private:
     State **states;
+    State *nfaStartState;
     State *curState;
     State *lastState;
     size_t curStateVector;

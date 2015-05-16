@@ -26,9 +26,10 @@
 #include "nfaFragments.h"
 
 NFA::NFA(void) {
-  states    = NULL;
-  curState  = NULL;
-  lastState = NULL;
+  states        = NULL;
+  curState      = NULL;
+  lastState     = NULL;
+  nfaStartState = NULL;
   curStateVector  = -1;
   numStateVectors = 0;
 }
@@ -42,9 +43,10 @@ NFA::~NFA(void) {
     free(states);
     states = NULL;
   }
-  curState = NULL;
-  lastState = NULL;
-  curStateVector = 0;
+  curState      = NULL;
+  lastState     = NULL;
+  nfaStartState = NULL;
+  curStateVector  = 0;
   numStateVectors = 0;
 }
 
