@@ -30,7 +30,7 @@ class DFA {
     DState **dStates;
     DState *dfaStartState;
     DState *tokensDState;
-    DState *curDState;
+    DState *curAllocatedDState;
     DState *lastDState;
     size_t curDStateVector;
     size_t numDStateVectors;
@@ -39,10 +39,13 @@ class DFA {
 //    List l1, l2;
 
     void allocateANewDState(void);
+    void unallocateLastAllocatedDState(void);
 
     void registerDState(DState *dfaState);
 
     void emptyDState(DState *d);
+    bool notEqualDStates(DState *d1, DState *d2);
+    void mergeDStates(DState *mergeInto, DState *other);
 
     typedef struct NFAStateNumber {
       size_t  stateByte;
@@ -68,10 +71,9 @@ class DFA {
      * past the character c,
      * to create next NFA state set nlist.
      */
-    void computeNextDFAState(DState *oldState,
-                             utf8Char_t c,
-                             classSet_t classificationSet,
-                             DState *newState);
+    DState *computeNextDFAState(DState *oldState,
+                                utf8Char_t c,
+                                classSet_t classificationSet);
 
     /* Free the tree of states rooted at d. */
 //    void freestates(DState *d);

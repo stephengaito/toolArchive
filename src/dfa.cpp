@@ -39,16 +39,16 @@ DFA::DFA(NFA *anNFA, Classifier *aUTF8Classifier) {
   knownDFAStatesMap = hattrie_create();
   nextDFAStateMap   = hattrie_create();
 
-  dStates      = NULL;
-  curDState    = NULL;
-  lastDState   = NULL;
-  curDStateVector  = -1;
-  numDStateVectors = 0;
+  dStates            = NULL;
+  curAllocatedDState = NULL;
+  lastDState         = NULL;
+  curDStateVector    = -1;
+  numDStateVectors   = 0;
   allocateANewDState(); // get space for the stateDState
-  dfaStartState  = curDState;
+  dfaStartState  = curAllocatedDState;
   computeDFAStartState();
   allocateANewDState(); // get space for the tokensDState
-  tokensDState = curDState;
+  tokensDState = curAllocatedDState;
   emptyDState(tokensDState);
 }
 
@@ -75,13 +75,13 @@ DFA::~DFA(void) {
     }
     free(dStates);
   }
-  dStates        = NULL;
-  dfaStartState  = NULL;
-  tokensDState   = NULL;
-  curDState      = NULL;
-  lastDState     = NULL;
-  curDStateVector  = 0;
-  numDStateVectors = 0;
+  dStates            = NULL;
+  dfaStartState      = NULL;
+  tokensDState       = NULL;
+  curAllocatedDState = NULL;
+  lastDState         = NULL;
+  curDStateVector    = 0;
+  numDStateVectors   = 0;
 }
 
 void DFA::emptyDState(DFA::DState *dfaState) {
@@ -92,7 +92,30 @@ void DFA::emptyDState(DFA::DState *dfaState) {
   }
 }
 
+void DFA::mergeDStates(DFA::DState *mergeInto, DFA::DState *other) {
+  if (!mergeInto) throw LexerException("invalid DFA state");
+  if (!other)     throw LexerException("invalid DFA state");
+  DState *mergeIntoEnd = mergeInto + dfaStateSize;
+  for (; mergeInto < mergeIntoEnd; mergeInto++, other++) {
+    *mergeInto |= *other;
+  }
+}
+
+bool DFA::notEqualDStates(DFA::DState *d1, DFA::DState *d2) {
+  if (!d1) throw LexerException("invalid DFA state");
+  if (!d2) throw LexerException("invalid DFA state");
+  DState *d1End = d1 + dfaStateSize;
+  for (; d1 < d1End; d1++, d2++) {
+    if (*d1 != *d2) return false;
+  }
+  return true;
+}
+
 void DFA::allocateANewDState(void) {
+  // TODO FINISH THIS
+}
+
+void DFA::unallocateLastAllocatedDState(void) {
   // TODO FINISH THIS
 }
 
@@ -119,7 +142,11 @@ void DFA::assembleDFAStateClassificationProbe(DState *dfaState,
 }
 
 void DFA::registerDState(DFA::DState *dfaState) {
-  // TODO FINISH THIS
+  DState **registeredValue = (DState**)hattrie_get(nextDFAStateMap,
+                                                   dfaState,
+                                                   dfaStateSize);
+  if (!registeredValue) throw new LexerException("Hat-Trie failure");
+  if (!*registeredValue) *registeredValue = dfaState;
 }
 
 /* Check whether state list contains a match. */
@@ -178,11 +205,17 @@ void DFA::computeDFAStartState(void) {
  * past the character c,
  * to create next NFA state set nlist.
  */
-void DFA::computeNextDFAState(DFA::DState *curDFAState,
-               utf8Char_t c,
-               classSet_t classificationSet,
-               DFA::DState *nextDFAState) {
+DFA::DState *DFA::computeNextDFAState(DFA::DState *curDFAState,
+                                      utf8Char_t c,
+                                      classSet_t classificationSet) {
   NFA::State *nfaState;
+  DState *nextGenericDFAState;
+  allocateANewDState();
+  nextGenericDFAState = curAllocatedDState;
+  emptyDState(nextGenericDFAState);
+  DState *nextDFAState;
+  allocateANewDState();
+  nextDFAState = curAllocatedDState;
   emptyDState(nextDFAState);
 
   size_t nfaStateNum = 0;
@@ -199,7 +232,7 @@ void DFA::computeNextDFAState(DFA::DState *curDFAState,
             break;
           case NFA::ClassSet:
             if (nfaState->matchData.s & classificationSet) {
-              addNFAStateToDFAState(nextDFAState, nfaState->out);
+              addNFAStateToDFAState(nextGenericDFAState, nfaState->out);
             }
             break;
           default:
@@ -211,7 +244,28 @@ void DFA::computeNextDFAState(DFA::DState *curDFAState,
       nfaStateNum++;
     }
   }
-  // TODO NEED TO STORE THIS NEW STATE
+  // always store the generic (classification based) nextGenericDState
+  assembleDFAStateClassificationProbe(curDFAState, classificationSet);
+  DState **resultNextState = (DState**)hattrie_get(nextDFAStateMap,
+                                                   dfaStateProbe,
+                                                   dfaStateProbeSize);
+  *resultNextState = nextGenericDFAState;
+  registerDState(nextGenericDFAState);
+  // now check if we need to store the specific nextDFAState
+  if (notEqualDStates(nextDFAState, nextGenericDFAState)) {
+    // the two states are NOT equal so we want to store the specific
+    // state as well
+    assembleDFAStateClassificationProbe(curDFAState, classificationSet);
+    resultNextState = (DState**)hattrie_get(nextDFAStateMap,
+                                            dfaStateProbe,
+                                            dfaStateProbeSize);
+    mergeDStates(nextDFAState, nextGenericDFAState);
+    *resultNextState = nextDFAState;
+    registerDState(nextDFAState);
+  } else {
+    unallocateLastAllocatedDState();
+  }
+  return *resultNextState;
 }
 
 /* Run DFA to determine whether it matches s. */
@@ -237,10 +291,9 @@ bool DFA::match(DFA::DState *dfaStartState, const char *stream) {
                                              dfaStateProbe,
                                              dfaStateProbeSize);
       if (!nextDFAState) {
-        computeNextDFAState(curDFAState,
-                            curChar,
-                            classificationSet,
-                            nextDFAState);
+        nextDFAState = computeNextDFAState(curDFAState,
+                                           curChar,
+                                           classificationSet);
       }
     }
     curDFAState = nextDFAState;
