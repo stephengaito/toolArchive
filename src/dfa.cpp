@@ -30,6 +30,7 @@ DFA::DFA(NFA *anNFA, Classifier *aUTF8Classifier) {
   utf8Classifier = aUTF8Classifier;
   nfaStatePtr2int = hattrie_create();
   dfaStateSize = (nfa->getNumberStates() / 8) + 1;
+  dStateVectorSize = 20*dfaStateSize;
   dfaStateProbeSize = dfaStateSize + sizeof(utf8Char_t);
   dfaStateProbe = (char*)calloc(dfaStateProbeSize, sizeof(uint8_t));
   int2nfaStatePtr = (NFA::State**)calloc(nfa->getNumberStates(),
@@ -106,17 +107,35 @@ bool DFA::notEqualDStates(DFA::DState *d1, DFA::DState *d2) {
   if (!d2) throw LexerException("invalid DFA state");
   DState *d1End = d1 + dfaStateSize;
   for (; d1 < d1End; d1++, d2++) {
-    if (*d1 != *d2) return false;
+    if (*d1 != *d2) return true;
   }
-  return true;
+  return false;
 }
 
 void DFA::allocateANewDState(void) {
-  // TODO FINISH THIS
+  if (lastDState < curAllocatedDState) {
+    curDStateVector++;
+    if (numDStateVectors <= curDStateVector) {
+      DState **oldDStates = dStates;
+      dStates = (DState**) calloc(numDStateVectors + 10, sizeof(DState*));
+      if (oldDStates) {
+        memcpy(dStates, oldDStates, numDStateVectors);
+      }
+      numDStateVectors += 10;
+    }
+    dStates[curDStateVector] = (DState*) calloc(dStateVectorSize,
+                                                sizeof(char));
+    curAllocatedDState = dStates[curDStateVector];
+    lastDState = curAllocatedDState + dStateVectorSize;
+    curAllocatedDState -= dfaStateSize;
+    reuseLastAllocatedDState = false;
+  }
+  if (!reuseLastAllocatedDState) curAllocatedDState += dfaStateSize;
+  reuseLastAllocatedDState = false;
 }
 
 void DFA::unallocateLastAllocatedDState(void) {
-  // TODO FINISH THIS
+  reuseLastAllocatedDState = true;
 }
 
 void DFA::assembleDFAStateProbe(DState *dfaState) {

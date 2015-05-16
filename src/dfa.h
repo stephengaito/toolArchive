@@ -32,8 +32,10 @@ class DFA {
     DState *tokensDState;
     DState *curAllocatedDState;
     DState *lastDState;
+    bool   reuseLastAllocatedDState;
     size_t curDStateVector;
     size_t numDStateVectors;
+    size_t dStateVectorSize;
 
 
 //    List l1, l2;
