@@ -10,8 +10,8 @@ go_bandit([](){
 
   printf("\n----------------------------------\n");
   printf(  "utf8Chars\n");
-  printf(  "  uint64_t = %lu bytes (%lu bits)\n", sizeof(uint64_t),   sizeof(uint64_t)*8);
-  printf(  "utf8Char_t = %lu bytes (%lu bits)\n", sizeof(utf8Char_t), sizeof(utf8Char_t)*8);
+  printf(  "  uint64_t = %zu bytes (%zu bits)\n", sizeof(uint64_t),   sizeof(uint64_t)*8);
+  printf(  "utf8Char_t = %zu bytes (%zu bits)\n", sizeof(utf8Char_t), sizeof(utf8Char_t)*8);
   printf(  "----------------------------------\n");
 
   describe("Utf8Chars buffer", [](){

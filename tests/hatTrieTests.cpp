@@ -10,7 +10,7 @@ go_bandit([](){
 
   printf("\n----------------------------------\n");
   printf(  "Hat-Trie\n");
-  printf(  "  value_t = %lu bytes (%lu bits)\n", sizeof(value_t),   sizeof(value_t)*8);
+  printf(  "  value_t = %zu bytes (%zu bits)\n", sizeof(value_t),   sizeof(value_t)*8);
   printf(  "----------------------------------\n");
 
   describe("Hat-Trie", [](){

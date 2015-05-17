@@ -19,7 +19,7 @@ classSet_t Classifier::findClassSet(const char* aClassName) {
 }
 
 classSet_t Classifier::registerClassSet(const char* aClassName,
-                                      uint64_t aClassSet) {
+                                        classSet_t aClassSet) {
   value_t *classSetPtr = hattrie_get(className2classSet,
                                      aClassName,
                                      strlen(aClassName));

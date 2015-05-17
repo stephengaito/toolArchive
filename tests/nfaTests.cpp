@@ -14,10 +14,10 @@ go_bandit([](){
 
   printf("\n----------------------------------\n");
   printf(  "lexer\n");
-  printf(  "MatchType = %lu bytes (%lu bits)\n", sizeof(NFA::MatchType), sizeof(NFA::MatchType)*8);
-  printf(  "MatchData = %lu bytes (%lu bits)\n", sizeof(NFA::MatchData), sizeof(NFA::MatchData)*8);
-  printf(  "NFAState* = %lu bytes (%lu bits)\n", sizeof(NFA::State*), sizeof(NFA::State*)*8);
-  printf(  " NFAState = %lu bytes (%lu bits)\n", sizeof(NFA::State),  sizeof(NFA::State)*8);
+  printf(  "MatchType = %zu bytes (%zu bits)\n", sizeof(NFA::MatchType), sizeof(NFA::MatchType)*8);
+  printf(  "MatchData = %zu bytes (%zu bits)\n", sizeof(NFA::MatchData), sizeof(NFA::MatchData)*8);
+  printf(  "NFAState* = %zu bytes (%zu bits)\n", sizeof(NFA::State*), sizeof(NFA::State*)*8);
+  printf(  " NFAState = %zu bytes (%zu bits)\n", sizeof(NFA::State),  sizeof(NFA::State)*8);
   printf(  "----------------------------------\n");
 
   describe("NFA::compileRegularExpression", [](){

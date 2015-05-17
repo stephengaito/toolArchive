@@ -78,7 +78,7 @@ void test_ahtable_insert()
 
 
         if (*u != v) {
-            fprintf(stderr, "[error] tally mismatch (reported: %lu, correct: %lu)\n",
+            fprintf(stderr, "[error] tally mismatch (reported: %zu, correct: %zu)\n",
                             *u, v);
         }
     }
@@ -122,10 +122,10 @@ void test_ahtable_iteration()
 
         if (*u != v) {
             if (v == 0) {
-                fprintf(stderr, "[error] incorrect iteration (%lu, %lu)\n", *u, v);
+                fprintf(stderr, "[error] incorrect iteration (%zu, %zu)\n", *u, v);
             }
             else {
-                fprintf(stderr, "[error] incorrect iteration tally (%lu, %lu)\n", *u, v);
+                fprintf(stderr, "[error] incorrect iteration tally (%zu, %zu)\n", *u, v);
             }
         }
 
@@ -185,10 +185,10 @@ void test_ahtable_sorted_iteration()
 
         if (*u != v) {
             if (v == 0) {
-                fprintf(stderr, "[error] incorrect iteration (%lu, %lu)\n", *u, v);
+                fprintf(stderr, "[error] incorrect iteration (%zu, %zu)\n", *u, v);
             }
             else {
-                fprintf(stderr, "[error] incorrect iteration tally (%lu, %lu)\n", *u, v);
+                fprintf(stderr, "[error] incorrect iteration tally (%zu, %zu)\n", *u, v);
             }
         }
 
