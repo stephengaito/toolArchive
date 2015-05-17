@@ -37,21 +37,18 @@ DFA::DFA(NFA *anNFA, Classifier *aUTF8Classifier) {
                                          sizeof(NFA::State*));
   numKnownNFAStates = 0;
 
-  knownDFAStatesMap = hattrie_create();
   nextDFAStateMap   = hattrie_create();
 
   dStates            = NULL;
   curAllocatedDState = NULL;
   lastDState         = NULL;
-  curDStateVector    = -1;
+  curDStateVector    = 0;
   numDStateVectors   = 0;
-  allocateANewDState(); // get space for the stateDState
-  dfaStartState  = curAllocatedDState;
+  dfaStartState = allocateANewDState(); // get space for the stateDState
   computeDFAStartState();
-  allocateANewDState(); // get space for the tokensDState
-  tokensDState = curAllocatedDState;
+  tokensDState =  allocateANewDState(); // get space for the tokensDState
   emptyDState(tokensDState);
-}
+};
 
 DFA::~DFA(void) {
   nfa = NULL;
@@ -64,8 +61,6 @@ DFA::~DFA(void) {
   if (int2nfaStatePtr) free(int2nfaStatePtr);
   int2nfaStatePtr = NULL;
   numKnownNFAStates = 0;
-  if (knownDFAStatesMap) hattrie_free(knownDFAStatesMap);
-  knownDFAStatesMap = NULL;
   if (nextDFAStateMap) hattrie_free(nextDFAStateMap);
   nextDFAStateMap = NULL;
 
@@ -83,6 +78,9 @@ DFA::~DFA(void) {
   lastDState         = NULL;
   curDStateVector    = 0;
   numDStateVectors   = 0;
+  allocatedUnusedDState0 = NULL;
+  allocatedUnusedDState1 = NULL;
+  allocatedUnusedDState2 = NULL;
 }
 
 void DFA::emptyDState(DFA::DState *dfaState) {
@@ -112,10 +110,46 @@ bool DFA::notEqualDStates(DFA::DState *d1, DFA::DState *d2) {
   return false;
 }
 
-void DFA::allocateANewDState(void) {
-  if (lastDState < curAllocatedDState) {
-    curDStateVector++;
+/* Check whether state list contains a match. */
+bool DFA::matchesToken(DFA::DState *dfaState) {
+  for (size_t i = 0; i < dfaStateSize; i++) {
+    if (dfaState[i] & tokensDState[i]) return true;
+  }
+  return false;
+}
+
+DFA::DState *DFA::allocateANewDState(void) {
+  DState *newDState = NULL;
+
+  // start by checking if we have any allocated but unused DStates...
+  if (allocatedUnusedDState0) {
+    newDState = allocatedUnusedDState0;
+    allocatedUnusedDState0 = NULL;
+    return newDState;
+  }
+  if (allocatedUnusedDState1) {
+    newDState = allocatedUnusedDState1;
+    allocatedUnusedDState1 = NULL;
+    return newDState;
+  }
+  if (allocatedUnusedDState2) {
+    newDState = allocatedUnusedDState2;
+    allocatedUnusedDState2 = NULL;
+    return newDState;
+  }
+
+  // We have no allocated but unused DStates....
+  //
+  // So now we check to see if we can allocate a new DState
+  // from our current block of DStates...
+  if (lastDState <= curAllocatedDState+dfaStateSize) {
+    // We have run out of DStates in the current block
+    //
+    // So we need to first allocate a new block
     if (numDStateVectors <= curDStateVector) {
+      // We have run out of block pointers in our DState vector
+      //
+      // So we allocate a new vector of block pointers
       DState **oldDStates = dStates;
       dStates = (DState**) calloc(numDStateVectors + 10, sizeof(DState*));
       if (oldDStates) {
@@ -123,19 +157,77 @@ void DFA::allocateANewDState(void) {
       }
       numDStateVectors += 10;
     }
+    // We have enough block pointers in our vector of block pointers
+    //
+    // So now allocate a new block of DStates
     dStates[curDStateVector] = (DState*) calloc(dStateVectorSize,
                                                 sizeof(char));
     curAllocatedDState = dStates[curDStateVector];
     lastDState = curAllocatedDState + dStateVectorSize;
-    curAllocatedDState -= dfaStateSize;
-    reuseLastAllocatedDState = false;
+    curDStateVector++;
   }
-  if (!reuseLastAllocatedDState) curAllocatedDState += dfaStateSize;
-  reuseLastAllocatedDState = false;
+  // We have enough unallocaed DStates to allocate one more
+  newDState = curAllocatedDState;
+  curAllocatedDState += dfaStateSize;
+  return newDState;
 }
 
-void DFA::unallocateLastAllocatedDState(void) {
-  reuseLastAllocatedDState = true;
+void DFA::unallocateADState(DFA::DState *aDFAState) {
+  if (!allocatedUnusedDState0) {
+    allocatedUnusedDState0 = aDFAState;
+    return;
+  }
+  if (!allocatedUnusedDState1) {
+    allocatedUnusedDState1 = aDFAState;
+    return;
+  }
+  if (!allocatedUnusedDState2) {
+    allocatedUnusedDState2 = aDFAState;
+    return;
+  }
+  // Oops we have allocated too many temporary DStates
+  // just quitely drop this one
+}
+
+DFA::NFAStateNumber DFA::getNFAStateNumber(NFA::State *nfaState) {
+  long long tmpNFAState = (long long)nfaState;
+  char nfaStatePtr[sizeof(NFA::State*)];
+  for (size_t i = 0; i < sizeof(NFA::State*); i++) {
+    nfaStatePtr[i] = tmpNFAState & 0xFF;
+    tmpNFAState >>=8;
+  }
+  value_t *nfaStateIntPtr = hattrie_get(nfaStatePtr2int,
+                                        nfaStatePtr,
+                                        sizeof(NFA::State*));
+  if (!nfaStateIntPtr) throw new LexerException("corrupted HAT-Trie nfaStatePtr2int");
+  if (!*nfaStateIntPtr) {
+    // this NFA::State needs to be added to our mapping
+    int2nfaStatePtr[numKnownNFAStates] = nfaState;
+    numKnownNFAStates++;
+    *nfaStateIntPtr = numKnownNFAStates;
+  }
+  NFAStateNumber nfaStateNumber;
+  nfaStateNumber.stateByte = *nfaStateIntPtr / 8;
+  nfaStateNumber.stateBit  = 1 << ((*nfaStateIntPtr % 8)-1);
+  // check to see if this NFAState is a token state
+  // .... if so record it in the tokensDState
+  if (nfaState->matchType == NFA::Token) {
+   tokensDState[nfaStateNumber.stateByte] |= nfaStateNumber.stateBit;
+  }
+  return nfaStateNumber;
+}
+
+/* Add nfaState to dfaState, following unlabeled arrows. */
+void DFA::addNFAStateToDFAState(DFA::DState *dfaState, NFA::State *nfaState) {
+  if (nfaState == NULL) return;
+  NFAStateNumber nfaStateNumber = getNFAStateNumber(nfaState);
+  dfaState[nfaStateNumber.stateByte] |= nfaStateNumber.stateBit;
+  if (nfaState->matchType == NFA::Split) {
+    /* follow unlabeled arrows */
+    addNFAStateToDFAState(dfaState, nfaState->out);
+    addNFAStateToDFAState(dfaState, nfaState->out1);
+    return;
+  }
 }
 
 void DFA::assembleDFAStateProbe(DState *dfaState) {
@@ -168,50 +260,6 @@ void DFA::registerDState(DFA::DState *dfaState) {
   if (!*registeredValue) *registeredValue = dfaState;
 }
 
-/* Check whether state list contains a match. */
-bool DFA::matchesToken(DFA::DState *dfaState) {
-  for (size_t i = 0; i < dfaStateSize; i++) {
-    if (dfaState[i] & tokensDState[i]) return true;
-  }
-  return false;
-}
-
-DFA::NFAStateNumber DFA::getNFAStateNumber(NFA::State *nfaState) {
-  NFA::State *nfaStatePtr = nfaState;
-  value_t *nfaStateIntPtr = hattrie_get(nfaStatePtr2int,
-                                        (char*)&nfaStatePtr,
-                                        sizeof(NFA::State*));
-  if (!nfaStateIntPtr) throw new LexerException("corrupted HAT-Trie nfaStatePtr2int");
-  if (!*nfaStateIntPtr) {
-    // this NFA::State needs to be added to our mapping
-    int2nfaStatePtr[numKnownNFAStates] = nfaState;
-    numKnownNFAStates++;
-    *nfaStateIntPtr = numKnownNFAStates;
-  }
-  NFAStateNumber nfaStateNumber;
-  nfaStateNumber.stateByte = *nfaStateIntPtr / 8;
-  nfaStateNumber.stateBit  = 1 << (*nfaStateIntPtr % 8);
-  // check to see if this NFAState is a token state
-  // .... if so record it in the tokensDState
-  if (nfaState->matchType == NFA::Token) {
-   tokensDState[nfaStateNumber.stateByte] |= nfaStateNumber.stateBit;
-  }
-  return nfaStateNumber;
-}
-
-/* Add nfaState to dfaState, following unlabeled arrows. */
-void DFA::addNFAStateToDFAState(DFA::DState *dfaState, NFA::State *nfaState) {
-  if (nfaState == NULL) return;
-  if (nfaState->matchType == NFA::Split) {
-    /* follow unlabeled arrows */
-    addNFAStateToDFAState(dfaState, nfaState->out);
-    addNFAStateToDFAState(dfaState, nfaState->out1);
-    return;
-  }
-  NFAStateNumber nfaStateNumber = getNFAStateNumber(nfaState);
-  dfaState[nfaStateNumber.stateByte] |= nfaStateNumber.stateBit;
-}
-
 /* Compute initial state list */
 void DFA::computeDFAStartState(void) {
   emptyDState(dfaStartState);
@@ -229,12 +277,10 @@ DFA::DState *DFA::computeNextDFAState(DFA::DState *curDFAState,
                                       classSet_t classificationSet) {
   NFA::State *nfaState;
   DState *nextGenericDFAState;
-  allocateANewDState();
-  nextGenericDFAState = curAllocatedDState;
+  nextGenericDFAState = allocateANewDState();
   emptyDState(nextGenericDFAState);
   DState *nextDFAState;
-  allocateANewDState();
-  nextDFAState = curAllocatedDState;
+  nextDFAState = allocateANewDState();
   emptyDState(nextDFAState);
 
   size_t nfaStateNum = 0;
@@ -282,16 +328,14 @@ DFA::DState *DFA::computeNextDFAState(DFA::DState *curDFAState,
     *resultNextState = nextDFAState;
     registerDState(nextDFAState);
   } else {
-    unallocateLastAllocatedDState();
+    unallocateADState(nextDFAState);
   }
   return *resultNextState;
 }
 
 /* Run DFA to determine whether it matches s. */
-bool DFA::match(DFA::DState *dfaStartState, const char *stream) {
+bool DFA::getNextToken(Utf8Chars *utf8Stream) {
   DState *curDFAState, *nextDFAState;
-
-  Utf8Chars *utf8Stream = new Utf8Chars(stream);
 
   curDFAState = dfaStartState;
   utf8Char_t curChar = utf8Stream->nextUtf8Char();
@@ -319,39 +363,6 @@ bool DFA::match(DFA::DState *dfaStartState, const char *stream) {
   }
   return matchesToken(curDFAState);
 }
-
-#ifdef NOT_DEFINED
-
-int main(int argc, char **argv) {
-  int i;
-  char *post;
-  State *start;
-
-  if (argc < 3) {
-    fprintf(stderr, "usage: nfa regexp string...\n");
-    return 1;
-  }
-
-  post = re2post(argv[1]);
-  if (post == NULL) {
-    fprintf(stderr, "bad regexp %s\n", argv[1]);
-    return 1;
-  }
-
-  start = post2nfa(post);
-  if (start == NULL) {
-    fprintf(stderr, "error in post2nfa %s\n", post);
-    return 1;
-  }
-
-  l1.s = malloc(nstate*sizeof l1.s[0]);
-  l2.s = malloc(nstate*sizeof l2.s[0]);
-  for (i=2; i<argc; i++) {
-    if (match(startdstate(start), argv[i])) printf("%s\n", argv[i]);
-  }
-  return 0;
-}
-#endif
 
 /*
  * Permission is hereby granted, free of charge, to any person

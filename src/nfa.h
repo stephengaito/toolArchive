@@ -40,7 +40,7 @@ class NFA {
       //int lastlist;
     } State;
 
-    State *compileRegularExpression(const char *re) throw (LexerException*) ;
+    void  compileRegularExpression(const char *re) throw (LexerException*) ;
     State *addState(MatchType aMatchType, MatchData someMatchData,
                           State *out, State *out1)
                           throw (LexerException*);

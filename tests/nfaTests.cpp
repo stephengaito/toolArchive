@@ -13,7 +13,7 @@ using namespace bandit;
 go_bandit([](){
 
   printf("\n----------------------------------\n");
-  printf(  "lexer\n");
+  printf(  "nfa\n");
   printf(  "MatchType = %zu bytes (%zu bits)\n", sizeof(NFA::MatchType), sizeof(NFA::MatchType)*8);
   printf(  "MatchData = %zu bytes (%zu bits)\n", sizeof(NFA::MatchData), sizeof(NFA::MatchData)*8);
   printf(  "NFAState* = %zu bytes (%zu bits)\n", sizeof(NFA::State*), sizeof(NFA::State*)*8);
@@ -24,7 +24,8 @@ go_bandit([](){
 
     it("should build NFA for a simple regular expression", [&](){
       NFA *nfa = new NFA();
-      NFA::State *anNFAState = nfa->compileRegularExpression("simple");
+      nfa->compileRegularExpression("simple");
+      NFA::State *anNFAState = nfa->getNFAStartState();
       AssertThat(nfa->getNumberStates(), Is().EqualTo(7));
       NFA::State *baseState = nfa->states[nfa->curStateVector];
       AssertThat(anNFAState, Is().EqualTo(baseState));
