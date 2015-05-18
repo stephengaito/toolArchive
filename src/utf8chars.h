@@ -46,6 +46,15 @@ class Utf8Chars {
     /// If there are no more characters, returns the null character.
     utf8Char_t nextUtf8Char();
 
+    /// \brief Return the next byte as a character.
+    ///
+    /// This *might* leave the collection of characters in the middle
+    /// of a UTF8 character.
+    char getNextByte(void) {
+      if (utf8Chars+numBytes < nextByte) return 0;
+      return *nextByte++;
+    }
+
     /// \brief Returns true if the Utf8Chars contians the given UTF8 char
     ///
     /// **NOTE** containsUtf8Char restarts the nextUtf8Char pointer

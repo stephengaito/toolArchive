@@ -50,7 +50,7 @@ NFAFragments::Ptrlist* NFAFragments::append(
 }
 
 void NFAFragments::push(NFAFragments::Frag aFrag)
-  throw (LexerException*) {
+  throw (LexerException) {
   if (stackEnd < stackPtr)
     throw LexerException("regular expression is too complex");
   *stackPtr = aFrag;
@@ -58,58 +58,71 @@ void NFAFragments::push(NFAFragments::Frag aFrag)
 };
 
 NFAFragments::Frag NFAFragments::pop(void)
-  throw (LexerException*) {
+  throw (LexerException) {
   --stackPtr;
   if (stackPtr < stack)
-    throw LexerException("regular expression is too complex");
+    throw LexerException("mallformed regular expression missing atom");
   return *stackPtr;
 };
 
-void NFAFragments::checkCharacter(utf8Char_t aChar) {
+void NFAFragments::checkCharacter(utf8Char_t aChar)
+  throw (LexerException) {
   NFA::MatchData someMatchData;
   someMatchData.c = aChar;
   NFA::State *s = nfa->addState(NFA::Character, someMatchData, NULL, NULL);
   push(frag(s, list1(&s->out)));
 }
 
-void NFAFragments::concatenate(void) {
+void NFAFragments::checkClassification(classSet_t aClass)
+  throw (LexerException) {
+  NFA::MatchData someMatchData;
+  someMatchData.s = aClass;
+  NFA::State *s = nfa->addState(NFA::ClassSet, someMatchData, NULL, NULL);
+  push(frag(s, list1(&s->out)));
+}
+
+void NFAFragments::concatenate(void)
+  throw (LexerException) {
   Frag e2 = pop();
   Frag e1 = pop();
   patch(e1.out, e2.start);
   push(frag(e1.start, e2.out));
 };
 
-void NFAFragments::alternate(void) {
+void NFAFragments::alternate(void)
+  throw (LexerException) {
   Frag e2 = pop();
   Frag e1 = pop();
   NFA::State *s = nfa->addState(NFA::Split, noMatchData, e1.start, e2.start);
   push(frag(s, append(e1.out, e2.out)));
 };
 
-void NFAFragments::zeroOrOne(void) {
+void NFAFragments::zeroOrOne(void)
+  throw (LexerException) {
   Frag   e = pop();
   NFA::State *s = nfa->addState(NFA::Split, noMatchData, e.start, NULL);
   push(frag(s, append(e.out, list1(&s->out1))));
 };
 
-void NFAFragments::zeroOrMore(void) {
+void NFAFragments::zeroOrMore(void)
+  throw (LexerException) {
   Frag   e = pop();
   NFA::State *s = nfa->addState(NFA::Split, noMatchData, e.start, NULL);
   patch(e.out, s);
   push(frag(s, list1(&s->out1)));
 };
 
-void NFAFragments::oneOrMore(void) {
+void NFAFragments::oneOrMore(void)
+  throw (LexerException) {
   Frag   e = pop();
   NFA::State *s = nfa->addState(NFA::Split, noMatchData, e.start, NULL);
   patch(e.out, s);
   push(frag(e.start, list1(&s->out1)));
 };
 
-NFA::State *NFAFragments::match(void) throw (LexerException*) {
+NFA::State *NFAFragments::match(void)
+  throw (LexerException) {
   Frag e = pop();
-  if (stackPtr != stack)
-    throw new LexerException("Mismatched NFA fragment stack");
   NFA::MatchData tokenData = noMatchData;
   patch(e.out, nfa->addState(NFA::Token, tokenData, NULL, NULL));
   return e.start;

@@ -1,9 +1,10 @@
 #ifndef NFA_H
 #define NFA_H
 
+#include <exception>
 #include "classifier.h"
 
-class LexerException {
+class LexerException: public std::exception {
   public:
     LexerException(const char* aMessage) { message = aMessage; };
     const char* message;
@@ -12,7 +13,7 @@ class LexerException {
 class NFA {
 
   public:
-    NFA(void);
+    NFA(Classifier *aUTF8Classifier);
     ~NFA(void);
     /*
      * Represents an NFA state plus zero or one or two arrows exiting.
@@ -37,13 +38,14 @@ class NFA {
       MatchData matchData;
       State *out;
       State *out1;
-      //int lastlist;
     } State;
 
-    void  compileRegularExpression(const char *re) throw (LexerException*) ;
+    Classifier *getClassifier(void) { return utf8Classifier; }
+
+    void  compileRegularExpression(const char *re) throw (LexerException) ;
     State *addState(MatchType aMatchType, MatchData someMatchData,
                           State *out, State *out1)
-                          throw (LexerException*);
+                          throw (LexerException);
     void preAddStates(size_t reLength);
     size_t getNumberStates() {
       return curState - states[curStateVector] + 1;
@@ -58,6 +60,7 @@ class NFA {
     State *lastState;
     size_t curStateVector;
     size_t numStateVectors;
+    Classifier *utf8Classifier;
 };
 
 

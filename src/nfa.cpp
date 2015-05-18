@@ -25,13 +25,14 @@
 
 #include "nfaFragments.h"
 
-NFA::NFA(void) {
+NFA::NFA(Classifier *aUTF8Classifier) {
   states        = NULL;
   curState      = NULL;
   lastState     = NULL;
   nfaStartState = NULL;
   curStateVector  = -1;
   numStateVectors = 0;
+  utf8Classifier = aUTF8Classifier;
 }
 
 NFA::~NFA(void) {
@@ -48,6 +49,7 @@ NFA::~NFA(void) {
   nfaStartState = NULL;
   curStateVector  = 0;
   numStateVectors = 0;
+  utf8Classifier = NULL; // classifier is not "owned" by the NFA instance
 }
 
 void NFA::preAddStates(size_t reLength) {
@@ -72,8 +74,8 @@ NFA::State *NFA::addState(NFA::MatchType aMatchType,
                           NFA::MatchData someMatchData,
                           NFA::State *out,
                           NFA::State *out1)
-  throw (LexerException*) {
-  if (lastState < curState) throw new LexerException("run out of NFA states");
+  throw (LexerException) {
+  if (lastState < curState) throw LexerException("run out of NFA states");
   curState++;
   curState->matchType = aMatchType;
   curState->matchData = someMatchData;
@@ -88,7 +90,7 @@ NFA::State *NFA::addState(NFA::MatchType aMatchType,
  * Cheesy parser, return static buffer.
  */
 void NFA::compileRegularExpression(const char *aUtf8RegExp)
-  throw (LexerException*) {
+  throw (LexerException) {
 
   size_t reLen = strlen(aUtf8RegExp);
   preAddStates(reLen);
@@ -99,6 +101,11 @@ void NFA::compileRegularExpression(const char *aUtf8RegExp)
     int nalt;
     int natom;
   } paren[reLen], *p;
+  size_t classNameBufSize = 255;
+  char classNameBuf[classNameBufSize+1];
+  char *className;
+  bool classNegated;
+  classSet_t classSet;
 
   p = paren;
   nalt = 0;
@@ -112,7 +119,7 @@ void NFA::compileRegularExpression(const char *aUtf8RegExp)
           fragments->concatenate();
         }
         if (p >= paren+reLen)
-          throw new LexerException("parentheses too deep");
+          throw LexerException("parentheses too deep");
         p->nalt = nalt;
         p->natom = natom;
         p++;
@@ -121,13 +128,13 @@ void NFA::compileRegularExpression(const char *aUtf8RegExp)
         break;
       case '|':
         if (natom == 0)
-          throw new LexerException("no previous atom found in alternation");
+          throw LexerException("no previous atom found in alternation");
         while (--natom > 0) fragments->concatenate();
         nalt++;
         break;
       case ')':
-        if (p == paren) throw new LexerException("mismatched parentheses");
-        if (natom == 0) throw new LexerException("no previous atom found before closing paranthesis");
+        if (p == paren) throw LexerException("mismatched parentheses");
+        if (natom == 0) throw LexerException("no previous atom found before closing paranthesis");
         while (--natom > 0) fragments->concatenate();
         for (; nalt > 0; nalt--) fragments->alternate();
         --p;
@@ -136,17 +143,48 @@ void NFA::compileRegularExpression(const char *aUtf8RegExp)
         natom++;
         break;
       case '*':
-        if (natom == 0) throw new LexerException("no previous atom found for zero or more");
+        if (natom == 0) throw LexerException("no previous atom found for zero or more");
         fragments->zeroOrMore();
         break;
       case '+':
-        if (natom == 0) throw new LexerException("no previous atom found for one or more");
+        if (natom == 0) throw LexerException("no previous atom found for one or more");
         fragments->oneOrMore();
         break;
       case '?':
-        if (natom == 0) throw new LexerException("no previous atom found for zero or one");
+        if (natom == 0) throw LexerException("no previous atom found for zero or one");
         fragments->zeroOrOne();
         break;
+      case '[':
+        // parse out the className
+        className = classNameBuf;
+        className[classNameBufSize] = 0;
+        for (size_t i = 0; i < classNameBufSize; i++) {
+          className[i] = re->getNextByte();
+          if (className[i] == ']') { className[i] = 0; break; }
+          if (className[i] == 0) break;
+        }
+        // determine if this is a negated class
+        classNegated = false;
+        if (*className == '!') {
+          classNegated = true;
+          className++;
+        }
+        // find the class set for this className
+        if (className[0] == 0) throw LexerException("mallformed classification specifier");
+        classSet = utf8Classifier->findClassSet(className);
+        // negate the class if needed
+        if (classNegated) classSet = ~classSet;
+        // now repeat the natom manipulate done for checkCharacter
+        if (natom > 1) {
+          --natom;
+          fragments->concatenate();
+        }
+        fragments->checkClassification(classSet);
+        natom++;
+        break;
+      case '\\': // escape character.... ignore and use next character instead
+        curChar = re->nextUtf8Char();
+        if (!curChar.u) continue;
       default:
         if (natom > 1) {
           --natom;
@@ -158,7 +196,7 @@ void NFA::compileRegularExpression(const char *aUtf8RegExp)
       }
       curChar = re->nextUtf8Char();
     }
-  if (p != paren) throw new LexerException("mismatched parentheses");
+  if (p != paren) throw LexerException("mismatched parentheses");
   while (--natom > 0) fragments->concatenate();
   for (; nalt > 0; nalt--) fragments->alternate();
   nfaStartState = fragments->match();

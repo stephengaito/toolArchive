@@ -249,6 +249,19 @@ go_bandit([](){
       AssertThat(whiteSpace->containsUtf8Char(expectedChar), Is().False());
     });
 
+    it("can mix the use of getNextBye and nextUtf8Char", [&](){
+      Utf8Chars *someChars = new Utf8Chars("some ch€racters");
+      size_t i = 0;
+      for (; i < 3; i++) someChars->getNextByte();
+      utf8Char_t expectedChar;
+      expectedChar.u = 0;
+      expectedChar.c[0] = 'e';
+      AssertThat(someChars->nextUtf8Char().u, Is().EqualTo(expectedChar.u));
+      for ( i++; i < 7; i++) someChars->getNextByte();
+      expectedChar = Utf8Chars::codePoint2utf8Char(0x20AC);
+      AssertThat(someChars->nextUtf8Char().u, Is().EqualTo(expectedChar.u));
+    });
+
   }); // Utf8Chars buffer
 
 });

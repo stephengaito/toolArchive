@@ -10,7 +10,7 @@ class DFA {
      */
     typedef char DState;
 
-    DFA(NFA *anNFA, Classifier *aUTF8Classifier);
+    DFA(NFA *anNFA);
     ~DFA(void);
 
     /// Run the DFA until the next token is recognized.
@@ -18,7 +18,6 @@ class DFA {
 
   private:
     NFA *nfa;
-    Classifier  *utf8Classifier;
     hattrie_t   *nfaStatePtr2int;
     NFA::State **int2nfaStatePtr;
     size_t numKnownNFAStates;

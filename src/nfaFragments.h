@@ -8,19 +8,21 @@ class NFAFragments {
     NFAFragments(NFA *nfa, size_t reLen);
     ~NFAFragments();
 
-    void checkCharacter(utf8Char_t aChar);
+    void checkCharacter(utf8Char_t aChar) throw (LexerException);
 
-    void concatenate(void);
+    void checkClassification(classSet_t aClass) throw (LexerException);
 
-    void alternate(void);
+    void concatenate(void) throw (LexerException);
 
-    void zeroOrOne(void);
+    void alternate(void) throw (LexerException);
 
-    void zeroOrMore(void);
+    void zeroOrOne(void) throw (LexerException);
 
-    void oneOrMore(void);
+    void zeroOrMore(void) throw (LexerException);
 
-    NFA::State *match(void) throw (LexerException*);
+    void oneOrMore(void) throw (LexerException);
+
+    NFA::State *match(void) throw (LexerException);
 
   private:
     /*
@@ -56,9 +58,9 @@ class NFAFragments {
     /* Join the two lists l1 and l2, returning the combination. */
     Ptrlist* append(Ptrlist *l1, Ptrlist *l2);
 
-    void push(Frag aFrag) throw (LexerException*) ;
+    void push(Frag aFrag) throw (LexerException);
 
-    Frag pop(void) throw (LexerException*) ;
+    Frag pop(void) throw (LexerException);
 
   private:
     NFA *nfa;

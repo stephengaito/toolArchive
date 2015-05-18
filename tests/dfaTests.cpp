@@ -22,10 +22,10 @@ go_bandit([](){
 
     it("should have correct sizes and pointers setup", [&](){
       Classifier *classifier = new Classifier();
-      NFA *nfa = new NFA();
+      NFA *nfa = new NFA(classifier);
       nfa->compileRegularExpression("(abab|abbb)");
       AssertThat(nfa->getNumberStates(), Is().EqualTo(10));
-      DFA *dfa = new DFA(nfa, classifier);
+      DFA *dfa = new DFA(nfa);
       AssertThat(dfa->dfaStateSize, Is().EqualTo(2)); // at most 16 NFA state bits
       AssertThat(dfa->dStateVectorSize, Is().EqualTo(40));
       AssertThat(dfa->dfaStateProbeSize, Is().EqualTo(2+sizeof(utf8Char_t)));
@@ -47,10 +47,10 @@ go_bandit([](){
 
     it("allocate and unallocate DStates", [&](){
       Classifier *classifier = new Classifier();
-      NFA *nfa = new NFA();
+      NFA *nfa = new NFA(classifier);
       nfa->compileRegularExpression("(abab|abbb)");
       AssertThat(nfa->getNumberStates(), Is().EqualTo(10));
-      DFA *dfa = new DFA(nfa, classifier);
+      DFA *dfa = new DFA(nfa);
       AssertThat(dfa->allocatedUnusedDState0, Is().EqualTo((void*)0));
       AssertThat(dfa->allocatedUnusedDState1, Is().EqualTo((void*)0));
       AssertThat(dfa->allocatedUnusedDState2, Is().EqualTo((void*)0));
@@ -97,10 +97,10 @@ go_bandit([](){
 
     it("getNFAStateNumber", [&](){
       Classifier *classifier = new Classifier();
-      NFA *nfa = new NFA();
+      NFA *nfa = new NFA(classifier);
       nfa->compileRegularExpression("(abab|abbb)");
       AssertThat(nfa->getNumberStates(), Is().EqualTo(10));
-      DFA *dfa = new DFA(nfa, classifier);
+      DFA *dfa = new DFA(nfa);
       AssertThat(dfa->numKnownNFAStates, Is().EqualTo(3));
       NFA::State *nfaStartState = nfa->getNFAStartState();
       AssertThat(dfa->int2nfaStatePtr[0], Is().EqualTo(nfaStartState));
@@ -142,10 +142,10 @@ go_bandit([](){
 
     it("should compute the correct start state", [&](){
       Classifier *classifier = new Classifier();
-      NFA *nfa = new NFA();
+      NFA *nfa = new NFA(classifier);
       nfa->compileRegularExpression("(abab|abbb)");
       AssertThat(nfa->getNumberStates(), Is().EqualTo(10));
-      DFA *dfa = new DFA(nfa, classifier);
+      DFA *dfa = new DFA(nfa);
       NFA::State *nfaStartState = nfa->getNFAStartState();
       AssertThat(nfaStartState, Is().Not().EqualTo((void*)0));
       AssertThat(nfaStartState->matchType, Is().EqualTo(NFA::Split));
@@ -163,10 +163,10 @@ go_bandit([](){
 
     it("registerDState", [&](){
       Classifier *classifier = new Classifier();
-      NFA *nfa = new NFA();
+      NFA *nfa = new NFA(classifier);
       nfa->compileRegularExpression("(abab|abbb)");
       AssertThat(nfa->getNumberStates(), Is().EqualTo(10));
-      DFA *dfa = new DFA(nfa, classifier);
+      DFA *dfa = new DFA(nfa);
       // dfaStartState is already registered..
       DFA::DState *registeredDState =
         (DFA::DState *)*hattrie_tryget(dfa->nextDFAStateMap,
@@ -177,10 +177,10 @@ go_bandit([](){
 
     it("computeNextDFAState with no generic states", [&](){
       Classifier *classifier = new Classifier();
-      NFA *nfa = new NFA();
+      NFA *nfa = new NFA(classifier);
       nfa->compileRegularExpression("(abab|abbb)");
       AssertThat(nfa->getNumberStates(), Is().EqualTo(10));
-      DFA *dfa = new DFA(nfa, classifier);
+      DFA *dfa = new DFA(nfa);
       AssertThat(dfa->allocatedUnusedDState0, Is().EqualTo((void*)0));
       AssertThat(dfa->allocatedUnusedDState1, Is().EqualTo((void*)0));
       AssertThat(dfa->allocatedUnusedDState2, Is().EqualTo((void*)0));

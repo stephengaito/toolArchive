@@ -25,9 +25,8 @@
 
 #include "dfa.h"
 
-DFA::DFA(NFA *anNFA, Classifier *aUTF8Classifier) {
+DFA::DFA(NFA *anNFA) {
   nfa = anNFA;
-  utf8Classifier = aUTF8Classifier;
   nfaStatePtr2int = hattrie_create();
   dfaStateSize = (nfa->getNumberStates() / 8) + 1;
   dStateVectorSize = 20*dfaStateSize;
@@ -52,7 +51,6 @@ DFA::DFA(NFA *anNFA, Classifier *aUTF8Classifier) {
 
 DFA::~DFA(void) {
   nfa = NULL;
-  utf8Classifier = NULL;
   if (nfaStatePtr2int) hattrie_free(nfaStatePtr2int);
   nfaStatePtr2int = NULL;
   if (dfaStateProbe) free(dfaStateProbe);
@@ -208,7 +206,7 @@ DFA::NFAStateNumber DFA::getNFAStateNumber(NFA::State *nfaState) {
   value_t *nfaStateIntPtr = hattrie_get(nfaStatePtr2int,
                                         nfaStatePtr,
                                         sizeof(NFA::State*));
-  if (!nfaStateIntPtr) throw new LexerException("corrupted HAT-Trie nfaStatePtr2int");
+  if (!nfaStateIntPtr) throw LexerException("corrupted HAT-Trie nfaStatePtr2int");
   if (!*nfaStateIntPtr) {
     // this NFA::State needs to be added to our mapping
     int2nfaStatePtr[numKnownNFAStates] = nfaState;
@@ -265,7 +263,7 @@ DFA::DState *DFA::registerDState(DFA::DState *dfaState) {
   DState **registeredValue = (DState**)hattrie_get(nextDFAStateMap,
                                                    dfaState,
                                                    dfaStateSize);
-  if (!registeredValue) throw new LexerException("Hat-Trie failure");
+  if (!registeredValue) throw LexerException("Hat-Trie failure");
   if (!*registeredValue) *registeredValue = dfaState;
   return *registeredValue;
 }
@@ -374,7 +372,7 @@ bool DFA::getNextToken(Utf8Chars *utf8Stream) {
                                                    dfaStateProbeSize);
     if (!nextDFAState) {
       // try the more generic
-      classSet_t classificationSet = utf8Classifier->getClassSet(curChar);
+      classSet_t classificationSet = nfa->getClassifier()->getClassSet(curChar);
       assembleDFAStateClassificationProbe(curDFAState, classificationSet);
       nextDFAState = (DState*)hattrie_tryget(nextDFAStateMap,
                                              dfaStateProbe,
