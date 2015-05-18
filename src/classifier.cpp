@@ -56,7 +56,7 @@ classSet_t Classifier::getClassSet(utf8Char_t aUtf8Char) {
                                            aUtf8Char.c, strlen(aUtf8Char.c));
 
   // if this is an unclassified character return the empty class set
-  if (!classSetPtr) return 0;
+  if (!classSetPtr) return ~0L;
 
   return *classSetPtr;
 }

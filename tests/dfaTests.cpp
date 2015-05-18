@@ -42,7 +42,7 @@ go_bandit([](){
       for( size_t i = 0; i < dfa->dfaStateSize; i++) {
         AssertThat(dfa->tokensDState[i], Is().EqualTo(0));
       }
-      AssertThat(dfa->notEqualDStates(dfa->tokensDState, dfa->dfaStartState), Is().True());
+      AssertThat(dfa->isSubDState(dfa->dfaStartState, dfa->tokensDState), Is().False());
     });
 
     it("allocate and unallocate DStates", [&](){
@@ -214,6 +214,115 @@ go_bandit([](){
                                       dfa->dfaStateSize);
       AssertThat((void**)registeredDState1, Is().Not().EqualTo((void*)0));
       AssertThat((void*)*registeredDState1, Is().EqualTo((void*)aDState1));
+      AssertThat(((int)nextDFAState[0]), Is().EqualTo((int)0x18));
+      for (size_t i = 1; i < dfa->dfaStateSize; i++) {
+        AssertThat(((int)nextDFAState[i]), Is().EqualTo((int)0x00));
+      }
+    });
+
+    it("computeNextDFAState with generic states", [&](){
+      Classifier *classifier = new Classifier();
+      classifier->registerClassSet("whitespace",1);
+      classifier->classifyUtf8CharsAs(Utf8Chars::whiteSpaceChars,"whitespace");
+      AssertThat(classifier->getClassSet(" "), Is().EqualTo(1));
+      AssertThat(classifier->getClassSet("a"), Is().EqualTo(~0L));
+      NFA *nfa = new NFA(classifier);
+      nfa->compileRegularExpression("(abab|[!whitespace]bbb)");
+      AssertThat(nfa->getNumberStates(), Is().EqualTo(10));
+      DFA *dfa = new DFA(nfa);
+      AssertThat(dfa->allocatedUnusedDState0, Is().EqualTo((void*)0));
+      AssertThat(dfa->allocatedUnusedDState1, Is().EqualTo((void*)0));
+      AssertThat(dfa->allocatedUnusedDState2, Is().EqualTo((void*)0));
+      DFA::DState *aDState0 = dfa->allocateANewDState(); // this will be generic state
+      DFA::DState *aDState1 = dfa->allocateANewDState(); // this will be the specific state
+      DFA::DState *aDState2 = dfa->allocateANewDState(); // should never be used
+      dfa->unallocateADState(aDState0);
+      dfa->unallocateADState(aDState1);
+      dfa->unallocateADState(aDState2);
+      utf8Char_t firstChar;
+      firstChar.u = 0;
+      firstChar.c[0] = 'a';
+      classSet_t classificationSet = classifier->getClassSet(firstChar);
+      AssertThat(classificationSet, Is().EqualTo(~0L));
+      DFA::DState *nextDFAState =
+        dfa->computeNextDFAState(dfa->dfaStartState,
+                                 firstChar,
+                                 classificationSet);
+      AssertThat((void*)nextDFAState, Is().Not().EqualTo((void*)0));
+      AssertThat((void*)nextDFAState, Is().EqualTo((void*)aDState1));
+      AssertThat(dfa->isEmptyDState(aDState0), Is().False());
+      AssertThat(((int)aDState0[0]), Is().EqualTo((int)0x10));
+      for (size_t i = 1; i < dfa->dfaStateSize; i++) {
+        AssertThat(((int)aDState0[i]), Is().EqualTo((int)0x00));
+      }
+      DFA::DState **registeredDState0 =
+        (DFA::DState**)hattrie_tryget(dfa->nextDFAStateMap,
+                                      aDState0,
+                                      dfa->dfaStateSize);
+      AssertThat((void**)registeredDState0, Is().Not().EqualTo((void*)0));
+      AssertThat((void*)*registeredDState0, Is().EqualTo((void*)aDState0));
+
+      AssertThat(dfa->isEmptyDState(aDState1), Is().False());
+      DFA::DState **registeredDState1 =
+        (DFA::DState**)hattrie_tryget(dfa->nextDFAStateMap,
+                                      aDState1,
+                                      dfa->dfaStateSize);
+      AssertThat((void**)registeredDState1, Is().Not().EqualTo((void*)0));
+      AssertThat((void*)*registeredDState1, Is().EqualTo((void*)aDState1));
+      AssertThat(((int)nextDFAState[0]), Is().EqualTo((int)0x18));
+      for (size_t i = 1; i < dfa->dfaStateSize; i++) {
+        AssertThat(((int)nextDFAState[i]), Is().EqualTo((int)0x00));
+      }
+    });
+
+    it("computeNextDFAState with only generic states", [&](){
+      Classifier *classifier = new Classifier();
+      classifier->registerClassSet("whitespace",1);
+      classifier->classifyUtf8CharsAs(Utf8Chars::whiteSpaceChars,"whitespace");
+      AssertThat(classifier->getClassSet(" "), Is().EqualTo(1));
+      AssertThat(classifier->getClassSet("a"), Is().EqualTo(~0L));
+      NFA *nfa = new NFA(classifier);
+      nfa->compileRegularExpression("([!whitespace]bab|[!whitespace]bbb)");
+      AssertThat(nfa->getNumberStates(), Is().EqualTo(10));
+      DFA *dfa = new DFA(nfa);
+      AssertThat(dfa->allocatedUnusedDState0, Is().EqualTo((void*)0));
+      AssertThat(dfa->allocatedUnusedDState1, Is().EqualTo((void*)0));
+      AssertThat(dfa->allocatedUnusedDState2, Is().EqualTo((void*)0));
+      DFA::DState *aDState0 = dfa->allocateANewDState(); // this will be generic state
+      DFA::DState *aDState1 = dfa->allocateANewDState(); // this will be the specific state
+      DFA::DState *aDState2 = dfa->allocateANewDState(); // should never be used
+      dfa->unallocateADState(aDState0);
+      dfa->unallocateADState(aDState1);
+      dfa->unallocateADState(aDState2);
+      utf8Char_t firstChar;
+      firstChar.u = 0;
+      firstChar.c[0] = 'a';
+      classSet_t classificationSet = classifier->getClassSet(firstChar);
+      AssertThat(classificationSet, Is().EqualTo(~0L));
+      DFA::DState *nextDFAState =
+        dfa->computeNextDFAState(dfa->dfaStartState,
+                                 firstChar,
+                                 classificationSet);
+      AssertThat((void*)nextDFAState, Is().Not().EqualTo((void*)0));
+      AssertThat((void*)nextDFAState, Is().EqualTo((void*)aDState0));
+      AssertThat(dfa->isEmptyDState(aDState0), Is().False());
+      AssertThat(((int)aDState0[0]), Is().EqualTo((int)0x18));
+      for (size_t i = 1; i < dfa->dfaStateSize; i++) {
+        AssertThat(((int)aDState0[i]), Is().EqualTo((int)0x00));
+      }
+      DFA::DState **registeredDState0 =
+        (DFA::DState**)hattrie_tryget(dfa->nextDFAStateMap,
+                                      aDState0,
+                                      dfa->dfaStateSize);
+      AssertThat((void**)registeredDState0, Is().Not().EqualTo((void*)0));
+      AssertThat((void*)*registeredDState0, Is().EqualTo((void*)aDState0));
+
+      AssertThat(dfa->isEmptyDState(aDState1), Is().True());
+      DFA::DState **registeredDState1 =
+        (DFA::DState**)hattrie_tryget(dfa->nextDFAStateMap,
+                                      aDState1,
+                                      dfa->dfaStateSize);
+      AssertThat((void**)registeredDState1, Is().EqualTo((void*)0));
       AssertThat(((int)nextDFAState[0]), Is().EqualTo((int)0x18));
       for (size_t i = 1; i < dfa->dfaStateSize; i++) {
         AssertThat(((int)nextDFAState[i]), Is().EqualTo((int)0x00));

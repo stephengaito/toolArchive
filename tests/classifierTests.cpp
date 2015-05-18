@@ -47,7 +47,7 @@ go_bandit([](){
     it("register a class with a utf8 name", [&](){
       Classifier *classifier = new Classifier();
       // show that naive classifier does not understand whitespace class
-      AssertThat(classifier->getClassSet(" "), Is().EqualTo(0));
+      AssertThat(classifier->getClassSet(" "), Is().EqualTo(~0L));
       // now classify a string of utf8 charaters
       classifier->registerClassSet("white€space", 1);
       classifier->classifyUtf8CharsAs(" ", "white€space");
@@ -57,11 +57,12 @@ go_bandit([](){
     it("classify characters", [&](){
       Classifier *classifier = new Classifier();
       // show that naive classifier does not understand whitespace class
-      AssertThat(classifier->getClassSet(" "), Is().EqualTo(0));
+      AssertThat(classifier->getClassSet(" "), Is().EqualTo(~0L));
       // now classify a string of utf8 charaters
       classifier->registerClassSet("whitespace", 1);
-      classifier->classifyUtf8CharsAs(" ", "whitespace");
+      classifier->classifyUtf8CharsAs(Utf8Chars::whiteSpaceChars, "whitespace");
       AssertThat(classifier->getClassSet(" "), Is().EqualTo(1));
+      AssertThat(classifier->getClassSet("a"), Is().EqualTo(~0L));
     }); // create classifier
 
   }); // Character classification

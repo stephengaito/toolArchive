@@ -38,7 +38,8 @@ const char Utf8Chars::whiteSpaceChars[] = {
   0xE2, 0x80, 0xA9, // 0x2029 PARAGRAPH SEPARATOR
   0xE2, 0x80, 0xAF, // 0x202F NARROW NO-BREAK SPACE
   0xE2, 0x81, 0x9F, // 0x205F MEDIUM MATHEMATICAL SPACE
-  0xE3, 0x80, 0x80  // 0x3000 IDEOGRAPHIC SPACE
+  0xE3, 0x80, 0x80, // 0x3000 IDEOGRAPHIC SPACE
+  0x00              // null C-string terminator
 };
 
 Utf8Chars::Utf8Chars(const char* someUtf8Chars) {

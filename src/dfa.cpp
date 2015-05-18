@@ -107,14 +107,15 @@ void DFA::mergeDStates(DFA::DState *mergeInto, DFA::DState *other) {
   }
 }
 
-bool DFA::notEqualDStates(DFA::DState *d1, DFA::DState *d2) {
+bool DFA::isSubDState(DFA::DState *d1, DFA::DState *d2) {
+  // return true if d1 is a subset of d2
   if (!d1) throw LexerException("invalid DFA state");
   if (!d2) throw LexerException("invalid DFA state");
   DState *d1End = d1 + dfaStateSize;
   for (; d1 < d1End; d1++, d2++) {
-    if (*d1 != *d2) return true;
+    if (*d1 & ~*d2) return false; // d1 contains a bit outside of d2
   }
-  return false;
+  return true;
 }
 
 /* Check whether state list contains a match. */
@@ -333,13 +334,24 @@ DFA::DState *DFA::computeNextDFAState(DFA::DState *curDFAState,
     // ensure we use the registered DFAState if any...
     *resultNextState = registerDState(nextGenericDFAState);
     if (*resultNextState != nextGenericDFAState) {
+      // This generic DState is a copy of the already registered DSstate
+      // so it is no longer needed
       unallocateADState(nextGenericDFAState);
+      // ensure nextGenericDFAState is a valid DState
+      // and the one used in the map
+      nextGenericDFAState = *resultNextState;
     }
   }
   // now check if we need to store the specific nextDFAState
-  if (notEqualDStates(nextSpecificDFAState, nextGenericDFAState)) {
-    // the two states are NOT equal so we want to store the specific
-    // state as well
+  if (isSubDState(nextSpecificDFAState, nextGenericDFAState)) {
+    // since the specific DState is a subState of the generic
+    // and since we have already registered the generic DState
+    // we do not need to do anything more
+    // this specific DState is no longer needed
+    unallocateADState(nextSpecificDFAState);
+  } else {
+    // the specific DState is NOT a substate of the generic DState
+    // so we want to store the specific state as well and return it
     assembleDFAStateCharacterProbe(curDFAState, c);
     resultNextState = (DState**)hattrie_get(nextDFAStateMap,
                                             dfaStateProbe,
@@ -349,10 +361,10 @@ DFA::DState *DFA::computeNextDFAState(DFA::DState *curDFAState,
     // ensure we use the registered DFAState if any...
     *resultNextState = registerDState(nextSpecificDFAState);
     if (*resultNextState != nextSpecificDFAState) {
+      // This specific DState is a copy of the already registered DSstate
+      // so it is no longer needed
       unallocateADState(nextSpecificDFAState);
     }
-  } else {
-    unallocateADState(nextSpecificDFAState);
   }
   return *resultNextState;
 }

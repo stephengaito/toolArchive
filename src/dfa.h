@@ -45,7 +45,7 @@ class DFA {
 
     void emptyDState(DState *d);
     bool isEmptyDState(DState *d);
-    bool notEqualDStates(DState *d1, DState *d2);
+    bool isSubDState(DState *d1, DState *d2); // d1 subsetOf d2
     void mergeDStates(DState *mergeInto, DState *other);
 
     /// Check whether DFA state contains a token.
