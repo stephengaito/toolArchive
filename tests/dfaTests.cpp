@@ -200,10 +200,20 @@ go_bandit([](){
                                  classificationSet);
       AssertThat((void*)nextDFAState, Is().Not().EqualTo((void*)0));
       AssertThat((void*)nextDFAState, Is().EqualTo((void*)aDState1));
-//      DFA::NFAStateNumber nfaStateNum = dfa->getNFAStateNumber(nfaStartState);
-//      AssertThat(dfa->int2nfaStatePtr[0], Is().EqualTo(nfaStartState));
-//      AssertThat(nfaStateNum.stateByte, Is().EqualTo(0));
-//      AssertThat((int)nfaStateNum.stateBit,  Is().EqualTo(1));
+      AssertThat(dfa->isEmptyDState(aDState0), Is().True());
+      DFA::DState **registeredDState0 =
+        (DFA::DState**)hattrie_tryget(dfa->nextDFAStateMap,
+                                      aDState0,
+                                      dfa->dfaStateSize);
+      AssertThat((void**)registeredDState0, Is().EqualTo((void*)0));
+
+      AssertThat(dfa->isEmptyDState(aDState1), Is().False());
+      DFA::DState **registeredDState1 =
+        (DFA::DState**)hattrie_tryget(dfa->nextDFAStateMap,
+                                      aDState1,
+                                      dfa->dfaStateSize);
+      AssertThat((void**)registeredDState1, Is().Not().EqualTo((void*)0));
+      AssertThat((void*)*registeredDState1, Is().EqualTo((void*)aDState1));
       AssertThat(((int)nextDFAState[0]), Is().EqualTo((int)0x18));
       for (size_t i = 1; i < dfa->dfaStateSize; i++) {
         AssertThat(((int)nextDFAState[i]), Is().EqualTo((int)0x00));

@@ -45,6 +45,7 @@ class DFA {
     void unallocateADState(DState *aDFAState);
 
     void emptyDState(DState *d);
+    bool isEmptyDState(DState *d);
     bool notEqualDStates(DState *d1, DState *d2);
     void mergeDStates(DState *mergeInto, DState *other);
 
@@ -66,7 +67,7 @@ class DFA {
                                         utf8Char_t curChar);
     void assembleDFAStateClassificationProbe(DState *dfaState,
                                              classSet_t classification);
-    void registerDState(DState *dfaState);
+    DState *registerDState(DState *dfaState);
 
     void computeDFAStartState(void);
 

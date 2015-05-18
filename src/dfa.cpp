@@ -91,6 +91,15 @@ void DFA::emptyDState(DFA::DState *dfaState) {
   }
 }
 
+bool DFA::isEmptyDState(DFA::DState *dfaState) {
+  if (!dfaState) throw LexerException("invalid DFA state");
+  DState *dfaStateEnd = dfaState + dfaStateSize;
+  for (; dfaState < dfaStateEnd; dfaState++) {
+    if (*dfaState != 0) return false;
+  }
+  return true;
+}
+
 void DFA::mergeDStates(DFA::DState *mergeInto, DFA::DState *other) {
   if (!mergeInto) throw LexerException("invalid DFA state");
   if (!other)     throw LexerException("invalid DFA state");
@@ -252,12 +261,13 @@ void DFA::assembleDFAStateClassificationProbe(DState *dfaState,
   }
 }
 
-void DFA::registerDState(DFA::DState *dfaState) {
+DFA::DState *DFA::registerDState(DFA::DState *dfaState) {
   DState **registeredValue = (DState**)hattrie_get(nextDFAStateMap,
                                                    dfaState,
                                                    dfaStateSize);
   if (!registeredValue) throw new LexerException("Hat-Trie failure");
   if (!*registeredValue) *registeredValue = dfaState;
+  return *registeredValue;
 }
 
 /* Compute initial state list */
@@ -276,12 +286,14 @@ DFA::DState *DFA::computeNextDFAState(DFA::DState *curDFAState,
                                       utf8Char_t c,
                                       classSet_t classificationSet) {
   NFA::State *nfaState;
+
   DState *nextGenericDFAState;
   nextGenericDFAState = allocateANewDState();
   emptyDState(nextGenericDFAState);
-  DState *nextDFAState;
-  nextDFAState = allocateANewDState();
-  emptyDState(nextDFAState);
+
+  DState *nextSpecificDFAState;
+  nextSpecificDFAState = allocateANewDState();
+  emptyDState(nextSpecificDFAState);
 
   size_t nfaStateNum = 0;
   for (size_t i = 0; i < dfaStateSize; i++) {
@@ -292,7 +304,7 @@ DFA::DState *DFA::computeNextDFAState(DFA::DState *curDFAState,
         switch (nfaState->matchType) {
           case NFA::Character:
             if (nfaState->matchData.c.u == c.u) {
-              addNFAStateToDFAState(nextDFAState, nfaState->out);
+              addNFAStateToDFAState(nextSpecificDFAState, nfaState->out);
             }
             break;
           case NFA::ClassSet:
@@ -309,26 +321,40 @@ DFA::DState *DFA::computeNextDFAState(DFA::DState *curDFAState,
       nfaStateNum++;
     }
   }
-  // always store the generic (classification based) nextGenericDState
-  assembleDFAStateClassificationProbe(curDFAState, classificationSet);
-  DState **resultNextState = (DState**)hattrie_get(nextDFAStateMap,
-                                                   dfaStateProbe,
-                                                   dfaStateProbeSize);
-  *resultNextState = nextGenericDFAState;
-  registerDState(nextGenericDFAState);
-  // now check if we need to store the specific nextDFAState
-  if (notEqualDStates(nextDFAState, nextGenericDFAState)) {
-    // the two states are NOT equal so we want to store the specific
-    // state as well
+
+  DState **resultNextState;
+
+  if (!isEmptyDState(nextGenericDFAState)) {
+    // there is a next generic DFAState...
+    // SO ...
+    // always store the generic (classification based) nextGenericDState
     assembleDFAStateClassificationProbe(curDFAState, classificationSet);
     resultNextState = (DState**)hattrie_get(nextDFAStateMap,
                                             dfaStateProbe,
                                             dfaStateProbeSize);
-    mergeDStates(nextDFAState, nextGenericDFAState);
-    *resultNextState = nextDFAState;
-    registerDState(nextDFAState);
+    // ensure we use the registered DFAState if any...
+    *resultNextState = registerDState(nextGenericDFAState);
+    if (*resultNextState != nextGenericDFAState) {
+      unallocateADState(nextGenericDFAState);
+    }
+  }
+  // now check if we need to store the specific nextDFAState
+  if (notEqualDStates(nextSpecificDFAState, nextGenericDFAState)) {
+    // the two states are NOT equal so we want to store the specific
+    // state as well
+    assembleDFAStateCharacterProbe(curDFAState, c);
+    resultNextState = (DState**)hattrie_get(nextDFAStateMap,
+                                            dfaStateProbe,
+                                            dfaStateProbeSize);
+    // merge the generic states into the specific...
+    mergeDStates(nextSpecificDFAState, nextGenericDFAState);
+    // ensure we use the registered DFAState if any...
+    *resultNextState = registerDState(nextSpecificDFAState);
+    if (*resultNextState != nextSpecificDFAState) {
+      unallocateADState(nextSpecificDFAState);
+    }
   } else {
-    unallocateADState(nextDFAState);
+    unallocateADState(nextSpecificDFAState);
   }
   return *resultNextState;
 }
