@@ -28,10 +28,11 @@ class NFA {
       Split     = 3,
       Token     = 4
     };
-    typedef  union MatchData {
+    typedef value_t token_t;
+    typedef union MatchData {
         utf8Char_t c;
         classSet_t s;
-        value_t    t;
+        token_t    t;
       } MatchData;
     typedef struct State {
       MatchType matchType;
@@ -42,10 +43,11 @@ class NFA {
 
     Classifier *getClassifier(void) { return utf8Classifier; }
 
-    void  compileRegularExpression(const char *re) throw (LexerException) ;
+    void  addRegularExpressionForToken(const char *re, token_t aTokenId)
+                                       throw (LexerException);
     State *addState(MatchType aMatchType, MatchData someMatchData,
-                          State *out, State *out1)
-                          throw (LexerException);
+                    State *out, State *out1)
+                    throw (LexerException);
     void preAddStates(size_t reLength);
     size_t getNumberStates() {
       return curState - states[curStateVector] + 1;
@@ -56,6 +58,7 @@ class NFA {
   private:
     State **states;
     State *nfaStartState;
+    State *nfaLastStartState;
     State *curState;
     State *lastState;
     size_t curStateVector;

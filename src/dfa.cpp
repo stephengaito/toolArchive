@@ -396,6 +396,7 @@ bool DFA::getNextToken(Utf8Chars *utf8Stream) {
       }
     }
     curDFAState = nextDFAState;
+    curChar = utf8Stream->nextUtf8Char();
   }
   return matchesToken(curDFAState);
 }

@@ -26,13 +26,14 @@
 #include "nfaFragments.h"
 
 NFA::NFA(Classifier *aUTF8Classifier) {
-  states        = NULL;
-  curState      = NULL;
-  lastState     = NULL;
-  nfaStartState = NULL;
-  curStateVector  = -1;
-  numStateVectors = 0;
-  utf8Classifier = aUTF8Classifier;
+  states            = NULL;
+  curState          = NULL;
+  lastState         = NULL;
+  nfaStartState     = NULL;
+  nfaLastStartState = NULL;
+  curStateVector    = -1;
+  numStateVectors   = 0;
+  utf8Classifier    = aUTF8Classifier;
 }
 
 NFA::~NFA(void) {
@@ -44,12 +45,13 @@ NFA::~NFA(void) {
     free(states);
     states = NULL;
   }
-  curState      = NULL;
-  lastState     = NULL;
-  nfaStartState = NULL;
-  curStateVector  = 0;
-  numStateVectors = 0;
-  utf8Classifier = NULL; // classifier is not "owned" by the NFA instance
+  curState          = NULL;
+  lastState         = NULL;
+  nfaStartState     = NULL;
+  nfaLastStartState = NULL;
+  curStateVector    = 0;
+  numStateVectors   = 0;
+  utf8Classifier    = NULL; // classifier is not "owned" by the NFA instance
 }
 
 void NFA::preAddStates(size_t reLength) {
@@ -89,8 +91,9 @@ NFA::State *NFA::addState(NFA::MatchType aMatchType,
  * Insert . as explicit concatenation operator.
  * Cheesy parser, return static buffer.
  */
-void NFA::compileRegularExpression(const char *aUtf8RegExp)
-  throw (LexerException) {
+void NFA::addRegularExpressionForToken(const char *aUtf8RegExp,
+                                       token_t aTokenId)
+                                       throw (LexerException) {
 
   size_t reLen = strlen(aUtf8RegExp);
   preAddStates(reLen);
@@ -106,6 +109,9 @@ void NFA::compileRegularExpression(const char *aUtf8RegExp)
   char *className;
   bool classNegated;
   classSet_t classSet;
+  MatchData noMatchData;
+  noMatchData.c.u = 0;
+  State *baseSplitState = addState(Split, noMatchData, NULL, NULL);
 
   p = paren;
   nalt = 0;
@@ -199,7 +205,14 @@ void NFA::compileRegularExpression(const char *aUtf8RegExp)
   if (p != paren) throw LexerException("mismatched parentheses");
   while (--natom > 0) fragments->concatenate();
   for (; nalt > 0; nalt--) fragments->alternate();
-  nfaStartState = fragments->match();
+  baseSplitState->out = fragments->match(aTokenId);
+  if (nfaLastStartState) {
+    nfaLastStartState->out1 = baseSplitState;
+    nfaLastStartState       = baseSplitState;
+  } else {
+    nfaStartState     = baseSplitState;
+    nfaLastStartState = nfaStartState;
+  }
 }
 
 /*

@@ -23,8 +23,8 @@ go_bandit([](){
     it("should have correct sizes and pointers setup", [&](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
-      nfa->compileRegularExpression("(abab|abbb)");
-      AssertThat(nfa->getNumberStates(), Is().EqualTo(10));
+      nfa->addRegularExpressionForToken("(abab|abbb)", 1);
+      AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
       DFA *dfa = new DFA(nfa);
       AssertThat(dfa->dfaStateSize, Is().EqualTo(2)); // at most 16 NFA state bits
       AssertThat(dfa->dStateVectorSize, Is().EqualTo(40));
@@ -48,8 +48,8 @@ go_bandit([](){
     it("allocate and unallocate DStates", [&](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
-      nfa->compileRegularExpression("(abab|abbb)");
-      AssertThat(nfa->getNumberStates(), Is().EqualTo(10));
+      nfa->addRegularExpressionForToken("(abab|abbb)", 1);
+      AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
       DFA *dfa = new DFA(nfa);
       AssertThat(dfa->allocatedUnusedDState0, Is().EqualTo((void*)0));
       AssertThat(dfa->allocatedUnusedDState1, Is().EqualTo((void*)0));
@@ -98,8 +98,8 @@ go_bandit([](){
     it("getNFAStateNumber", [&](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
-      nfa->compileRegularExpression("(abab|abbb)");
-      AssertThat(nfa->getNumberStates(), Is().EqualTo(10));
+      nfa->addRegularExpressionForToken("(abab|abbb)", 1);
+      AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
       DFA *dfa = new DFA(nfa);
       AssertThat(dfa->numKnownNFAStates, Is().EqualTo(3));
       NFA::State *nfaStartState = nfa->getNFAStartState();
@@ -143,8 +143,8 @@ go_bandit([](){
     it("should compute the correct start state", [&](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
-      nfa->compileRegularExpression("(abab|abbb)");
-      AssertThat(nfa->getNumberStates(), Is().EqualTo(10));
+      nfa->addRegularExpressionForToken("(abab|abbb)", 1);
+      AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
       DFA *dfa = new DFA(nfa);
       NFA::State *nfaStartState = nfa->getNFAStartState();
       AssertThat(nfaStartState, Is().Not().EqualTo((void*)0));
@@ -164,8 +164,8 @@ go_bandit([](){
     it("registerDState", [&](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
-      nfa->compileRegularExpression("(abab|abbb)");
-      AssertThat(nfa->getNumberStates(), Is().EqualTo(10));
+      nfa->addRegularExpressionForToken("(abab|abbb)", 1);
+      AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
       DFA *dfa = new DFA(nfa);
       // dfaStartState is already registered..
       DFA::DState *registeredDState =
@@ -178,8 +178,8 @@ go_bandit([](){
     it("computeNextDFAState with no generic states", [&](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
-      nfa->compileRegularExpression("(abab|abbb)");
-      AssertThat(nfa->getNumberStates(), Is().EqualTo(10));
+      nfa->addRegularExpressionForToken("(abab|abbb)", 1);
+      AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
       DFA *dfa = new DFA(nfa);
       AssertThat(dfa->allocatedUnusedDState0, Is().EqualTo((void*)0));
       AssertThat(dfa->allocatedUnusedDState1, Is().EqualTo((void*)0));
@@ -227,8 +227,8 @@ go_bandit([](){
       AssertThat(classifier->getClassSet(" "), Is().EqualTo(1));
       AssertThat(classifier->getClassSet("a"), Is().EqualTo(~0L));
       NFA *nfa = new NFA(classifier);
-      nfa->compileRegularExpression("(abab|[!whitespace]bbb)");
-      AssertThat(nfa->getNumberStates(), Is().EqualTo(10));
+      nfa->addRegularExpressionForToken("(abab|[!whitespace]bbb)", 1);
+      AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
       DFA *dfa = new DFA(nfa);
       AssertThat(dfa->allocatedUnusedDState0, Is().EqualTo((void*)0));
       AssertThat(dfa->allocatedUnusedDState1, Is().EqualTo((void*)0));
@@ -282,8 +282,8 @@ go_bandit([](){
       AssertThat(classifier->getClassSet(" "), Is().EqualTo(1));
       AssertThat(classifier->getClassSet("a"), Is().EqualTo(~0L));
       NFA *nfa = new NFA(classifier);
-      nfa->compileRegularExpression("([!whitespace]bab|[!whitespace]bbb)");
-      AssertThat(nfa->getNumberStates(), Is().EqualTo(10));
+      nfa->addRegularExpressionForToken("([!whitespace]bab|[!whitespace]bbb)", 1);
+      AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
       DFA *dfa = new DFA(nfa);
       AssertThat(dfa->allocatedUnusedDState0, Is().EqualTo((void*)0));
       AssertThat(dfa->allocatedUnusedDState1, Is().EqualTo((void*)0));
@@ -327,6 +327,44 @@ go_bandit([](){
       for (size_t i = 1; i < dfa->dfaStateSize; i++) {
         AssertThat(((int)nextDFAState[i]), Is().EqualTo((int)0x00));
       }
+    });
+
+    it("getNextToken with simple regular expression", [&](){
+      Classifier *classifier = new Classifier();
+      NFA *nfa = new NFA(classifier);
+      nfa->addRegularExpressionForToken("simple", 1);
+      AssertThat(nfa->getNumberStates(), Is().EqualTo(8));
+      DFA *dfa = new DFA(nfa);
+      Utf8Chars *stream0 = new Utf8Chars("simple");
+      AssertThat(dfa->getNextToken(stream0), Is().True());
+      Utf8Chars *stream1 = new Utf8Chars("notSoSimple");
+//      AssertThat(dfa->getNextToken(stream1), Is().True());
+    });
+
+    it("getNextToken with alternate simple regular expression", [&](){
+      Classifier *classifier = new Classifier();
+      NFA *nfa = new NFA(classifier);
+      nfa->addRegularExpressionForToken("(simple|notSoSimple)", 1);
+      AssertThat(nfa->getNumberStates(), Is().EqualTo(20));
+      DFA *dfa = new DFA(nfa);
+      Utf8Chars *stream0 = new Utf8Chars("simple");
+//      AssertThat(dfa->getNextToken(stream0), Is().True());
+      Utf8Chars *stream1 = new Utf8Chars("notSoSimple");
+//      AssertThat(dfa->getNextToken(stream1), Is().True());
+    });
+
+    it("getNextToken", [&](){
+      Classifier *classifier = new Classifier();
+      classifier->registerClassSet("whitespace",1);
+      classifier->classifyUtf8CharsAs(Utf8Chars::whiteSpaceChars,"whitespace");
+      AssertThat(classifier->getClassSet(" "), Is().EqualTo(1));
+      AssertThat(classifier->getClassSet("a"), Is().EqualTo(~0L));
+      NFA *nfa = new NFA(classifier);
+      nfa->addRegularExpressionForToken("[!whitespace]+", 1);
+      AssertThat(nfa->getNumberStates(), Is().EqualTo(4));
+      DFA *dfa = new DFA(nfa);
+      Utf8Chars *stream0 = new Utf8Chars("sillysomeNonWhiteSpace");
+//      AssertThat(dfa->getNextToken(stream0), Is().True());
     });
 
   }); // dfa

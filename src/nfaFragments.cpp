@@ -120,10 +120,12 @@ void NFAFragments::oneOrMore(void)
   push(frag(e.start, list1(&s->out1)));
 };
 
-NFA::State *NFAFragments::match(void)
+NFA::State *NFAFragments::match(NFA::token_t aTokenId)
   throw (LexerException) {
   Frag e = pop();
-  NFA::MatchData tokenData = noMatchData;
+  NFA::MatchData tokenData;
+  tokenData.c.u = 0;
+  tokenData.t = aTokenId;
   patch(e.out, nfa->addState(NFA::Token, tokenData, NULL, NULL));
   return e.start;
 };

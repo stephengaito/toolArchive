@@ -22,7 +22,7 @@ class NFAFragments {
 
     void oneOrMore(void) throw (LexerException);
 
-    NFA::State *match(void) throw (LexerException);
+    NFA::State *match(NFA::token_t aTokenId) throw (LexerException);
 
   private:
     /*
