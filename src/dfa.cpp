@@ -198,6 +198,10 @@ void DFA::unallocateADState(DFA::DState *aDFAState) {
 }
 
 DFA::NFAStateNumber DFA::getNFAStateNumber(NFA::State *nfaState) {
+  NFAStateNumber nfaStateNumber;
+  nfaStateNumber.stateByte = 0;
+  nfaStateNumber.stateBit  = 0;
+  if (!nfaState) return nfaStateNumber;
   long long tmpNFAState = (long long)nfaState;
   char nfaStatePtr[sizeof(NFA::State*)];
   for (size_t i = 0; i < sizeof(NFA::State*); i++) {
@@ -214,7 +218,6 @@ DFA::NFAStateNumber DFA::getNFAStateNumber(NFA::State *nfaState) {
     numKnownNFAStates++;
     *nfaStateIntPtr = numKnownNFAStates;
   }
-  NFAStateNumber nfaStateNumber;
   nfaStateNumber.stateByte = *nfaStateIntPtr / 8;
   nfaStateNumber.stateBit  = 1 << ((*nfaStateIntPtr % 8)-1);
   // check to see if this NFAState is a token state
