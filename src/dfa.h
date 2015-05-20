@@ -20,6 +20,7 @@ class DFA {
     NFA *nfa;
     hattrie_t   *nfaStatePtr2int;
     NFA::State **int2nfaStatePtr;
+    size_t int2nfaStatePtrSize;
     size_t numKnownNFAStates;
 
     hattrie_t   *nextDFAStateMap;
@@ -47,6 +48,7 @@ class DFA {
     bool isEmptyDState(DState *d);
     bool isSubDState(DState *d1, DState *d2); // d1 subsetOf d2
     void mergeDStates(DState *mergeInto, DState *other);
+    void printDState(FILE *filePtr, const char* message, DState *d);
 
     /// Check whether DFA state contains a token.
     bool matchesToken(DState *dState);
@@ -56,7 +58,8 @@ class DFA {
       uint8_t stateBit;
     } NFAStateNumber;
 
-    NFAStateNumber getNFAStateNumber(NFA::State *nfaState);
+    NFAStateNumber getNFAStateNumber(NFA::State *nfaState)
+      throw (LexerException);
 
     /* Add s to l, following unlabeled arrows. */
     void addNFAStateToDFAState(DState *dfaState, NFA::State *nfaState);

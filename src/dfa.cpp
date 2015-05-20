@@ -32,7 +32,8 @@ DFA::DFA(NFA *anNFA) {
   dStateVectorSize = 20*dfaStateSize;
   dfaStateProbeSize = dfaStateSize + sizeof(utf8Char_t);
   dfaStateProbe = (char*)calloc(dfaStateProbeSize, sizeof(uint8_t));
-  int2nfaStatePtr = (NFA::State**)calloc(nfa->getNumberStates(),
+  int2nfaStatePtrSize = nfa->getNumberStates();
+  int2nfaStatePtr = (NFA::State**)calloc(int2nfaStatePtrSize,
                                          sizeof(NFA::State*));
   numKnownNFAStates = 0;
 
@@ -126,6 +127,14 @@ bool DFA::matchesToken(DFA::DState *dfaState) {
   return false;
 }
 
+void DFA::printDState(FILE *filePtr, const char* message, DFA::DState *d) {
+  fprintf(filePtr, "\n%s ", message);
+  for (size_t i = 0; i < dfaStateSize; i++) {
+    fprintf(filePtr, " %u ", (int)d[i]);
+  }
+  fprintf(filePtr, "\n");
+}
+
 DFA::DState *DFA::allocateANewDState(void) {
   DState *newDState = NULL;
 
@@ -197,7 +206,8 @@ void DFA::unallocateADState(DFA::DState *aDFAState) {
   // just quitely drop this one
 }
 
-DFA::NFAStateNumber DFA::getNFAStateNumber(NFA::State *nfaState) {
+DFA::NFAStateNumber DFA::getNFAStateNumber(NFA::State *nfaState)
+  throw (LexerException) {
   NFAStateNumber nfaStateNumber;
   nfaStateNumber.stateByte = 0;
   nfaStateNumber.stateBit  = 0;
@@ -213,13 +223,16 @@ DFA::NFAStateNumber DFA::getNFAStateNumber(NFA::State *nfaState) {
                                         sizeof(NFA::State*));
   if (!nfaStateIntPtr) throw LexerException("corrupted HAT-Trie nfaStatePtr2int");
   if (!*nfaStateIntPtr) {
+    if (int2nfaStatePtrSize <= numKnownNFAStates) {
+      throw LexerException("could not getNFAStateNumber too few nfaStateInts");
+    }
     // this NFA::State needs to be added to our mapping
     int2nfaStatePtr[numKnownNFAStates] = nfaState;
     numKnownNFAStates++;
     *nfaStateIntPtr = numKnownNFAStates;
   }
-  nfaStateNumber.stateByte = *nfaStateIntPtr / 8;
-  nfaStateNumber.stateBit  = 1 << ((*nfaStateIntPtr % 8)-1);
+  nfaStateNumber.stateByte = (*nfaStateIntPtr - 1) / 8;
+  nfaStateNumber.stateBit  = 1 << ((*nfaStateIntPtr - 1) % 8);
   // check to see if this NFAState is a token state
   // .... if so record it in the tokensDState
   if (nfaState->matchType == NFA::Token) {
@@ -324,29 +337,10 @@ DFA::DState *DFA::computeNextDFAState(DFA::DState *curDFAState,
     }
   }
 
-  DState **resultNextState;
-
-  if (!isEmptyDState(nextGenericDFAState)) {
-    // there is a next generic DFAState...
-    // SO ...
-    // always store the generic (classification based) nextGenericDState
-    assembleDFAStateClassificationProbe(curDFAState, classificationSet);
-    resultNextState = (DState**)hattrie_get(nextDFAStateMap,
-                                            dfaStateProbe,
-                                            dfaStateProbeSize);
-    // ensure we use the registered DFAState if any...
-    *resultNextState = registerDState(nextGenericDFAState);
-    if (*resultNextState != nextGenericDFAState) {
-      // This generic DState is a copy of the already registered DSstate
-      // so it is no longer needed
-      unallocateADState(nextGenericDFAState);
-      // ensure nextGenericDFAState is a valid DState
-      // and the one used in the map
-      nextGenericDFAState = *resultNextState;
-    }
-  }
+  DState **resultNextState = NULL;
   // now check if we need to store the specific nextDFAState
-  if (isSubDState(nextSpecificDFAState, nextGenericDFAState)) {
+  if (isSubDState(nextSpecificDFAState, nextGenericDFAState) ||
+      isEmptyDState(nextSpecificDFAState)) {
     // since the specific DState is a subState of the generic
     // and since we have already registered the generic DState
     // we do not need to do anything more
@@ -369,6 +363,29 @@ DFA::DState *DFA::computeNextDFAState(DFA::DState *curDFAState,
       unallocateADState(nextSpecificDFAState);
     }
   }
+  if (isEmptyDState(nextGenericDFAState)) {
+    // the generic state is empty so we do not store it
+    unallocateADState(nextGenericDFAState);
+  } else {
+    // there is a next generic DFAState...
+    // SO ...
+    // always store the generic (classification based) nextGenericDState
+    assembleDFAStateClassificationProbe(curDFAState, classificationSet);
+    resultNextState = (DState**)hattrie_get(nextDFAStateMap,
+                                            dfaStateProbe,
+                                            dfaStateProbeSize);
+    // ensure we use the registered DFAState if any...
+    *resultNextState = registerDState(nextGenericDFAState);
+    if (*resultNextState != nextGenericDFAState) {
+      // This generic DState is a copy of the already registered DSstate
+      // so it is no longer needed
+      unallocateADState(nextGenericDFAState);
+      // ensure nextGenericDFAState is a valid DState
+      // and the one used in the map
+      nextGenericDFAState = *resultNextState;
+    }
+  }
+  if (!resultNextState) return NULL;
   return *resultNextState;
 }
 
@@ -382,20 +399,26 @@ bool DFA::getNextToken(Utf8Chars *utf8Stream) {
     assembleDFAStateCharacterProbe(curDFAState, curChar);
     // now probe the nextDFAState hat-trie
     // start with most specific
-    DState *nextDFAState = (DState*)hattrie_tryget(nextDFAStateMap,
-                                                   dfaStateProbe,
-                                                   dfaStateProbeSize);
-    if (!nextDFAState) {
+    DState *nextDFAState = NULL;
+    value_t *tryGetDFAState = hattrie_tryget(nextDFAStateMap,
+                                             dfaStateProbe,
+                                             dfaStateProbeSize);
+    if (tryGetDFAState && *tryGetDFAState) {
+      nextDFAState = (DState*)*tryGetDFAState;
+    } else {
       // try the more generic
       classSet_t classificationSet = nfa->getClassifier()->getClassSet(curChar);
       assembleDFAStateClassificationProbe(curDFAState, classificationSet);
-      nextDFAState = (DState*)hattrie_tryget(nextDFAStateMap,
-                                             dfaStateProbe,
-                                             dfaStateProbeSize);
-      if (!nextDFAState) {
+      tryGetDFAState = hattrie_tryget(nextDFAStateMap,
+                                      dfaStateProbe,
+                                      dfaStateProbeSize);
+      if (tryGetDFAState && *tryGetDFAState) {
+        nextDFAState = (DState*)*tryGetDFAState;
+      } else {
         nextDFAState = computeNextDFAState(curDFAState,
                                            curChar,
                                            classificationSet);
+        if (!nextDFAState) return false;
       }
     }
     curDFAState = nextDFAState;
