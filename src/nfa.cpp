@@ -108,7 +108,7 @@ void NFA::addRegularExpressionForToken(const char *aUtf8RegExp,
   char classNameBuf[classNameBufSize+1];
   char *className;
   bool classNegated;
-  classSet_t classSet;
+  Classifier::classSet_t classSet;
   MatchData noMatchData;
   noMatchData.c.u = 0;
   State *baseSplitState = addState(Split, noMatchData, NULL, NULL);

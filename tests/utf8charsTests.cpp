@@ -14,13 +14,23 @@ go_bandit([](){
   printf(  "utf8Char_t = %zu bytes (%zu bits)\n", sizeof(utf8Char_t), sizeof(utf8Char_t)*8);
   printf(  "----------------------------------\n");
 
-  describe("Utf8Chars buffer", [](){
+  /// \brief Test the Utf8Chars buffered stream.
+  ///
+  /// The Utf8Chars class provides a buffered stream of utf8Char_t types.
+  /// These tests verify the required behaviour of this buffered stream of
+  /// utf8Char_t types.
+  describe("Utf8Chars", [](){
 
+    /// Simply ensure we can correctly create a new Utf8Chars object
+    /// on a standard C-string.
     it("create a Utf8Chars buffer", [&](){
       Utf8Chars *someChars = new Utf8Chars("silly");
       AssertThat(someChars, Is().Not().EqualTo((Utf8Chars*)0));
     });
 
+    /// Confirm that Utf8Chars::codePoint2utf8Char handles provides the
+    /// correct mapping from code points to utf8Chat_t types. In particular,
+    /// we check each of the code point boundaries.
     it("convert code points to utf8Char_t", [&](){
       utf8Char_t expectedChar;
       expectedChar.u = 0;
@@ -60,6 +70,8 @@ go_bandit([](){
       AssertThat(Utf8Chars::codePoint2utf8Char(0x7FFFFFFFF).u, Is().EqualTo(expectedChar.u));
     });
 
+    /// Ensure that we can iterate over a *simple* ASCII string of one
+    /// charater.
     it("iterate over a simple ascii string", [&](){
       Utf8Chars *someChars = new Utf8Chars("s");
       utf8Char_t expectedChar;
@@ -75,6 +87,8 @@ go_bandit([](){
       AssertThat((someChars->nextUtf8Char()).u, Is().EqualTo(0));
     });
 
+    /// Ensure that we can iterate over a *simple* ASCII string of multiple
+    /// charaters.
     it("iterate over a long ascii string", [&](){
       Utf8Chars *someChars = new Utf8Chars("silly");
       utf8Char_t expectedChar;
@@ -97,6 +111,8 @@ go_bandit([](){
       AssertThat((someChars->nextUtf8Char()).u, Is().EqualTo(expectedChar.u));
     });
 
+    /// Ensure that we can iterate over a string which contains one
+    /// UTF8 charater.
     it("iterate over a simple utf8 string", [&](){
       Utf8Chars *someChars = new Utf8Chars("€");
       utf8Char_t expectedChar;
@@ -114,6 +130,8 @@ go_bandit([](){
       AssertThat((someChars->nextUtf8Char()).u, Is().EqualTo(0));
     });
 
+    /// Ensure that we can iterate over a string which contains multiple
+    /// UTF8 charaters.
     it("iterate over a long utf8 string", [&](){
       Utf8Chars *someChars = new Utf8Chars("$¢€[");
       utf8Char_t expectedChar;
@@ -152,6 +170,8 @@ go_bandit([](){
       AssertThat((someChars->nextUtf8Char()).u, Is().EqualTo(expectedChar.u));
     });
 
+    /// Check that Utf8Chars::nextUtf8Char can handle mallformed
+    /// "utf8" byte sequences.
     it("iterate over malformed UTF8 strings",[&](){
       utf8Char_t nullChar;
       nullChar.u = 0;
@@ -178,6 +198,12 @@ go_bandit([](){
       AssertThat(someChars->nextUtf8Char().u, Is().EqualTo(aChar.u));
     });
 
+    /// Ensure that the Utf8Chars::whiteSpaceChars constant contains
+    /// the white space UTF8 characters we are expecting.
+    ///
+    /// This test also contains code (normally commeted out) to produce
+    /// the C code required to provide the Utf8Chars::whiteSpaceChars
+    /// structure.
     it("whiteSpaceChars contains UTF8 white space characters", [&](){
 /*
       //
@@ -249,6 +275,9 @@ go_bandit([](){
       AssertThat(whiteSpace->containsUtf8Char(expectedChar), Is().False());
     });
 
+    /// We occasionally need to iterate over a Utf8Chars stream byte by byte
+    /// instead of utf8Char_t by utf8Char_t. This test ensures that we can
+    /// (reasonably) mix Utf8Chars::nextUtf8Char and Utf8Chars::getNextByte.
     it("can mix the use of getNextBye and nextUtf8Char", [&](){
       Utf8Chars *someChars = new Utf8Chars("some ch€racters");
       size_t i = 0;

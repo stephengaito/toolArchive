@@ -14,6 +14,7 @@ project (DynamicUTF8Parser)
 
 loadLLVM()
 configureDoxygen()
+transformDoxygen()
 
 add_subdirectory(HAT-trie)
 

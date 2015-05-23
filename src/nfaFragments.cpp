@@ -73,7 +73,7 @@ void NFAFragments::checkCharacter(utf8Char_t aChar)
   push(frag(s, list1(&s->out)));
 }
 
-void NFAFragments::checkClassification(classSet_t aClass)
+void NFAFragments::checkClassification(Classifier::classSet_t aClass)
   throw (LexerException) {
   NFA::MatchData someMatchData;
   someMatchData.s = aClass;

@@ -10,7 +10,8 @@ class NFAFragments {
 
     void checkCharacter(utf8Char_t aChar) throw (LexerException);
 
-    void checkClassification(classSet_t aClass) throw (LexerException);
+    void checkClassification(Classifier::classSet_t aClass)
+    throw (LexerException);
 
     void concatenate(void) throw (LexerException);
 

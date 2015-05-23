@@ -268,7 +268,7 @@ go_bandit([](){
       utf8Char_t firstChar;
       firstChar.u = 0;
       firstChar.c[0] = 'a';
-      classSet_t classificationSet = 0;
+      Classifier::classSet_t classificationSet = 0;
       DFA::DState *nextDFAState =
         dfa->computeNextDFAState(dfa->dfaStartState,
                                  firstChar,
@@ -317,7 +317,8 @@ go_bandit([](){
       utf8Char_t firstChar;
       firstChar.u = 0;
       firstChar.c[0] = 'a';
-      classSet_t classificationSet = classifier->getClassSet(firstChar);
+      Classifier::classSet_t classificationSet =
+        classifier->getClassSet(firstChar);
       AssertThat(classificationSet, Is().EqualTo(~0L));
       DFA::DState *nextDFAState =
         dfa->computeNextDFAState(dfa->dfaStartState,
@@ -372,7 +373,8 @@ go_bandit([](){
       utf8Char_t firstChar;
       firstChar.u = 0;
       firstChar.c[0] = 'a';
-      classSet_t classificationSet = classifier->getClassSet(firstChar);
+      Classifier::classSet_t classificationSet =
+        classifier->getClassSet(firstChar);
       AssertThat(classificationSet, Is().EqualTo(~0L));
       DFA::DState *nextDFAState =
         dfa->computeNextDFAState(dfa->dfaStartState,

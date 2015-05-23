@@ -11,6 +11,18 @@ macro(loadLLVM)
   message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 endmacro(loadLLVM)
 
+
+# Transform source and test files into a format suitable for use with 
+# Doxygen.
+macro(transformDoxygen)
+  add_custom_target(transformDoxygenSrcs
+    COMMAND ${CMAKE_SOURCE_DIR}/bin/transformDoxygen ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/tests
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Transforming source and tests for API documentation with Doxygen" VERBATIM
+  )
+  add_dependencies(doc transformDoxygenSrcs )
+endmacro(transformDoxygen)
+
 # Load and Configure Doxygen
 #
 # add a target to generate API documentation with Doxygen

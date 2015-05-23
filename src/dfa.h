@@ -68,7 +68,7 @@ class DFA {
     void assembleDFAStateCharacterProbe(DState *dfaState,
                                         utf8Char_t curChar);
     void assembleDFAStateClassificationProbe(DState *dfaState,
-                                             classSet_t classification);
+      Classifier::classSet_t classification);
     DState *registerDState(DState *dfaState);
 
     void computeDFAStartState(void);
@@ -80,7 +80,7 @@ class DFA {
      */
     DState *computeNextDFAState(DState *oldState,
                                 utf8Char_t c,
-                                classSet_t classificationSet);
+                                Classifier::classSet_t classificationSet);
 
 };
 

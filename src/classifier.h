@@ -2,8 +2,6 @@
 #define CLASSIFIER_H
 
 #include <hat-trie.h>
-typedef value_t classSet_t;
-
 #include "utf8chars.h"
 
 /**
@@ -21,6 +19,14 @@ bitwise operation.
 class Classifier {
 
   public:
+    /// \brief A classSet_t represents a bit set of Classifier classes.
+    ///
+    /// Each classSet_t corresponds to a limited collection of Classifier
+    /// base classes assigned by the user. Any particular Classifier class
+    /// can be any collection of these base classes depending upon whether
+    /// or not a given bit in the classSet_t is (un)set. Currently a
+    /// classSet_t bit set is limited to 64 base classes.
+    typedef value_t classSet_t;
 
     /// \brief Create a UTF8 character classifier.
     ///

@@ -10,7 +10,7 @@ Classifier::Classifier(void) {
   utf8Char2classSet = hattrie_create();
 }
 
-classSet_t Classifier::findClassSet(const char* aClassName) {
+Classifier::classSet_t Classifier::findClassSet(const char* aClassName) {
   value_t *classSetPtr = hattrie_tryget(className2classSet,
                                         aClassName,
                                         strlen(aClassName));
@@ -18,8 +18,8 @@ classSet_t Classifier::findClassSet(const char* aClassName) {
   return *classSetPtr;
 }
 
-classSet_t Classifier::registerClassSet(const char* aClassName,
-                                        classSet_t aClassSet) {
+Classifier::classSet_t Classifier::registerClassSet(const char* aClassName,
+                                                    classSet_t aClassSet) {
   value_t *classSetPtr = hattrie_get(className2classSet,
                                      aClassName,
                                      strlen(aClassName));
@@ -45,13 +45,13 @@ void Classifier::classifyUtf8CharsAs(const char* someUtf8Chars,
   }
 }
 
-classSet_t Classifier::getClassSet(const char* someUtf8Chars) {
+Classifier:: classSet_t Classifier::getClassSet(const char* someUtf8Chars) {
   Utf8Chars *utf8Chars = new Utf8Chars(someUtf8Chars);
   utf8Char_t aUtf8Char = utf8Chars->nextUtf8Char();
   return getClassSet(aUtf8Char);
 }
 
-classSet_t Classifier::getClassSet(utf8Char_t aUtf8Char) {
+Classifier::classSet_t Classifier::getClassSet(utf8Char_t aUtf8Char) {
   classSet_t *classSetPtr = hattrie_tryget(utf8Char2classSet,
                                            aUtf8Char.c, strlen(aUtf8Char.c));
 

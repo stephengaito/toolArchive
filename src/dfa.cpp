@@ -269,9 +269,9 @@ void DFA::assembleDFAStateCharacterProbe(DState *dfaState,
 }
 
 void DFA::assembleDFAStateClassificationProbe(DState *dfaState,
-                                              classSet_t classification) {
+  Classifier::classSet_t classification) {
   assembleDFAStateProbe(dfaState);
-  for (size_t j = 0; j < sizeof(classSet_t); j++) {
+  for (size_t j = 0; j < sizeof(Classifier::classSet_t); j++) {
     dfaStateProbe[dfaStateSize+j] = ((uint8_t*)(&classification))[j];
   }
 }
@@ -299,7 +299,7 @@ void DFA::computeDFAStartState(void) {
  */
 DFA::DState *DFA::computeNextDFAState(DFA::DState *curDFAState,
                                       utf8Char_t c,
-                                      classSet_t classificationSet) {
+                                      Classifier::classSet_t classificationSet) {
   NFA::State *nfaState;
 
   DState *nextGenericDFAState;
@@ -407,7 +407,8 @@ bool DFA::getNextToken(Utf8Chars *utf8Stream) {
       nextDFAState = (DState*)*tryGetDFAState;
     } else {
       // try the more generic
-      classSet_t classificationSet = nfa->getClassifier()->getClassSet(curChar);
+      Classifier::classSet_t classificationSet =
+        nfa->getClassifier()->getClassSet(curChar);
       assembleDFAStateClassificationProbe(curDFAState, classificationSet);
       tryGetDFAState = hattrie_tryget(nextDFAStateMap,
                                       dfaStateProbe,
