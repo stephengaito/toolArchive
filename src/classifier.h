@@ -25,7 +25,9 @@ class Classifier {
     /// base classes assigned by the user. Any particular Classifier class
     /// can be any collection of these base classes depending upon whether
     /// or not a given bit in the classSet_t is (un)set. Currently a
-    /// classSet_t bit set is limited to 64 base classes.
+    /// classSet_t bit set is limited to the size of the platform's
+    /// pointers (32 and 64 bits on 32 and 64 bit architectures
+    /// respectively).
     typedef value_t classSet_t;
 
     /// \brief Create a UTF8 character classifier.
