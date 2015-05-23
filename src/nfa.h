@@ -11,7 +11,11 @@
 /// is malformed, or the DFA state used to recognize a token is corrupted.
 class LexerException: public std::exception {
   public:
+    /// \brief Initialize a LexerException structure.
     LexerException(const char* aMessage) { message = aMessage; };
+
+    /// \brief The message associated with this LexerException
+    /// instance.
     const char* message;
 };
 
@@ -136,13 +140,36 @@ class NFA {
     State *getNFAStartState() { return nfaStartState; }
 
   private:
+    /// \brief The vector of blocks of pre allocated NFA::State(s).
     State **states;
+
+    /// \brief The start of the linked list of start states of the
+    /// various token recognizing (sub)NFA(s).
+    ///
+    /// The first NFA::State in this linked list is the start state
+    /// of the whole NFA.
     State *nfaStartState;
+
+    /// \brief The last start state in the linked list of NFA::State(s).
     State *nfaLastStartState;
+
+    /// \brief The currently unassigned NFA::State in the current block
+    /// of NFA::State(s).
     State *curState;
+
+    /// \brief The last allocatable NFA::State in the current block of
+    /// NFA::State(s).
     State *lastState;
+
+    /// \brief The index in the vector of NFA::State blocks which is
+    /// currently being allocated.
     size_t curStateVector;
+
+    /// \brief The number of possible NFA::State blocks which the current
+    /// vector of blocks, states, can hold.
     size_t numStateVectors;
+
+    /// \brief The Classifier used by this NFA to classify UTF8 characters.
     Classifier *utf8Classifier;
 };
 

@@ -74,7 +74,12 @@ class Classifier {
     );
 
   private:
+    /// \brief The Hat-Trie implementing the class name to class set
+    /// mapping used to register a given classification bit set.
     hattrie_t *className2classSet;
+
+    /// \brief The Hat-Trie implementing the utf8Char_t to class set
+    /// mapping used to classify a given UTF8 character.
     hattrie_t *utf8Char2classSet;
 
 };

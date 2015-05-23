@@ -3,25 +3,17 @@
 
 #include <stdint.h>
 
-/**
-
-\brief The utf8Char_struct (utf8Char_t) is a simple union to allow a
-single UTF8 character to be viewed as either an array of 8 bytes, or as
-a single unsigned 64 bit integer.
-
-*/
+/// \brief The utf8Char_struct (utf8Char_t) is a simple union to allow
+/// a single UTF8 character to be viewed as either an array of 8 bytes, or
+/// as a single unsigned 64 bit integer.
 typedef union utf8Char_struct {
   char     c[8]; ///< a UTF8 character as an array of at most 8 bytes
   uint64_t u;    ///< a UTF8 character as an unsigned 64 bit integer
 } utf8Char_t;
 
-/**
-
-\brief The Utf8Chars class encapsulates UTF8 strings. In particular
-the Utf8Chars class understands how to walk forwards and backwards
-over UTF8 characters.
-
-*/
+/// \brief The Utf8Chars class encapsulates UTF8 strings. In particular
+/// the Utf8Chars class understands how to walk forwards and backwards over
+/// UTF8 characters.
 class Utf8Chars {
   public:
 
@@ -44,12 +36,26 @@ class Utf8Chars {
     /// \brief Return the next UTF8 character.
     ///
     /// If there are no more characters, returns the null character.
+    ///
+    /// If the Utf8Chars::getNextByte and Utf8Chars::nextUtf8Char methods
+    /// are intermixed then the nextByte might *not* be the begining of
+    /// a UTF8 character. In this case the Utf8Chars::nextUtf8Char will
+    /// return a null character (which could be interpreted to represent
+    /// the end of the Utf8Chars character stream.
     utf8Char_t nextUtf8Char();
 
     /// \brief Return the next byte as a character.
     ///
+    /// If there are no more characters, returns the null character.
+    ///
     /// This *might* leave the collection of characters in the middle
     /// of a UTF8 character.
+    ///
+    /// If the Utf8Chars::getNextByte and Utf8Chars::nextUtf8Char methods
+    /// are intermixed then the nextByte might *not* be the begining of
+    /// a UTF8 character. In this case the Utf8Chars::nextUtf8Char will
+    /// return a null character (which could be interpreted to represent
+    /// the end of the Utf8Chars character stream.
     char getNextByte(void) {
       if (utf8Chars+numBytes < nextByte) return 0;
       return *nextByte++;
@@ -67,8 +73,27 @@ class Utf8Chars {
     static utf8Char_t codePoint2utf8Char(uint64_t codePoint);
 
   private:
+
+    /// \brief The C-string of UTF8 characters.
     const char* utf8Chars;
+
+    /// \brief The total number of bytes contained in this string of
+    /// UTF8 characters.
+    ///
+    /// The number of bytes will generally be larger than the number of
+    /// [UTF8 characters](http://en.wikipedia.org/wiki/UTF-8) if there
+    /// are any non-[ASCII](http://en.wikipedia.org/wiki/ASCII)
+    /// characters in the string.
     size_t      numBytes;
+
+    /// \brief The nextByte to be returned by either of the
+    /// Utf8Chars::nextUtf8Char or Utf8Chars::getNextByte methods.
+    ///
+    /// If the Utf8Chars::getNextByte and Utf8Chars::nextUtf8Char methods
+    /// are intermixed then the nextByte might *not* be the begining of
+    /// a UTF8 character. In this case the Utf8Chars::nextUtf8Char will
+    /// return a null character (which could be interpreted to represent
+    /// the end of the Utf8Chars character stream.
     const char* nextByte;
 };
 

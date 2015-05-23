@@ -18,9 +18,13 @@ go_bandit([](){
   printf(  "NFAStateNumber = %zu bytes (%zu bits)\n", sizeof(DFA::NFAStateNumber), sizeof(DFA::NFAStateNumber)*8);
   printf(  "----------------------------------\n");
 
+  /// \brief Test the ability of a given DFA class to compile, on the fly,
+  /// a DFA corresponding to a given NFA.
   describe("DFA", [](){
 
-    it("should have correct sizes and pointers setup", [&](){
+    /// Show that we can create an appropriately allocated DFA
+    /// from a given NFA.
+    it("Should have correct sizes and pointers setup", [&](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
       nfa->addRegularExpressionForToken("(abab|abbb)", 1);
@@ -45,7 +49,9 @@ go_bandit([](){
       AssertThat(dfa->isSubDState(dfa->dfaStartState, dfa->tokensDState), Is().False());
     });
 
-    it("allocate and unallocate DStates", [&](){
+    /// Show that we can allocate and unallocate DFA::DStates, to/from
+    /// the three allocatedUnusedDState{0|1|2}.
+    it("Allocate and unallocate DStates", [&](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
       nfa->addRegularExpressionForToken("(abab|abbb)", 1);
@@ -95,7 +101,11 @@ go_bandit([](){
       }
     });
 
-    it("getNFAStateNumber", [&](){
+    /// Show that DFA::getNFAStateNumber computes correct
+    /// DFA::NFAStateNumber(s). In particular we need to show that
+    /// we can deal with *more* than 8 NFA::States (i.e. more than the
+    /// first byte in the NFAStateNumber/DFA::DState bit set).
+    it("Should compute correct NFAStateNumbers using getNFAStateNumber", [&](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
       nfa->addRegularExpressionForToken("thisisasimpletest", 1);
@@ -140,7 +150,7 @@ go_bandit([](){
       AssertThat((int)aStateNum.stateBit, Is().EqualTo(8));
     });
 
-    it("getNFAStateNumber with lots of states", [&](){
+    it("Show that DFA::getNFAStateNumber can deal with lots of NFA::States", [&](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
       nfa->addRegularExpressionForToken("thisisasimpletest", 1);
@@ -214,7 +224,10 @@ go_bandit([](){
       }
     });
 
-    it("should compute the correct start state", [&](){
+    /// Using the regular expression: /(abab|abbb)/ which has
+    /// a moderately complex starting collection of NFA::State(s),
+    /// show that we can compute the correct DFA::DState.
+    it("Should compute the correct start state", [&](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
       nfa->addRegularExpressionForToken("(abab|abbb)", 1);
@@ -235,7 +248,7 @@ go_bandit([](){
       }
     });
 
-    it("registerDState", [&](){
+    it("Should be able to register a DFA::DState using DFA::registerDState", [&](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
       nfa->addRegularExpressionForToken("(abab|abbb)", 1);
@@ -250,7 +263,10 @@ go_bandit([](){
       AssertThat((void*)*registeredDState, Is().EqualTo((void*)dfa->dfaStartState));
     });
 
-    it("computeNextDFAState with no generic states", [&](){
+    /// Show that DFA::computeNextDFAState can compile a simple
+    /// NFA corresponding to the regular expression: /(abab|abbb)/
+    /// which has only characters to match.
+    it("Should computeNextDFAState with no generic states", [&](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
       nfa->addRegularExpressionForToken("(abab|abbb)", 1);
@@ -295,7 +311,11 @@ go_bandit([](){
       }
     });
 
-    it("computeNextDFAState with generic states", [&](){
+    /// Show that DFA::computeNextDFAState can compile an
+    /// NFA corresponding to the regular expression:
+    /// /(abab|[!whitespace]bbb)/ which has both characters
+    /// and Classifier::classSet_t(s) to match.
+    it("Should computeNextDFAState with generic states", [&](){
       Classifier *classifier = new Classifier();
       classifier->registerClassSet("whitespace",1);
       classifier->classifyUtf8CharsAs(Utf8Chars::whiteSpaceChars,"whitespace");
@@ -351,6 +371,10 @@ go_bandit([](){
       }
     });
 
+    /// Show that DFA::computeNextDFAState can compile an
+    /// NFA corresponding to the regular expression:
+    /// /([!whitespace]bab|[!whitespace]bbb)/ which has only
+    /// Classifier::classSet_t(s) to match in the first transition.
     it("computeNextDFAState with only generic states", [&](){
       Classifier *classifier = new Classifier();
       classifier->registerClassSet("whitespace",1);
@@ -406,7 +430,7 @@ go_bandit([](){
       }
     });
 
-    it("getNextToken with simple regular expression", [&](){
+    it("Show that DFA::getNextToken works with a simple regular expression", [&](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
       nfa->addRegularExpressionForToken("simple", 1);
@@ -418,7 +442,7 @@ go_bandit([](){
       AssertThat(dfa->getNextToken(stream1), Is().False());
     });
 
-    it("getNextToken with alternate simple regular expression", [&](){
+    it("Show that DFA::getNextToken works with simple regular expression with alternate patterns", [&](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
       nfa->addRegularExpressionForToken("(simple|notSoSimple)", 1);
@@ -430,7 +454,7 @@ go_bandit([](){
       AssertThat(dfa->getNextToken(stream1), Is().True());
     });
 
-    it("getNextToken", [&](){
+    it("Show that DFA::getNextToken works with a regular expression with only Classifier::classSet_t transitions", [&](){
       Classifier *classifier = new Classifier();
       classifier->registerClassSet("whitespace",1);
       classifier->classifyUtf8CharsAs(Utf8Chars::whiteSpaceChars,"whitespace");
