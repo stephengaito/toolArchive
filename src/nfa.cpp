@@ -61,7 +61,7 @@ void NFA::preAddStates(size_t reLength) {
     State **oldStates = states;
     states = (State**) calloc(numStateVectors + 10, sizeof(State*));
     if (oldStates) {
-      memcpy(states, oldStates, numStateVectors);
+      memcpy(states, oldStates, numStateVectors*sizeof(State*));
     }
     numStateVectors += 10;
   }

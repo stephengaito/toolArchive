@@ -170,7 +170,7 @@ DFA::DState *DFA::allocateANewDState(void) {
       DState **oldDStates = dStates;
       dStates = (DState**) calloc(numDStateVectors + 10, sizeof(DState*));
       if (oldDStates) {
-        memcpy(dStates, oldDStates, numDStateVectors);
+        memcpy(dStates, oldDStates, numDStateVectors*sizeof(DState*));
       }
       numDStateVectors += 10;
     }
