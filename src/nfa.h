@@ -60,7 +60,7 @@ class NFA {
     };
 
     /// \brief A token_t represents a given token ID.
-    typedef value_t token_t;
+    typedef value_t tokenId_t;
 
     /// \brief The NFA::MatchData union provides the data required to
     /// mathc a given NFA::State,
@@ -76,7 +76,7 @@ class NFA {
         /// class of UTF8 characters using a given Classifier.
         Classifier::classSet_t s;
         /// \brief The token ID associated to a given matched (sub)NFA.
-        token_t    t;
+        tokenId_t  t;
       } MatchData;
 
     /// \brief Every NFA is a graph of NFA::State stuctures which is
@@ -112,7 +112,7 @@ class NFA {
 
     /// \brief Add the Regular Expression used to recognize a Token
     /// with Token ID aTokenId.
-    void  addRegularExpressionForToken(const char *re, token_t aTokenId)
+    void  addRegularExpressionForToken(const char *re, tokenId_t aTokenId)
                                        throw (LexerException);
 
     /// \brief Add a new NFA state.

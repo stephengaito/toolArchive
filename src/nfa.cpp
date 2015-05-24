@@ -92,7 +92,7 @@ NFA::State *NFA::addState(NFA::MatchType aMatchType,
  * Cheesy parser, return static buffer.
  */
 void NFA::addRegularExpressionForToken(const char *aUtf8RegExp,
-                                       token_t aTokenId)
+                                       tokenId_t aTokenId)
                                        throw (LexerException) {
 
   size_t reLen = strlen(aUtf8RegExp);

@@ -18,7 +18,7 @@ class Symbols {
 
     /// \brief A SymbolEntry captures all the information required by
     /// the system  about a particular symbol.
-    typedef struct SymbolEntry_struct {
+    typedef struct SymbolEntry {
 
     } SymbolEntry;
 

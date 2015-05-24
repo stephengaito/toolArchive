@@ -1,6 +1,7 @@
 #ifndef DFA_H
 #define DFA_H
 
+#include <stdio.h>
 #include "nfa.h"
 
 /// \brief The DFA class is used to interpret a given NFA.
@@ -22,6 +23,15 @@
 class DFA {
   public:
 
+    typedef struct Token {
+      NFA::tokenId_t tokenId;
+      Utf8Chars *baseStream;
+      utf8Char_t *startChar;
+      size_t     length;
+    } Token;
+
+    static Token *nullToken;
+
     /// \brief Represents a DFA state as a bit set of NFA states.
     ///
     /// For a given NFA, the number of NFA::States is known, so that
@@ -35,7 +45,7 @@ class DFA {
     ~DFA(void);
 
     /// \brief Run the DFA until the next token is recognized.
-    bool getNextToken(Utf8Chars *utf8Stream);
+    Token *getNextToken(Utf8Chars *utf8Stream);
 
   private:
     /// \brief The NFA associated to this DFA.

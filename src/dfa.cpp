@@ -390,7 +390,7 @@ DFA::DState *DFA::computeNextDFAState(DFA::DState *curDFAState,
 }
 
 /* Run DFA to determine whether it matches s. */
-bool DFA::getNextToken(Utf8Chars *utf8Stream) {
+DFA::Token *DFA::getNextToken(Utf8Chars *utf8Stream) {
   DState *curDFAState, *nextDFAState;
 
   curDFAState = dfaStartState;

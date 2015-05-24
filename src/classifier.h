@@ -61,6 +61,10 @@ class Classifier {
       const char* aClassName      ///< [in] the name of the *previously* registered class to use to classify these characters
     );
 
+    /// \brief Setup this Classifier to classify UTF8 white space using the
+    /// classSet_t provided.
+    void classifyWhiteSpace(classSet_t aClassSet);
+
     /// \brief Get the class set classification for a given character.
     ///
     /// Returns the empty set if this character has never been classified.

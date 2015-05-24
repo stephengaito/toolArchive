@@ -45,6 +45,11 @@ void Classifier::classifyUtf8CharsAs(const char* someUtf8Chars,
   }
 }
 
+void Classifier::classifyWhiteSpace(classSet_t aClassSet) {
+  registerClassSet("whiteSpace", aClassSet);
+  classifyUtf8CharsAs(Utf8Chars::whiteSpaceChars, "whiteSpace");
+}
+
 Classifier:: classSet_t Classifier::getClassSet(const char* someUtf8Chars) {
   Utf8Chars *utf8Chars = new Utf8Chars(someUtf8Chars);
   utf8Char_t aUtf8Char = utf8Chars->nextUtf8Char();
