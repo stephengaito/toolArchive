@@ -4,6 +4,10 @@ using namespace bandit;
 #include <string.h>
 #include <stdio.h>
 
+#ifndef private
+#define private public
+#endif
+
 #include <utf8chars.h>
 
 go_bandit([](){
@@ -25,8 +29,43 @@ go_bandit([](){
     /// on a standard C-string.
     it("create a Utf8Chars buffer", [&](){
       Utf8Chars *someChars = new Utf8Chars("silly");
-      AssertThat(someChars, Is().Not().EqualTo((Utf8Chars*)0));
+      AssertThat(someChars,              Is().Not().EqualTo((Utf8Chars*)0));
+      AssertThat(someChars->nextByte,    Is().EqualTo(someChars->utf8Chars));
+      AssertThat(someChars->currentMark, Is().EqualTo(someChars->utf8Chars));
     });
+
+    it("Show that we can mark text", [&](){
+      Utf8Chars *someChars = new Utf8Chars("silly");
+      AssertThat(someChars,              Is().Not().EqualTo((Utf8Chars*)0));
+      AssertThat(someChars->nextByte,    Is().EqualTo(someChars->utf8Chars));
+      AssertThat(someChars->currentMark, Is().EqualTo(someChars->utf8Chars));
+      utf8Char_t expectedChar;
+      expectedChar.u = 0;
+      expectedChar.c[0] = 's';
+      AssertThat(someChars->nextUtf8Char().u, Is().EqualTo(expectedChar.u));
+      someChars->mark();
+      const char *markedChar = someChars->getMark();
+      AssertThat(someChars->currentMark, Is().Not().EqualTo(someChars->utf8Chars));
+      AssertThat(someChars->currentMark, Is().EqualTo(someChars->nextByte));
+      AssertThat(someChars->currentMark, Is().EqualTo(markedChar));
+      expectedChar.c[0] = 'i';
+      AssertThat(someChars->nextUtf8Char().u, Is().EqualTo(expectedChar.u));
+      expectedChar.c[0] = 'l';
+      AssertThat(someChars->nextUtf8Char().u, Is().EqualTo(expectedChar.u));
+      expectedChar.c[0] = 'l';
+      AssertThat(someChars->nextUtf8Char().u, Is().EqualTo(expectedChar.u));
+      AssertThat(someChars->currentMark, Is().Not().EqualTo(someChars->nextByte));
+      AssertThat(someChars->currentMark, Is().EqualTo(markedChar));
+      AssertThat(someChars->getNumberOfBytesInMarkedText(), Is().EqualTo(3));
+      char *ill = someChars->getCopyOfMarkedText();
+      AssertThat(someChars->currentMark, Is().Not().EqualTo(ill));
+      AssertThat(strlen(ill), Is().EqualTo(3));
+      AssertThat(ill[0], Is().EqualTo('i'));
+      AssertThat(ill[1], Is().EqualTo('l'));
+      AssertThat(ill[2], Is().EqualTo('l'));
+      AssertThat(ill[3], Is().EqualTo(0));
+    });
+
 
     /// Confirm that Utf8Chars::codePoint2utf8Char handles provides the
     /// correct mapping from code points to utf8Chat_t types. In particular,

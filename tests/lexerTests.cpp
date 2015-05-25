@@ -11,6 +11,11 @@ using namespace bandit;
 
 #include <lexer.h>
 
+enum LexerTestTokens {
+  WhiteSpace,
+  NonWhiteSpace
+};
+
 go_bandit([](){
 
   printf("\n----------------------------------\n");
@@ -24,13 +29,36 @@ go_bandit([](){
     it("Create a Lexer and tokenize if then else", [&](){
       Lexer *lexer = new Lexer();
       AssertThat(lexer, Is().Not().EqualTo((void*)0));
+      AssertThat(lexer->dfa, Is().EqualTo((void*)0));
       lexer->classifyWhiteSpace();
+      AssertThat(lexer->dfa, Is().EqualTo((void*)0));
       lexer->addToken("[whiteSpace]+", WhiteSpace);
+      AssertThat(lexer->dfa, Is().EqualTo((void*)0));
       lexer->addToken("[!whiteSpace]+", NonWhiteSpace);
+      AssertThat(lexer->dfa, Is().EqualTo((void*)0));
       lexer->compile();
+      AssertThat(lexer->dfa, Is().Not().EqualTo((void*)0));
       Utf8Chars *someChars = new Utf8Chars(" if A then B else C ");
-      Lexer::Token *aToken = lexer->getNextToken(someChars);
-      AssertThat(aToken, Is().Not().EqualTo((void*)0));
+      Lexer::TokenId aTokenId = lexer->getNextTokenId(someChars);
+      AssertThat(aTokenId, Is().EqualTo(0));
+      AssertThat(someChars->getNextByte(), Is().EqualTo('i'));
+      someChars->backup();
+      aTokenId = lexer->getNextTokenId(someChars);
+      AssertThat(aTokenId, Is().EqualTo(1));
+      AssertThat(someChars->getNextByte(), Is().EqualTo(' '));
+      someChars->backup();
+      aTokenId = lexer->getNextTokenId(someChars);
+      AssertThat(aTokenId, Is().EqualTo(0));
+      AssertThat(someChars->getNextByte(), Is().EqualTo('A'));
+      someChars->backup();
+      aTokenId = lexer->getNextTokenId(someChars);
+      AssertThat(aTokenId, Is().EqualTo(1));
+      AssertThat(someChars->getNextByte(), Is().EqualTo(' '));
+      someChars->backup();
+      aTokenId = lexer->getNextTokenId(someChars);
+      AssertThat(aTokenId, Is().EqualTo(0));
+      AssertThat(someChars->getNextByte(), Is().EqualTo('t'));
+      someChars->backup();
     });
 
   }); // describe Lexer

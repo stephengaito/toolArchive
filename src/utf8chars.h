@@ -2,6 +2,7 @@
 #define UTF8CHARS_H
 
 #include <stdint.h>
+#include <string.h>
 
 /// \brief The utf8Char_struct (utf8Char_t) is a simple union to allow
 /// a single UTF8 character to be viewed as either an array of 8 bytes, or
@@ -61,13 +62,36 @@ class Utf8Chars {
       return *nextByte++;
     }
 
+    /// \brief Remember the current location in the stream.
+    void mark(void) {
+      currentMark = nextByte;
+    }
+
+    /// \brief Get the stream at the marked location.
+    const char *getMark(void) {
+      return nextByte;
+    }
+
+    /// \brief Returns the number of bytes, not neccessarily the number
+    /// of UTF8 characters, in the marked text.
+    size_t getNumberOfBytesInMarkedText(void) {
+      return nextByte - currentMark;
+    }
+
+    /// \brief Returns a (strndup'ed) copy of the currently marked text.
+    ///
+    /// The currently marked text are the bytes from the currentMark
+    /// until just before the nextByte.
+    char *getCopyOfMarkedText(void) {
+      return strndup(currentMark, getNumberOfBytesInMarkedText());
+    }
+
     /// \brief Returns true if the Utf8Chars contians the given UTF8 char
     ///
     /// **NOTE** containsUtf8Char restarts the nextUtf8Char pointer
     /// *and* if the expectedUtf8Char is found, leaves the nextUtf8Char
     /// pointer pointing at the *next* character in the string.
     bool containsUtf8Char(utf8Char_t expectedUtf8Char);
-
 
     /// \brief Convert an integer code point into a UTF8 character
     static utf8Char_t codePoint2utf8Char(uint64_t codePoint);
@@ -95,6 +119,12 @@ class Utf8Chars {
     /// return a null character (which could be interpreted to represent
     /// the end of the Utf8Chars character stream.
     const char* nextByte;
+
+    /// \brief The currently marked character in the stream.
+    ///
+    /// This currentMark can be used to remember a previously marked
+    /// location in the stream.
+    const char* currentMark;
 };
 
 #endif

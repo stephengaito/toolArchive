@@ -33,6 +33,7 @@ NFA::NFA(Classifier *aUTF8Classifier) {
   nfaLastStartState = NULL;
   curStateVector    = -1;
   numStateVectors   = 0;
+  numKnownStates    = 0;
   utf8Classifier    = aUTF8Classifier;
 }
 
@@ -51,6 +52,7 @@ NFA::~NFA(void) {
   nfaLastStartState = NULL;
   curStateVector    = 0;
   numStateVectors   = 0;
+  numKnownStates    = 0;
   utf8Classifier    = NULL; // classifier is not "owned" by the NFA instance
 }
 
@@ -78,6 +80,7 @@ NFA::State *NFA::addState(NFA::MatchType aMatchType,
                           NFA::State *out1)
   throw (LexerException) {
   if (lastState < curState) throw LexerException("run out of NFA states");
+  numKnownStates++;
   curState++;
   curState->matchType = aMatchType;
   curState->matchData = someMatchData;
@@ -91,9 +94,9 @@ NFA::State *NFA::addState(NFA::MatchType aMatchType,
  * Insert . as explicit concatenation operator.
  * Cheesy parser, return static buffer.
  */
-void NFA::addRegularExpressionForToken(const char *aUtf8RegExp,
-                                       tokenId_t aTokenId)
-                                       throw (LexerException) {
+void NFA::addRegularExpressionForTokenId(const char *aUtf8RegExp,
+                                         TokenId aTokenId)
+                                         throw (LexerException) {
 
   size_t reLen = strlen(aUtf8RegExp);
   preAddStates(reLen);

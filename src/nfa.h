@@ -60,7 +60,7 @@ class NFA {
     };
 
     /// \brief A token_t represents a given token ID.
-    typedef value_t tokenId_t;
+    typedef value_t TokenId;
 
     /// \brief The NFA::MatchData union provides the data required to
     /// mathc a given NFA::State,
@@ -76,7 +76,7 @@ class NFA {
         /// class of UTF8 characters using a given Classifier.
         Classifier::classSet_t s;
         /// \brief The token ID associated to a given matched (sub)NFA.
-        tokenId_t  t;
+        TokenId  t;
       } MatchData;
 
     /// \brief Every NFA is a graph of NFA::State stuctures which is
@@ -112,7 +112,7 @@ class NFA {
 
     /// \brief Add the Regular Expression used to recognize a Token
     /// with Token ID aTokenId.
-    void  addRegularExpressionForToken(const char *re, tokenId_t aTokenId)
+    void  addRegularExpressionForTokenId(const char *re, TokenId aTokenId)
                                        throw (LexerException);
 
     /// \brief Add a new NFA state.
@@ -129,7 +129,7 @@ class NFA {
 
     /// \brief Get the current number of NFA::States.
     size_t getNumberStates() {
-      return curState - states[curStateVector] + 1;
+      return numKnownStates;
     }
 
     /// \brief Return the initial state for this NFA.
@@ -168,6 +168,9 @@ class NFA {
     /// \brief The number of possible NFA::State blocks which the current
     /// vector of blocks, states, can hold.
     size_t numStateVectors;
+
+    /// \brief The number of NFA::States added to this NFA.
+    size_t numKnownStates;
 
     /// \brief The Classifier used by this NFA to classify UTF8 characters.
     Classifier *utf8Classifier;

@@ -70,7 +70,7 @@ go_bandit([](){
       classifier->registerClassSet("whitespace", 1);
       classifier->classifyUtf8CharsAs(Utf8Chars::whiteSpaceChars, "whitespace");
       AssertThat(classifier->getClassSet(" "), Is().EqualTo(1));
-      AssertThat(classifier->getClassSet("a"), Is().EqualTo(~0L));
+      AssertThat(classifier->getClassSet("a"), Is().EqualTo(~1L));
     }); // create classifier
 
   }); // Character classification

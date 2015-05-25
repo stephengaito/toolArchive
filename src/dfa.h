@@ -23,15 +23,6 @@
 class DFA {
   public:
 
-    typedef struct Token {
-      NFA::tokenId_t tokenId;
-      Utf8Chars *baseStream;
-      utf8Char_t *startChar;
-      size_t     length;
-    } Token;
-
-    static Token *nullToken;
-
     /// \brief Represents a DFA state as a bit set of NFA states.
     ///
     /// For a given NFA, the number of NFA::States is known, so that
@@ -45,7 +36,7 @@ class DFA {
     ~DFA(void);
 
     /// \brief Run the DFA until the next token is recognized.
-    Token *getNextToken(Utf8Chars *utf8Stream);
+    NFA::TokenId getNextTokenId(Utf8Chars *utf8Stream);
 
   private:
     /// \brief The NFA associated to this DFA.
@@ -173,7 +164,7 @@ class DFA {
 
     /// \brief Return true if the DFA::DState contains a token
     /// recognizing NFA::State.
-    bool matchesToken(DState *dState);
+    NFA::State *matchesToken(DState *dState);
 
     /// \brief The NFAStateNumber structure represents a single
     /// bit in the DFA::DState bit set.

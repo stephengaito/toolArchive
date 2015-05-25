@@ -49,7 +49,8 @@ Utf8Chars::Utf8Chars(const char* someUtf8Chars) {
 }
 
 void Utf8Chars::restart(void) {
-  nextByte  = utf8Chars;
+  nextByte    = utf8Chars;
+  currentMark = utf8Chars;
 }
 
 // We use the Wikipedia

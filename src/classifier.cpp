@@ -8,6 +8,8 @@ Classifier::Classifier(void) {
 
   // create the utf8Char2classSet mapping of characters to HAT-trie value_t
   utf8Char2classSet = hattrie_create();
+
+  unClassifiedSet = ~0L;
 }
 
 Classifier::classSet_t Classifier::findClassSet(const char* aClassName) {
@@ -33,7 +35,7 @@ void Classifier::classifyUtf8CharsAs(const char* someUtf8Chars,
                                      const char* aClassName) {
 
   classSet_t newClassSet = findClassSet(aClassName);
-
+  unClassifiedSet &= ~newClassSet;
   Utf8Chars *utf8Chars = new Utf8Chars(someUtf8Chars);
   utf8Char_t aUtf8Char = utf8Chars->nextUtf8Char();
   while(aUtf8Char.u != 0) {
@@ -61,7 +63,7 @@ Classifier::classSet_t Classifier::getClassSet(utf8Char_t aUtf8Char) {
                                            aUtf8Char.c, strlen(aUtf8Char.c));
 
   // if this is an unclassified character return the empty class set
-  if (!classSetPtr) return ~0L;
+  if (!classSetPtr) return unClassifiedSet;
 
   return *classSetPtr;
 }

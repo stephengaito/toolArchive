@@ -120,17 +120,23 @@ bool DFA::isSubDState(DFA::DState *d1, DFA::DState *d2) {
 }
 
 /* Check whether state list contains a match. */
-bool DFA::matchesToken(DFA::DState *dfaState) {
+NFA::State *DFA::matchesToken(DFA::DState *dfaState) {
   for (size_t i = 0; i < dfaStateSize; i++) {
-    if (dfaState[i] & tokensDState[i]) return true;
+    if (dfaState[i] & tokensDState[i]) {
+      for (size_t j = 0; j < 8; j++) {
+        if (dfaState[i] & tokensDState[i] & (1<<j)) {
+          return int2nfaStatePtr[(i*8)+j];
+        }
+      }
+    }
   }
-  return false;
+  return NULL;
 }
 
 void DFA::printDState(FILE *filePtr, const char* message, DFA::DState *d) {
-  fprintf(filePtr, "\n%s ", message);
+  fprintf(filePtr, "\n%s (%zu bytes) ", message, dfaStateSize);
   for (size_t i = 0; i < dfaStateSize; i++) {
-    fprintf(filePtr, " %u ", (int)d[i]);
+    fprintf(filePtr, " %u ", (int)d[i]&0xFF);
   }
   fprintf(filePtr, "\n");
 }
@@ -390,7 +396,7 @@ DFA::DState *DFA::computeNextDFAState(DFA::DState *curDFAState,
 }
 
 /* Run DFA to determine whether it matches s. */
-DFA::Token *DFA::getNextToken(Utf8Chars *utf8Stream) {
+NFA::TokenId DFA::getNextTokenId(Utf8Chars *utf8Stream) {
   DState *curDFAState, *nextDFAState;
 
   curDFAState = dfaStartState;
@@ -419,13 +425,20 @@ DFA::Token *DFA::getNextToken(Utf8Chars *utf8Stream) {
         nextDFAState = computeNextDFAState(curDFAState,
                                            curChar,
                                            classificationSet);
-        if (!nextDFAState) return false;
+        if (!nextDFAState) {
+          utf8Stream->backup();
+          NFA::State *tokenState = matchesToken(curDFAState);
+          if (tokenState) return tokenState->matchData.t;
+          return -1;
+        }
       }
     }
     curDFAState = nextDFAState;
     curChar = utf8Stream->nextUtf8Char();
   }
-  return matchesToken(curDFAState);
+  NFA::State *tokenState = matchesToken(curDFAState);
+  if (tokenState) return tokenState->matchData.t;
+  return -1;
 }
 
 /*

@@ -31,7 +31,6 @@ class Classifier {
     typedef value_t classSet_t;
 
     /// \brief Create a UTF8 character classifier.
-    ///
     Classifier();
 
     /// \brief Find the class set associated with a given class.
@@ -88,6 +87,12 @@ class Classifier {
     /// mapping used to classify a given UTF8 character.
     hattrie_t *utf8Char2classSet;
 
+    /// \brief The classSet_t to be used if a UTF8 character has not
+    /// been explicitly classified.
+    ///
+    /// The unClassifiedSet is the complement of the union of all
+    /// classSet_t(s) used by the classifyUtf8CharsAs method.
+    classSet_t unClassifiedSet;
 };
 
 

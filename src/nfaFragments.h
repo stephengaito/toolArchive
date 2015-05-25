@@ -54,7 +54,7 @@ class NFAFragments {
     /// \brief Push an NFAFragments::Frag structure containing an
     /// NFA::State which represents a terminal state which recognizes a
     /// token with id, aTokenId.
-    NFA::State *match(NFA::tokenId_t aTokenId) throw (LexerException);
+    NFA::State *match(NFA::TokenId aTokenId) throw (LexerException);
 
   private:
     /// \brief a Ptrlist is a linked list of NFA::State structures
