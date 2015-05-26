@@ -25,11 +25,14 @@
 
 #include "dfa.h"
 
+#ifndef NUM_DFA_STATES_PER_BLOCK
+#define NUM_DFA_STATES_PER_BLOCK 20
+#endif
+
 DFA::DFA(NFA *anNFA) {
   nfa = anNFA;
   nfaStatePtr2int = hattrie_create();
   dfaStateSize = (nfa->getNumberStates() / 8) + 1;
-  dStateVectorSize = 20*dfaStateSize;
   dfaStateProbeSize = dfaStateSize + sizeof(utf8Char_t);
   dfaStateProbe = (char*)calloc(dfaStateProbeSize, sizeof(uint8_t));
   int2nfaStatePtrSize = nfa->getNumberStates();
@@ -39,11 +42,10 @@ DFA::DFA(NFA *anNFA) {
 
   nextDFAStateMap   = hattrie_create();
 
-  dStates            = NULL;
-  curAllocatedDState = NULL;
-  lastDState         = NULL;
-  curDStateVector    = 0;
-  numDStateVectors   = 0;
+  allocatedUnusedDState0 = NULL;
+  allocatedUnusedDState1 = NULL;
+  allocatedUnusedDState2 = NULL;
+  dStateAllocator = new BlockAllocator(NUM_DFA_STATES_PER_BLOCK*dfaStateSize);
   dfaStartState = allocateANewDState(); // get space for the stateDState
   computeDFAStartState();
   tokensDState =  allocateANewDState(); // get space for the tokensDState
@@ -63,20 +65,10 @@ DFA::~DFA(void) {
   if (nextDFAStateMap) hattrie_free(nextDFAStateMap);
   nextDFAStateMap = NULL;
 
-  if (dStates) {
-    for (size_t i = 0; i < numDStateVectors; i++) {
-      if (dStates[i]) free(dStates[i]);
-      dStates[i] = NULL;
-    }
-    free(dStates);
-  }
-  dStates            = NULL;
+  if (dStateAllocator) delete dStateAllocator;
+  dStateAllocator    = NULL;
   dfaStartState      = NULL;
   tokensDState       = NULL;
-  curAllocatedDState = NULL;
-  lastDState         = NULL;
-  curDStateVector    = 0;
-  numDStateVectors   = 0;
   allocatedUnusedDState0 = NULL;
   allocatedUnusedDState1 = NULL;
   allocatedUnusedDState2 = NULL;
@@ -162,36 +154,8 @@ DFA::DState *DFA::allocateANewDState(void) {
   }
 
   // We have no allocated but unused DStates....
-  //
-  // So now we check to see if we can allocate a new DState
-  // from our current block of DStates...
-  if (lastDState <= curAllocatedDState+dfaStateSize) {
-    // We have run out of DStates in the current block
-    //
-    // So we need to first allocate a new block
-    if (numDStateVectors <= curDStateVector) {
-      // We have run out of block pointers in our DState vector
-      //
-      // So we allocate a new vector of block pointers
-      DState **oldDStates = dStates;
-      dStates = (DState**) calloc(numDStateVectors + 10, sizeof(DState*));
-      if (oldDStates) {
-        memcpy(dStates, oldDStates, numDStateVectors*sizeof(DState*));
-      }
-      numDStateVectors += 10;
-    }
-    // We have enough block pointers in our vector of block pointers
-    //
-    // So now allocate a new block of DStates
-    dStates[curDStateVector] = (DState*) calloc(dStateVectorSize,
-                                                sizeof(char));
-    curAllocatedDState = dStates[curDStateVector];
-    lastDState = curAllocatedDState + dStateVectorSize;
-    curDStateVector++;
-  }
-  // We have enough unallocaed DStates to allocate one more
-  newDState = curAllocatedDState;
-  curAllocatedDState += dfaStateSize;
+  newDState = (DState*)dStateAllocator->allocateNewStructure(dfaStateSize);
+  emptyDState(newDState);
   return newDState;
 }
 
@@ -209,7 +173,7 @@ void DFA::unallocateADState(DFA::DState *aDFAState) {
     return;
   }
   // Oops we have allocated too many temporary DStates
-  // just quitely drop this one
+  // just quietly drop this one
 }
 
 DFA::NFAStateNumber DFA::getNFAStateNumber(NFA::State *nfaState)
@@ -289,6 +253,7 @@ DFA::DState *DFA::registerDState(DFA::DState *dfaState) {
   if (!registeredValue) throw LexerException("Hat-Trie failure");
   if (!*registeredValue) *registeredValue = dfaState;
   return *registeredValue;
+//  return dfaState;
 }
 
 /* Compute initial state list */

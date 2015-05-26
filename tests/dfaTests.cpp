@@ -22,8 +22,6 @@ go_bandit([](){
   /// a DFA corresponding to a given NFA.
   describe("DFA", [](){
 
-#ifdef NOT_DEFINED
-
     /// Show that we can create an appropriately allocated DFA
     /// from a given NFA.
     it("Should have correct sizes and pointers setup", [&](){
@@ -33,22 +31,27 @@ go_bandit([](){
       AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
       DFA *dfa = new DFA(nfa);
       AssertThat(dfa->dfaStateSize, Is().EqualTo(2)); // at most 16 NFA state bits
-      AssertThat(dfa->dStateVectorSize, Is().EqualTo(40));
       AssertThat(dfa->dfaStateProbeSize, Is().EqualTo(2+sizeof(utf8Char_t)));
       AssertThat(dfa->dfaStateProbe, Is().Not().EqualTo((void*)0));
       AssertThat(dfa->nfaStatePtr2int, Is().Not().EqualTo((void*)0));
       AssertThat(dfa->int2nfaStatePtr, Is().Not().EqualTo((NFA::State**)0));
+      AssertThat(dfa->nextDFAStateMap, Is().Not().EqualTo((void*)0));
       AssertThat(dfa->allocatedUnusedDState0, Is().EqualTo((void*)0));
       AssertThat(dfa->allocatedUnusedDState1, Is().EqualTo((void*)0));
       AssertThat(dfa->allocatedUnusedDState2, Is().EqualTo((void*)0));
-      AssertThat(dfa->dStates, Is().Not().EqualTo((void*)0));
-      AssertThat(dfa->curDStateVector, Is().EqualTo(1));
-      AssertThat(((void*)dfa->dfaStartState), Is().EqualTo((void*)dfa->dStates[0]));
-      AssertThat(((void*)dfa->tokensDState), Is().EqualTo((void*)(dfa->dStates[0]+dfa->dfaStateSize)));
+      AssertThat(dfa->dStateAllocator->blocks, Is().Not().EqualTo((void*)0));
+      AssertThat(dfa->dStateAllocator->nextBlock, Is().EqualTo(1));
+      AssertThat(((void*)dfa->dfaStartState),
+        Is().EqualTo((void*)dfa->dStateAllocator->blocks[0]));
+      AssertThat(((void*)dfa->tokensDState),
+        Is().EqualTo((void*)(dfa->dStateAllocator->blocks[0]+dfa->dfaStateSize)));
       for( size_t i = 0; i < dfa->dfaStateSize; i++) {
         AssertThat(dfa->tokensDState[i], Is().EqualTo(0));
       }
       AssertThat(dfa->isSubDState(dfa->dfaStartState, dfa->tokensDState), Is().False());
+      delete dfa;
+      delete nfa;
+      delete classifier;
     });
 
     /// Show that we can allocate and unallocate DFA::DStates, to/from
@@ -101,6 +104,9 @@ go_bandit([](){
         DFA::DState *someNewDStates = dfa->allocateANewDState();
         AssertThat(someNewDStates, Is().Not().EqualTo((void*)0));
       }
+      delete dfa;
+      delete nfa;
+      delete classifier;
     });
 
     /// Show that DFA::getNFAStateNumber computes correct
@@ -150,6 +156,9 @@ go_bandit([](){
       AssertThat(dfa->numKnownNFAStates, Is().EqualTo(4));
       AssertThat(aStateNum.stateByte, Is().EqualTo(0));
       AssertThat((int)aStateNum.stateBit, Is().EqualTo(8));
+      delete dfa;
+      delete nfa;
+      delete classifier;
     });
 
     it("Show that DFA::getNFAStateNumber can deal with lots of NFA::States", [&](){
@@ -158,7 +167,8 @@ go_bandit([](){
       nfa->addRegularExpressionForTokenId("thisisasimpletest", 1);
       AssertThat(nfa->getNumberStates(), Is().EqualTo(19));
       DFA *dfa = new DFA(nfa);
-      NFA::State *baseState = nfa->states[nfa->curStateVector];
+      NFA::State *baseState =
+       (NFA::State*)nfa->stateAllocator->blocks[nfa->stateAllocator->nextBlock - 1];
       DFA::NFAStateNumber aStateNum = dfa->getNFAStateNumber(baseState);
       AssertThat(aStateNum.stateByte, Is().EqualTo(0));
       AssertThat((int)aStateNum.stateBit,  Is().EqualTo(1));
@@ -224,6 +234,9 @@ go_bandit([](){
       } catch (LexerException& e) {
         AssertThat(true, Is().True());
       }
+      delete dfa;
+      delete nfa;
+      delete classifier;
     });
 
     /// Using the regular expression: /(abab|abbb)/ which has
@@ -248,6 +261,9 @@ go_bandit([](){
       for (size_t i = 1; i < dfa->dfaStateSize; i++) {
         AssertThat(((int)dfa->dfaStartState[i]), Is().EqualTo((int)0x00));
       }
+      delete dfa;
+      delete nfa;
+      delete classifier;
     });
 
     it("Should be able to register a DFA::DState using DFA::registerDState", [&](){
@@ -263,6 +279,9 @@ go_bandit([](){
                                       dfa->dfaStateSize);
       AssertThat((void*)registeredDState, Is().Not().EqualTo((void*)0));
       AssertThat((void*)*registeredDState, Is().EqualTo((void*)dfa->dfaStartState));
+      delete dfa;
+      delete nfa;
+      delete classifier;
     });
 
     /// Show that DFA::computeNextDFAState can compile a simple
@@ -311,6 +330,9 @@ go_bandit([](){
       for (size_t i = 1; i < dfa->dfaStateSize; i++) {
         AssertThat(((int)nextDFAState[i]), Is().EqualTo((int)0x00));
       }
+      delete dfa;
+      delete nfa;
+      delete classifier;
     });
 
     /// Show that DFA::computeNextDFAState can compile an
@@ -371,6 +393,9 @@ go_bandit([](){
       for (size_t i = 1; i < dfa->dfaStateSize; i++) {
         AssertThat(((int)nextDFAState[i]), Is().EqualTo((int)0x00));
       }
+      delete dfa;
+      delete nfa;
+      delete classifier;
     });
 
     /// Show that DFA::computeNextDFAState can compile an
@@ -430,6 +455,9 @@ go_bandit([](){
       for (size_t i = 1; i < dfa->dfaStateSize; i++) {
         AssertThat(((int)nextDFAState[i]), Is().EqualTo((int)0x00));
       }
+      delete dfa;
+      delete nfa;
+      delete classifier;
     });
 
     it("Show that DFA::getNextToken works with a simple regular expression", [&](){
@@ -444,6 +472,9 @@ go_bandit([](){
       Utf8Chars *stream1 = new Utf8Chars("notSoSimple");
       aTokenId = dfa->getNextTokenId(stream1);
       AssertThat(aTokenId, Is().EqualTo(-1));
+      delete dfa;
+      delete nfa;
+      delete classifier;
     });
 
     it("Show that DFA::getNextToken works with simple regular expression with alternate patterns", [&](){
@@ -458,9 +489,12 @@ go_bandit([](){
       Utf8Chars *stream1 = new Utf8Chars("notSoSimple");
       aTokenId = dfa->getNextTokenId(stream1);
       AssertThat(aTokenId, Is().EqualTo(1));
+      delete dfa;
+      delete nfa;
+      delete classifier;
     });
 
-    it("Show that DFA::getNextToken works with a regular expression with only Classifier::classSet_t transitions", [&](){
+   it("Show that DFA::getNextToken works with a regular expression with only Classifier::classSet_t transitions", [&](){
       Classifier *classifier = new Classifier();
       classifier->registerClassSet("whitespace",1);
       classifier->classifyUtf8CharsAs(Utf8Chars::whiteSpaceChars,"whitespace");
@@ -473,6 +507,9 @@ go_bandit([](){
       Utf8Chars *stream0 = new Utf8Chars("sillysomeNonWhiteSpace");
       NFA::TokenId aTokenId = dfa->getNextTokenId(stream0);
       AssertThat(aTokenId, Is().EqualTo(1));
+      delete dfa;
+      delete nfa;
+      delete classifier;
     });
 
     it("Show that DFA::getNextTokenId works with multiple regExp/TokenIds", [&](){
@@ -491,9 +528,10 @@ go_bandit([](){
       Utf8Chars *stream1 = new Utf8Chars("   sillysomeNonWhiteSpace");
       aTokenId = dfa->getNextTokenId(stream1);
       AssertThat(aTokenId, Is().EqualTo(1));
+      delete dfa;
+      delete nfa;
+      delete classifier;
     });
-
-#endif
 
   }); // dfa
 });

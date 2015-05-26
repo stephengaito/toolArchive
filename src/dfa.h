@@ -85,8 +85,8 @@ class DFA {
     /// nextDFAStateMap.
     char  *dfaStateProbe;
 
-    /// \brief The vector of blocks of pre-allocated DFA::DState(s).
-    DState **dStates;
+    /// \brief A BlockAllocator which allocates new DStates.
+    BlockAllocator *dStateAllocator;
 
     /// \brief The initial starting state for this DFA.
     DState *dfaStartState;
@@ -97,14 +97,6 @@ class DFA {
     /// This bit set is used to determine if/when a token has been
     /// recognized.
     DState *tokensDState;
-
-    /// \brief The currently unassigned DFA::DState in the current
-    /// block of DFA::DState(s).
-    DState *curAllocatedDState;
-
-    /// \brief The last allocatable DFA::DState inthe current block of
-    /// DFA::DState(s).
-    DState *lastDState;
 
     /// \brief One of three allocated but currently unused DFA::DState(s).
     ///
@@ -120,17 +112,6 @@ class DFA {
     ///
     /// Since this DFA::DState is unused it can be re-allocated as needed.
     DState *allocatedUnusedDState2;
-
-    /// \brief The index in the vector of DFA::DState blocks which is
-    /// currently being allocated.
-    size_t curDStateVector;
-
-    /// \brief The number of possible DFA::DState blocks which the current
-    /// vector of DFA::DState blocks can hold.
-    size_t numDStateVectors;
-
-    /// \brief The number of bytes in a any DFA::DState block.
-    size_t dStateVectorSize;
 
     /// \brief Allocate a DFA::DState.
     ///
