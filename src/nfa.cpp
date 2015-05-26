@@ -25,68 +25,39 @@
 
 #include "nfaFragments.h"
 
+#ifndef NUM_NFA_STATES_PER_BLOCK
+#define NUM_NFA_STATES_PER_BLOCK 20
+#endif
+
 NFA::NFA(Classifier *aUTF8Classifier) {
-  states            = NULL;
-  curState          = NULL;
-  lastState         = NULL;
+  stateAllocator = new BlockAllocator(NUM_NFA_STATES_PER_BLOCK*sizeof(State));
   nfaStartState     = NULL;
   nfaLastStartState = NULL;
-  curStateVector    = -1;
-  numStateVectors   = 0;
   numKnownStates    = 0;
   utf8Classifier    = aUTF8Classifier;
 }
 
 NFA::~NFA(void) {
-  if (states) {
-    for (size_t i = 0; i < numStateVectors; i++) {
-      if (states[i]) free(states[i]);
-      states[i] = NULL;
-    }
-    free(states);
-    states = NULL;
-  }
-  curState          = NULL;
-  lastState         = NULL;
+  if (stateAllocator) delete stateAllocator;
+  stateAllocator    = NULL;
   nfaStartState     = NULL;
   nfaLastStartState = NULL;
-  curStateVector    = 0;
-  numStateVectors   = 0;
   numKnownStates    = 0;
   utf8Classifier    = NULL; // classifier is not "owned" by the NFA instance
-}
-
-void NFA::preAddStates(size_t reLength) {
-  curStateVector++;
-  // Ensure there are enough NFA State vectors for this additional collection
-  if (numStateVectors <= curStateVector) {
-    State **oldStates = states;
-    states = (State**) calloc(numStateVectors + 10, sizeof(State*));
-    if (oldStates) {
-      memcpy(states, oldStates, numStateVectors*sizeof(State*));
-    }
-    numStateVectors += 10;
-  }
-
-  states[curStateVector] = (State*) calloc(2*reLength, sizeof(State));
-  curState = states[curStateVector];
-  lastState = curState + 2*reLength;
-  curState--;
 }
 
 NFA::State *NFA::addState(NFA::MatchType aMatchType,
                           NFA::MatchData someMatchData,
                           NFA::State *out,
-                          NFA::State *out1)
-  throw (LexerException) {
-  if (lastState < curState) throw LexerException("run out of NFA states");
+                          NFA::State *out1) {
+  State *newState =
+    (State*)stateAllocator->allocateNewStructure(sizeof(State));
   numKnownStates++;
-  curState++;
-  curState->matchType = aMatchType;
-  curState->matchData = someMatchData;
-  curState->out       = out;
-  curState->out1      = out1;
-  return curState;
+  newState->matchType = aMatchType;
+  newState->matchData = someMatchData;
+  newState->out       = out;
+  newState->out1      = out1;
+  return newState;
 }
 
 /*
@@ -99,7 +70,7 @@ void NFA::addRegularExpressionForTokenId(const char *aUtf8RegExp,
                                          throw (LexerException) {
 
   size_t reLen = strlen(aUtf8RegExp);
-  preAddStates(reLen);
+  //TODO: we might want to preAddStates(reLen);
   Utf8Chars *re = new Utf8Chars(aUtf8RegExp);
   int nalt, natom;
   NFAFragments *fragments = new NFAFragments(this, reLen);

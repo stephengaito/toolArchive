@@ -2,6 +2,7 @@
 #define NFA_H
 
 #include <exception>
+#include "blockAllocator.h"
 #include "classifier.h"
 
 /// \brief LexerExceptions provide simple messages detailing why the
@@ -117,15 +118,7 @@ class NFA {
 
     /// \brief Add a new NFA state.
     State *addState(MatchType aMatchType, MatchData someMatchData,
-                    State *out, State *out1)
-                    throw (LexerException);
-
-    /// \brief (pre)Add a collection of empty NFA states.
-    ///
-    /// To ensure that NFA::States are managed in the heap as
-    /// runs of continguous memory locations, to enhance performance,
-    /// we need to allocate contiguous memory for a collection of states.
-    void preAddStates(size_t reLength);
+                    State *out, State *out1);
 
     /// \brief Get the current number of NFA::States.
     size_t getNumberStates() {
@@ -140,8 +133,9 @@ class NFA {
     State *getNFAStartState() { return nfaStartState; }
 
   private:
-    /// \brief The vector of blocks of pre allocated NFA::State(s).
-    State **states;
+
+    /// \brief A BlockAllocator which allocates new NFA::States.
+    BlockAllocator *stateAllocator;
 
     /// \brief The start of the linked list of start states of the
     /// various token recognizing (sub)NFA(s).
@@ -152,22 +146,6 @@ class NFA {
 
     /// \brief The last start state in the linked list of NFA::State(s).
     State *nfaLastStartState;
-
-    /// \brief The currently unassigned NFA::State in the current block
-    /// of NFA::State(s).
-    State *curState;
-
-    /// \brief The last allocatable NFA::State in the current block of
-    /// NFA::State(s).
-    State *lastState;
-
-    /// \brief The index in the vector of NFA::State blocks which is
-    /// currently being allocated.
-    size_t curStateVector;
-
-    /// \brief The number of possible NFA::State blocks which the current
-    /// vector of blocks, states, can hold.
-    size_t numStateVectors;
 
     /// \brief The number of NFA::States added to this NFA.
     size_t numKnownStates;
