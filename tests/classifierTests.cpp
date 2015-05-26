@@ -21,6 +21,7 @@ go_bandit([](){
     it("create classifier", [&](){
       Classifier *classifier = new Classifier();
       AssertThat(classifier, Is().Not().EqualTo((Classifier*)0));
+      delete classifier;
     }); // create classifier
 
     /// Ensure that we can register new UTF8 character classes.
@@ -47,6 +48,7 @@ go_bandit([](){
       AssertThat(newClassSet, Is().EqualTo(1));
       classSet = classifier->findClassSet("silly");
       AssertThat(classSet, Is().EqualTo(2));
+      delete classifier;
     });
 
     /// Ensure that we can use non ASCII UTF8 characters in a class name.
@@ -58,6 +60,7 @@ go_bandit([](){
       classifier->registerClassSet("white€space", 1);
       classifier->classifyUtf8CharsAs(" ", "white€space");
       AssertThat(classifier->getClassSet(" "), Is().EqualTo(1));
+      delete classifier;
     }); // create classifier
 
     /// Ensure that we can determine the correct classifications of
@@ -71,6 +74,7 @@ go_bandit([](){
       classifier->classifyUtf8CharsAs(Utf8Chars::whiteSpaceChars, "whitespace");
       AssertThat(classifier->getClassSet(" "), Is().EqualTo(1));
       AssertThat(classifier->getClassSet("a"), Is().EqualTo(~1L));
+      delete classifier;
     }); // create classifier
 
   }); // Character classification

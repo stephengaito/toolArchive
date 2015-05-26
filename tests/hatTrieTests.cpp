@@ -42,6 +42,7 @@ go_bandit([](){
       AssertThat(prefix, Is().Not().EqualTo(full));
       value_t *prefix2 = hattrie_get(hatTrie, prefixStr, strlen(prefixStr));
       AssertThat(prefix, Is().EqualTo(prefix2));
+      hattrie_free(hatTrie);
     }); // test hattrie_get
 
   }); // Hat-Trie

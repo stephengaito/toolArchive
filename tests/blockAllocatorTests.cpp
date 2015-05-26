@@ -30,7 +30,7 @@ go_bandit([](){
       for (size_t i = 0; i < blockAllocator->numBlocks; i++) {
         AssertThat(blockAllocator->blocks[i], Is().EqualTo((void*)0));
       }
-      blockAllocator->~BlockAllocator();
+      delete blockAllocator;
     });
 
     it("AddNewBlock should add a new block", [&](){
@@ -45,7 +45,7 @@ go_bandit([](){
          AssertThat(blockAllocator->blocks[i], Is().EqualTo(prevPtrs[i]));
         }
       }
-      blockAllocator->~BlockAllocator();
+      delete blockAllocator;
     });
 
     it("ClearBlocks and AddNewBlock should work together", [&](){
@@ -79,7 +79,7 @@ go_bandit([](){
          AssertThat(blockAllocator->blocks[i], Is().EqualTo(prevPtrs[i]));
         }
       }
-      blockAllocator->~BlockAllocator();
+      delete blockAllocator;
     });
 
     it("AllocateNewStructure should allocate some new structures", [&](){
@@ -97,7 +97,7 @@ go_bandit([](){
       for ( ; i < blockAllocator->numBlocks; i++) {
         AssertThat(blockAllocator->blocks[i], Is().EqualTo((char*)0));
       }
-      blockAllocator->~BlockAllocator();
+      delete blockAllocator;
     });
 
   }); // describe BlockAllocator

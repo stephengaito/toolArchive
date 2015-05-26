@@ -102,6 +102,8 @@ go_bandit([](){
       AssertThat(nextState->matchData.t, Is().EqualTo(1));
       AssertThat(nextState->out,  Is().EqualTo((NFA::State*)0));
       AssertThat(nextState->out1, Is().EqualTo((NFA::State*)0));
+      delete nfa;
+      delete classifier;
     });
 
     /// We build the NFA assocaited with a simple linear regular
@@ -176,6 +178,8 @@ go_bandit([](){
       AssertThat(nextState->matchData.t, Is().EqualTo(1));
       AssertThat(nextState->out,  Is().EqualTo((NFA::State*)0));
       AssertThat(nextState->out1, Is().EqualTo((NFA::State*)0));
+      delete nfa;
+      delete classifier;
     });
 
     /// We need to verify that empty regular expressions
@@ -189,6 +193,8 @@ go_bandit([](){
       } catch (LexerException& e) {
         AssertThat(true, Is().True());
       }
+      delete nfa;
+      delete classifier;
     });
 
     /// We need to verify the malformed regular expressions,
@@ -202,6 +208,8 @@ go_bandit([](){
       } catch (LexerException& e) {
         AssertThat(true, Is().True());
       }
+      delete nfa;
+      delete classifier;
     });
 
     /// We need to verify that trailing \\ escapes (with no futher
@@ -240,6 +248,8 @@ go_bandit([](){
       } catch (LexerException& e) {
         AssertThat(false, Is().True());
       }
+      delete nfa;
+      delete classifier;
     });
 
     /// We need to ensure that we can correctly compile a regular
@@ -283,6 +293,8 @@ go_bandit([](){
       AssertThat(nextState->matchData.t, Is().EqualTo(1));
       AssertThat(nextState->out,  Is().EqualTo((NFA::State*)0));
       AssertThat(nextState->out1, Is().EqualTo((NFA::State*)0));
+      delete nfa;
+      delete classifier;
     });
 
     it("should be able to add multiple regular-expression/tokenIds", [&](){
@@ -394,6 +406,8 @@ go_bandit([](){
       AssertThat(nextState->matchData.c.u, Is().EqualTo(2));
       AssertThat(nextState->out, Is().EqualTo((void*)0));
       AssertThat(nextState->out1, Is().EqualTo((void*)0));
+      delete nfa;
+      delete classifier;
     });
 
   }); // regularExpression2NFA

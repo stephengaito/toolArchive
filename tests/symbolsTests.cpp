@@ -25,6 +25,7 @@ go_bandit([](){
     it("should be able to create a new Symbols object", [&](){
       Symbols *symbols = new Symbols();
       AssertThat(symbols, Is().Not().EqualTo((void*)0));
+      delete symbols;
     });
 
     it("should be able to delete a Symbols object", [&](){
@@ -41,6 +42,7 @@ go_bandit([](){
       Symbols::SymbolEntry *entry =
         symbols->registerSymbol(symbol, strlen(symbol));
       AssertThat(entry, Is().Not().EqualTo((void*)0));
+      delete symbols;
     });
 
     it("registerSymbol should return any already registered symbol", [&](){
@@ -54,6 +56,7 @@ go_bandit([](){
         symbols->registerSymbol(symbol, strlen(symbol));
       AssertThat(entry1, Is().Not().EqualTo((void*)0));
       AssertThat(entry0, Is().EqualTo(entry1));
+      delete symbols;
     });
 
     it("getSymbol should return an already registered symbol", [&](){
@@ -67,6 +70,7 @@ go_bandit([](){
         symbols->getSymbol(symbol, strlen(symbol));
       AssertThat(entry1, Is().Not().EqualTo((void*)0));
       AssertThat(entry0, Is().EqualTo(entry1));
+      delete symbols;
     });
 
     it("getSymbol should return NULL if the symbol is not registered", [&](){
@@ -76,6 +80,7 @@ go_bandit([](){
       Symbols::SymbolEntry *entry =
         symbols->getSymbol(symbol, strlen(symbol));
       AssertThat(entry, Is().EqualTo((void*)0));
+      delete symbols;
     });
 
   }); // describe symbols

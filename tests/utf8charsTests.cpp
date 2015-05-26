@@ -32,6 +32,7 @@ go_bandit([](){
       AssertThat(someChars,              Is().Not().EqualTo((Utf8Chars*)0));
       AssertThat(someChars->nextByte,    Is().EqualTo(someChars->utf8Chars));
       AssertThat(someChars->currentMark, Is().EqualTo(someChars->utf8Chars));
+      delete someChars;
     });
 
     it("Show that we can mark text", [&](){
@@ -64,6 +65,7 @@ go_bandit([](){
       AssertThat(ill[1], Is().EqualTo('l'));
       AssertThat(ill[2], Is().EqualTo('l'));
       AssertThat(ill[3], Is().EqualTo(0));
+      delete someChars;
     });
 
 
@@ -124,6 +126,7 @@ go_bandit([](){
       someChars->backup();
       AssertThat((someChars->nextUtf8Char()).u, Is().EqualTo(expectedChar.u));
       AssertThat((someChars->nextUtf8Char()).u, Is().EqualTo(0));
+      delete someChars;
     });
 
     /// Ensure that we can iterate over a *simple* ASCII string of multiple
@@ -148,6 +151,7 @@ go_bandit([](){
       someChars->restart();
       expectedChar.c[0] = 's';
       AssertThat((someChars->nextUtf8Char()).u, Is().EqualTo(expectedChar.u));
+      delete someChars;
     });
 
     /// Ensure that we can iterate over a string which contains one
@@ -167,6 +171,7 @@ go_bandit([](){
       someChars->backup();
       AssertThat((someChars->nextUtf8Char()).u, Is().EqualTo(expectedChar.u));
       AssertThat((someChars->nextUtf8Char()).u, Is().EqualTo(0));
+      delete someChars;
     });
 
     /// Ensure that we can iterate over a string which contains multiple
@@ -207,6 +212,7 @@ go_bandit([](){
       expectedChar.u    = 0;
       expectedChar.c[0] = '$';
       AssertThat((someChars->nextUtf8Char()).u, Is().EqualTo(expectedChar.u));
+      delete someChars;
     });
 
     /// Check that Utf8Chars::nextUtf8Char can handle mallformed
@@ -235,6 +241,7 @@ go_bandit([](){
       aChar.c[1] = 0x80;
       someChars = new Utf8Chars(aChar.c);
       AssertThat(someChars->nextUtf8Char().u, Is().EqualTo(aChar.u));
+      delete someChars;
     });
 
     /// Ensure that the Utf8Chars::whiteSpaceChars constant contains
@@ -328,6 +335,7 @@ go_bandit([](){
       for ( i++; i < 7; i++) someChars->getNextByte();
       expectedChar = Utf8Chars::codePoint2utf8Char(0x20AC);
       AssertThat(someChars->nextUtf8Char().u, Is().EqualTo(expectedChar.u));
+      delete someChars;
     });
 
   }); // Utf8Chars buffer
