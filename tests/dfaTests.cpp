@@ -14,7 +14,7 @@ go_bandit([](){
 
   printf("\n----------------------------------\n");
   printf(  "dfa\n");
-  printf(  "           DFA = %zu bytes (%zu bits)\n", sizeof(DFA::DFA), sizeof(DFA::DFA)*8);
+  printf(  "           DFA = %zu bytes (%zu bits)\n", sizeof(DFA), sizeof(DFA)*8);
   printf(  "NFAStateNumber = %zu bytes (%zu bits)\n", sizeof(DFA::NFAStateNumber), sizeof(DFA::NFAStateNumber)*8);
   printf(  "----------------------------------\n");
 

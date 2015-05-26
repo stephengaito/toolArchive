@@ -15,7 +15,7 @@ go_bandit([](){
 
   printf("\n----------------------------------\n");
   printf(  "symbols\n");
-  printf(  "    Symbols = %zu bytes (%zu bits)\n", sizeof(Symbols::Symbols), sizeof(Symbols::Symbols)*8);
+  printf(  "    Symbols = %zu bytes (%zu bits)\n", sizeof(Symbols), sizeof(Symbols)*8);
   printf(  "SymbolEntry = %zu bytes (%zu bits)\n", sizeof(Symbols::SymbolEntry), sizeof(Symbols::SymbolEntry)*8);
   printf(  "----------------------------------\n");
 

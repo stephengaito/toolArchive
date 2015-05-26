@@ -36,11 +36,16 @@ class BlockAllocator {
           blocks[i] = NULL;
         }
       }
+      nextBlock = 0;
     }
 
     /// \brief Destory the block allocator and all of its blocks.
     ~BlockAllocator(void) {
-      clearBlocks();
+      if (blocks) {
+        clearBlocks();
+        free(blocks);
+      }
+      blocks    = NULL;
       numBlocks = 0;
       nextBlock = 0;
       blockSize = 0;
