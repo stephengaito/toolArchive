@@ -2,6 +2,7 @@
 #define SYMBOLS_H
 
 #include <hat-trie.h>
+#include "blockAllocator.h"
 
 /// \brief The Symbols class is used to ensure that symbols are
 /// unique across the system.
@@ -40,27 +41,9 @@ class Symbols {
     /// \brief The symbol to symbolEntry mapping
     hattrie_t *symbol2SymbolEntryMap;
 
-    /// \brief The vector of SymbolEntry blocks from which new
-    /// SymbolEntries are allocated.
-    SymbolEntry **symbolEntries;
-
-    /// \brief A pointer to the next SymbolEntry to be allocated.
-    SymbolEntry *curSymbolEntry;
-
-    /// \brief A pointer to the last SymbolEntry in the current block.
-    SymbolEntry *lastSymbolEntry;
-
-    /// \brief The size, in terms of SymbolEntries, of a block of
-    /// SymbolEntries.
-    size_t symbolEntryBlockSize;
-
-    /// \brief The index of the current/next block of SymbolEntries to
-    /// be allocated.
-    size_t curSymbolEntryBlock;
-
-    /// \brief The number of SymbolEntry block pointers in the vector
-    /// of SymbolEntry blocks (symbolEntries).
-    size_t numSymbolEntryBlocks;
+    /// \brief A BlockAllocator which allocates new SymbolEntry
+    /// structures.
+    BlockAllocator *symbolAllocator;
 };
 
 
