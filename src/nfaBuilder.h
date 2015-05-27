@@ -1,10 +1,10 @@
-#ifndef LEXER_H
-#define LEXER_H
+#ifndef NFA_BUILDER_H
+#define NFA_BUILDER_H
 
 #include "nfa.h"
 
-/// \brief NFABuilder represents a partial specified NFA containing
-/// one or more NFA::States.
+/// \brief An NFABuilder represents a partially specified NFA
+/// containing one or more NFA::States.
 ///
 /// In particular NFABuilder::Frag structures represent an NFA which
 /// has yet to be defined output connections. Otherwise all NFA::States
@@ -16,7 +16,7 @@ class NFABuilder {
   public:
 
     /// \brief Create an instance of NFABuilder.
-    NFABuilder(NFA *nfa, size_t reLen);
+    NFABuilder(NFA *nfa);
 
     /// \brief Destroy an instance of NFABuilder.
     ~NFABuilder();
@@ -55,6 +55,12 @@ class NFABuilder {
     /// NFA::State which represents a terminal state which recognizes a
     /// token with id, aTokenId.
     NFA::State *match(NFA::TokenId aTokenId) throw (LexerException);
+
+    /// \brief Compile the Regular Expression into a (sub)NFA used to
+    /// recognize a Token with Token ID aTokenId.
+    NFA::State *compileRegularExpressionForTokenId(const char *re,
+                                                   NFA::TokenId aTokenId)
+                                                   throw (LexerException);
 
   private:
     /// \brief a Ptrlist is a linked list of NFA::State structures
@@ -115,10 +121,10 @@ class NFABuilder {
     Frag *stack;
 
     /// \brief The current top of the NFABuilder stack.
-    Frag *stackPtr;
+    size_t stackTop;
 
-    /// \brief The absolute top of the allocated NFABuilder stack.
-    Frag *stackEnd;
+    /// \brief The size of the allocated NFABuilder stack.
+    size_t stackSize;
 
     /// \brief An instance of NFA::MatchData initialized to represent
     /// no/empty/null match data.

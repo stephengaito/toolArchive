@@ -55,7 +55,8 @@ go_bandit([](){
     it("Should build NFA for a simple regular expression", [&](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
-      nfa->addRegularExpressionForTokenId("simple", 1);
+      NFABuilder *nfaBuilder = new NFABuilder(nfa);
+      nfa->appendNFAToStartState(nfaBuilder->compileRegularExpressionForTokenId("simple", 1));
       NFA::State *anNFAState = nfa->getNFAStartState();
       AssertThat(nfa->getNumberStates(), Is().EqualTo(8));
       AssertThat(anNFAState, Is().EqualTo(nfa->nfaStartState));
@@ -120,7 +121,8 @@ go_bandit([](){
     it("Should build NFA for a regular expression with escape characters", [&](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
-      nfa->addRegularExpressionForTokenId("\\s\\(\\)\\|\\*\\+\\?\\\\", 1);
+      NFABuilder *nfaBuilder = new NFABuilder(nfa);
+      nfa->appendNFAToStartState(nfaBuilder->compileRegularExpressionForTokenId("\\s\\(\\)\\|\\*\\+\\?\\\\", 1));
       NFA::State *anNFAState = nfa->getNFAStartState();
       AssertThat(nfa->getNumberStates(), Is().EqualTo(10));
       AssertThat(anNFAState, Is().EqualTo(nfa->nfaStartState));
@@ -196,8 +198,9 @@ go_bandit([](){
     it("Empty regular expressions should throw lexer exceptions", [&](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
+      NFABuilder *nfaBuilder = new NFABuilder(nfa);
       try {
-        nfa->addRegularExpressionForTokenId("\\", 1);
+        nfa->appendNFAToStartState(nfaBuilder->compileRegularExpressionForTokenId("\\", 1));
         AssertThat(false, Is().True());
       } catch (LexerException& e) {
         AssertThat(true, Is().True());
@@ -211,8 +214,9 @@ go_bandit([](){
     it("Malformed regular expressions throws lexer exception", [&](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
+      NFABuilder *nfaBuilder = new NFABuilder(nfa);
       try {
-        nfa->addRegularExpressionForTokenId("*", 1);
+        nfa->appendNFAToStartState(nfaBuilder->compileRegularExpressionForTokenId("*", 1));
         AssertThat(false, Is().True());
       } catch (LexerException& e) {
         AssertThat(true, Is().True());
@@ -228,8 +232,9 @@ go_bandit([](){
     it("Trailing \\ escapes are ignored", [&](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
+      NFABuilder *nfaBuilder = new NFABuilder(nfa);
       try {
-        nfa->addRegularExpressionForTokenId("s\\", 1);
+        nfa->appendNFAToStartState(nfaBuilder->compileRegularExpressionForTokenId("s\\", 1));
         AssertThat(true, Is().True());
         NFA::State *anNFAState = nfa->getNFAStartState();
         AssertThat(nfa->getNumberStates(), Is().EqualTo(3));
@@ -277,7 +282,8 @@ go_bandit([](){
       classifier->registerClassSet("whitespace",1);
       classifier->classifyUtf8CharsAs(Utf8Chars::whiteSpaceChars,"whitespace");
       NFA *nfa = new NFA(classifier);
-      nfa->addRegularExpressionForTokenId("[!whitespace]+", 1);
+      NFABuilder *nfaBuilder = new NFABuilder(nfa);
+      nfa->appendNFAToStartState(nfaBuilder->compileRegularExpressionForTokenId("[!whitespace]+", 1));
       NFA::State *anNFAState = nfa->getNFAStartState();
       AssertThat(nfa->getNumberStates(), Is().EqualTo(4));
       AssertThat(anNFAState, Is().EqualTo(nfa->nfaStartState));
@@ -313,7 +319,8 @@ go_bandit([](){
       classifier->registerClassSet("whitespace",1);
       classifier->classifyUtf8CharsAs(Utf8Chars::whiteSpaceChars,"whitespace");
       NFA *nfa = new NFA(classifier);
-      nfa->addRegularExpressionForTokenId("[whitespace]+", 1);
+      NFABuilder *nfaBuilder = new NFABuilder(nfa);
+      nfa->appendNFAToStartState(nfaBuilder->compileRegularExpressionForTokenId("[whitespace]+", 1));
       AssertThat(nfa->getNumberStates(), Is().EqualTo(4));
       NFA::State *baseState =
        (NFA::State*)nfa->stateAllocator->blocks[nfa->stateAllocator->nextBlock - 1];
@@ -350,7 +357,7 @@ go_bandit([](){
       //
       // Now add the second regExp
       //
-      nfa->addRegularExpressionForTokenId("[!whitespace]+", 2);
+      nfa->appendNFAToStartState(nfaBuilder->compileRegularExpressionForTokenId("[!whitespace]+", 2));
       AssertThat(nfa->getNumberStates(), Is().EqualTo(8));
       //
       // check to ensure that the FIRST branch is the regExp: /[whitespace]+/

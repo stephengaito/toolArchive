@@ -1,6 +1,7 @@
 #ifndef LEXER_H
 #define LEXER_H
 
+#include "nfaBuilder.h"
 #include "dfa.h"
 
 /// \brief The Lexer class brings together the Classifier/NFA/DFA classes
@@ -15,6 +16,7 @@ class Lexer {
     Lexer(void) {
       classifier = new Classifier();
       nfa        = new NFA(classifier);
+      nfaBuilder = new NFABuilder(nfa);
       dfa        = NULL;
     }
 
@@ -30,7 +32,9 @@ class Lexer {
     ///
     /// No addition is made if the Lexer has already been compiled.
     void addToken(const char *regExp, TokenId aTokenId) {
-      if (!dfa) nfa->addRegularExpressionForTokenId(regExp, aTokenId);
+      if (!dfa) {
+        nfa->appendNFAToStartState(nfaBuilder->compileRegularExpressionForTokenId(regExp, aTokenId));
+      }
     }
 
     /// \brief Compile the Regular-Expression/TokenId information.
@@ -57,6 +61,9 @@ class Lexer {
 
     /// \brief The NFA used to scan Utf8Chars streams.
     NFA *nfa;
+
+    /// \brief The NFABuilder used to build the NFA from regular expressions.
+    NFABuilder *nfaBuilder;
 
     /// \brief The DFA used to scan Utf8Chars streams.
     ///

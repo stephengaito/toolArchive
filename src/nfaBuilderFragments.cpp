@@ -2,19 +2,24 @@
 
 #include "nfaBuilder.h"
 
-NFABuilder::NFABuilder(NFA *anNFA, size_t reLength) {
-  nfa = anNFA;
-  stack = (Frag*) calloc(2*reLength, sizeof(Frag));
-  stackPtr = stack;
-  stackEnd = stack + (2*reLength);
+#ifndef NFA_BUILDER_STACK_INCREMENT
+#define NFA_BUILDER_STACK_INCREMENT 10
+#endif
+
+NFABuilder::NFABuilder(NFA *anNFA) {
+  nfa             = anNFA;
+  stack           = NULL;
+  stackTop        = 0;
+  stackSize       = 0;
   noMatchData.c.u = 0;
 }
 
 NFABuilder::~NFABuilder(void) {
+  nfa             = NULL;
   if (stack) free(stack);
-  stack = NULL;
-  stackPtr = NULL;
-  stackEnd = NULL;
+  stack           = NULL;
+  stackTop        = 0;
+  stackSize       = 0;
   noMatchData.c.u = 0;
 }
 
@@ -51,18 +56,28 @@ NFABuilder::Ptrlist* NFABuilder::append(
 
 void NFABuilder::push(NFABuilder::Frag aFrag)
   throw (LexerException) {
-  if (stackEnd < stackPtr)
-    throw LexerException("regular expression is too complex");
-  *stackPtr = aFrag;
-  stackPtr++;
+  if (stackSize <= stackTop) {
+    // we need to increase the size of the stack
+    Frag *oldStack = stack;
+    stack = (Frag*) calloc(stackSize+NFA_BUILDER_STACK_INCREMENT, sizeof(Frag));
+    if (oldStack) {
+      memcpy(stack, oldStack, stackSize);
+      free(oldStack);
+    }
+    stackSize += NFA_BUILDER_STACK_INCREMENT;
+  }
+  stack[stackTop] = aFrag;
+  stackTop++;
 };
 
 NFABuilder::Frag NFABuilder::pop(void)
   throw (LexerException) {
-  --stackPtr;
-  if (stackPtr < stack)
+  if (0 < stackTop) {
+    --stackTop;
+  } else {
     throw LexerException("malformed regular expression missing atom");
-  return *stackPtr;
+  }
+  return stack[stackTop];
 };
 
 void NFABuilder::checkCharacter(utf8Char_t aChar)

@@ -111,10 +111,13 @@ class NFA {
     /// \brief Get the Classifier associated with this NFA.
     Classifier *getClassifier(void) { return utf8Classifier; }
 
-    /// \brief Add the Regular Expression used to recognize a Token
-    /// with Token ID aTokenId.
-    void  addRegularExpressionForTokenId(const char *re, TokenId aTokenId)
-                                       throw (LexerException);
+    /// \brief Append the (sub)NFA to the current start state.
+    void appendNFAToStartState(State *subNFAStartState);
+
+    /// \brief Find the class set associated with the given className.
+    Classifier::classSet_t findClassSet(const char *className) {
+      return utf8Classifier->findClassSet(className);
+    }
 
     /// \brief Add a new NFA state.
     State *addState(MatchType aMatchType, MatchData someMatchData,
