@@ -32,6 +32,40 @@ go_bandit([](){
       AssertThat(someChars,              Is().Not().EqualTo((Utf8Chars*)0));
       AssertThat(someChars->nextByte,    Is().EqualTo(someChars->utf8Chars));
       AssertThat(someChars->currentMark, Is().EqualTo(someChars->utf8Chars));
+      AssertThat(someChars->ownsString,  Is().False());
+      delete someChars;
+      someChars = new Utf8Chars("silly", Utf8Chars::DoNotOwn);
+      AssertThat(someChars,              Is().Not().EqualTo((Utf8Chars*)0));
+      AssertThat(someChars->nextByte,    Is().EqualTo(someChars->utf8Chars));
+      AssertThat(someChars->currentMark, Is().EqualTo(someChars->utf8Chars));
+      AssertThat(someChars->ownsString,  Is().False());
+      delete someChars;
+    });
+
+    /// Simply ensure we can correctly create a new Utf8Chars object
+    /// on a standard C-string which will be duplicated.
+    it("create a Utf8Chars buffer and duplicate string", [&](){
+      const char* cString = "silly";
+      Utf8Chars *someChars = new Utf8Chars(cString, Utf8Chars::Duplicate);
+      AssertThat(someChars,              Is().Not().EqualTo((Utf8Chars*)0));
+      AssertThat(someChars->nextByte,    Is().EqualTo(someChars->utf8Chars));
+      AssertThat(someChars->currentMark, Is().EqualTo(someChars->utf8Chars));
+      AssertThat(someChars->ownsString,  Is().True());
+      AssertThat(someChars->utf8Chars,   Equals(cString));
+      AssertThat(someChars->utf8Chars,   Is().Not().EqualTo((char*)cString));
+      delete someChars;
+    });
+
+    /// Simply ensure we can correctly create a new Utf8Chars object
+    /// on a standard C-string which will take over ownership.
+    it("create a Utf8Chars buffer and take over ownership", [&](){
+      const char* cString = strdup("silly");
+      Utf8Chars *someChars = new Utf8Chars(cString, Utf8Chars::TakeOwnership);
+      AssertThat(someChars,              Is().Not().EqualTo((Utf8Chars*)0));
+      AssertThat(someChars->nextByte,    Equals(someChars->utf8Chars));
+      AssertThat(someChars->currentMark, Equals(someChars->utf8Chars));
+      AssertThat(someChars->ownsString,  Is().True());
+      AssertThat(someChars->utf8Chars,   Equals(cString));
       delete someChars;
     });
 

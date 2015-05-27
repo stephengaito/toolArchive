@@ -1,6 +1,7 @@
 #ifndef UTF8CHARS_H
 #define UTF8CHARS_H
 
+#include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -18,6 +19,11 @@ typedef union utf8Char_struct {
 class Utf8Chars {
   public:
 
+    /// \brief The ownership model for the Utf8Chars.
+    enum Ownership {
+      DoNotOwn, TakeOwnership, Duplicate
+    };
+
     /// \brief A list of UTF8 white space charaters
     static const char whiteSpaceChars[];
 
@@ -25,8 +31,15 @@ class Utf8Chars {
     ///
     /// using the byte array someUtf8Chars.
     Utf8Chars(
-      const char* someUtf8Chars ///< [in] the byte array of UTF8 chars
+      const char* someUtf8Chars, ///< [in] the byte array of UTF8 chars
+      Ownership ownership = DoNotOwn
     ); ///< Create an instance of Utf8Chars
+
+    /// \brief Destroy this object.
+    ///
+    /// If the underlying C-String is owned by this object, the string
+    /// will be freed as well.
+    ~Utf8Chars(void);
 
     /// Set next character back to the begining
     void restart();
@@ -97,6 +110,9 @@ class Utf8Chars {
     static utf8Char_t codePoint2utf8Char(uint64_t codePoint);
 
   private:
+
+    /// \brief Whether or not this C-string is owned by this object
+    bool ownsString;
 
     /// \brief The C-string of UTF8 characters.
     const char* utf8Chars;

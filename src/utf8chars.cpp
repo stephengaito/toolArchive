@@ -42,10 +42,33 @@ const char Utf8Chars::whiteSpaceChars[] = {
   0x00              // null C-string terminator
 };
 
-Utf8Chars::Utf8Chars(const char* someUtf8Chars) {
-  utf8Chars = someUtf8Chars;
-  numBytes  = strlen(someUtf8Chars);
+Utf8Chars::Utf8Chars(const char* someUtf8Chars,
+                     Utf8Chars::Ownership ownership) {
+  switch(ownership) {
+    case DoNotOwn:
+      ownsString = false;
+      utf8Chars = someUtf8Chars;
+      break;
+    case TakeOwnership:
+      ownsString = true;
+      utf8Chars = someUtf8Chars;
+      break;
+    default:
+      ownsString = true;
+      utf8Chars = strdup(someUtf8Chars);
+      break;
+  }
+  numBytes  = strlen(utf8Chars);
   restart();
+}
+
+Utf8Chars::~Utf8Chars(void) {
+  if (utf8Chars && ownsString) free((void*)utf8Chars);
+  utf8Chars   = NULL;
+  ownsString  = false;
+  numBytes    = 0;
+  nextByte    = NULL;
+  currentMark = NULL;
 }
 
 void Utf8Chars::restart(void) {
