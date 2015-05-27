@@ -9,7 +9,7 @@ using namespace bandit;
 #define private public
 #endif
 
-#include <nfaFragments.h>
+#include <nfaBuilder.h>
 
 go_bandit([](){
 
@@ -18,7 +18,7 @@ go_bandit([](){
   /// There are no explicit NFAFragments tests.
   ///
   /// The NFAFragments class is (currently) tested by the NFA_Tests.
-  describe("NFAFragments", [](){
+  describe("NFABuilder", [](){
   });
 
 });

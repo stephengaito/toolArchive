@@ -23,7 +23,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "nfaFragments.h"
+#include "nfaBuilder.h"
 
 #ifndef NUM_NFA_STATES_PER_BLOCK
 #define NUM_NFA_STATES_PER_BLOCK 20
@@ -73,7 +73,7 @@ void NFA::addRegularExpressionForTokenId(const char *aUtf8RegExp,
   //TODO: we might want to preAddStates(reLen);
   Utf8Chars *re = new Utf8Chars(aUtf8RegExp);
   int nalt, natom;
-  NFAFragments *fragments = new NFAFragments(this, reLen);
+  NFABuilder *fragments = new NFABuilder(this, reLen);
   struct {
     int nalt;
     int natom;

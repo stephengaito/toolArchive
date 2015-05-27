@@ -3,62 +3,62 @@
 
 #include "nfa.h"
 
-/// \brief NFAFragments represents a partial specified NFA containing
+/// \brief NFABuilder represents a partial specified NFA containing
 /// one or more NFA::States.
 ///
-/// In particular NFAFragments::Frag structures represent an NFA which
+/// In particular NFABuilder::Frag structures represent an NFA which
 /// has yet to be defined output connections. Otherwise all NFA::States
 /// are fully defined.
 ///
-/// NFAFragments::Frag structures are pushed and poped from a stack.
-class NFAFragments {
+/// NFABuilder::Frag structures are pushed and poped from a stack.
+class NFABuilder {
 
   public:
 
-    /// \brief Create an instance of NFAFragments.
-    NFAFragments(NFA *nfa, size_t reLen);
+    /// \brief Create an instance of NFABuilder.
+    NFABuilder(NFA *nfa, size_t reLen);
 
-    /// \brief Destroy an instance of NFAFragments.
-    ~NFAFragments();
+    /// \brief Destroy an instance of NFABuilder.
+    ~NFABuilder();
 
-    /// \brief Push an NFAFragments::Frag structure containing an
+    /// \brief Push an NFABuilder::Frag structure containing an
     /// NFA::State suitable to check a given UTF8 character.
     void checkCharacter(utf8Char_t aChar) throw (LexerException);
 
-    /// \brief Push an NFAFragments::Frag structure containing an
+    /// \brief Push an NFABuilder::Frag structure containing an
     /// NFA::State suitable to check that the current UTF8 character
     /// is a member of a given Classifier::classSet_t.
     void checkClassification(Classifier::classSet_t aClass)
     throw (LexerException);
 
-    /// \brief Push an NFAFragments::Frag structure containing an
+    /// \brief Push an NFABuilder::Frag structure containing an
     /// NFA::State suitable to check one successor NFA::State.
     void concatenate(void) throw (LexerException);
 
-    /// \brief Push an NFAFragments::Frag structure containing an
+    /// \brief Push an NFABuilder::Frag structure containing an
     /// NFA::State suitable to check two possible successor NFA::States.
     void alternate(void) throw (LexerException);
 
-    /// \brief Push an NFAFragments::Frag structure containing an
+    /// \brief Push an NFABuilder::Frag structure containing an
     /// NFA::State suitable to check zero or one previous NFA::State.
     void zeroOrOne(void) throw (LexerException);
 
-    /// \brief Push an NFAFragments::Frag structure containing an
+    /// \brief Push an NFABuilder::Frag structure containing an
     /// NFA::State suitable to check zero or more previous NFA::State.
     void zeroOrMore(void) throw (LexerException);
 
-    /// \brief Push an NFAFragments::Frag structure containing an
+    /// \brief Push an NFABuilder::Frag structure containing an
     /// NFA::State suitable to check one or more previous NFA::State.
     void oneOrMore(void) throw (LexerException);
 
-    /// \brief Push an NFAFragments::Frag structure containing an
+    /// \brief Push an NFABuilder::Frag structure containing an
     /// NFA::State which represents a terminal state which recognizes a
     /// token with id, aTokenId.
     NFA::State *match(NFA::TokenId aTokenId) throw (LexerException);
 
   private:
     /// \brief a Ptrlist is a linked list of NFA::State structures
-    /// which the NFAFragments::patch method should patck to provide
+    /// which the NFABuilder::patch method should patck to provide
     /// a fully specified NFA structure.
     typedef union Ptrlist {
       /// \brief Since the NFA::State out pointers in the Ptrlist are
@@ -72,7 +72,7 @@ class NFAFragments {
     /// \brief A partially built NFA without the matching nfaState
     /// filled in.
     ///
-    /// The NFAFragments::patch method takes a Frag structure and
+    /// The NFABuilder::patch method takes a Frag structure and
     /// patches the Frag.out list to the given NFA::State.
     typedef struct Frag {
       /// \brief Frag.start points at the start NFA::State.
@@ -96,28 +96,28 @@ class NFAFragments {
     /// combination.
     Ptrlist* append(Ptrlist *l1, Ptrlist *l2);
 
-    /// \brief Push the Frag onto the NFAFragments stack of partial NFA
+    /// \brief Push the Frag onto the NFABuilder stack of partial NFA
     /// fragments.
     void push(Frag aFrag) throw (LexerException);
 
-    /// \brief Pop a Frag off the NFAFragments stack of partial NFA
+    /// \brief Pop a Frag off the NFABuilder stack of partial NFA
     /// fragments.
     Frag pop(void) throw (LexerException);
 
   private:
-    /// \brief The NFA for which these NFAFragments are being constructed.
+    /// \brief The NFA for which these NFABuilder are being constructed.
     NFA *nfa;
 
-    /// \brief The stack of partially constructed NFAFragments.
+    /// \brief The stack of partially constructed NFABuilder.
     ///
     /// A given regular expression is parsed directly into an impliclit
     /// reverse polish structure using this stack.
     Frag *stack;
 
-    /// \brief The current top of the NFAFragments stack.
+    /// \brief The current top of the NFABuilder stack.
     Frag *stackPtr;
 
-    /// \brief The absolute top of the allocated NFAFragments stack.
+    /// \brief The absolute top of the allocated NFABuilder stack.
     Frag *stackEnd;
 
     /// \brief An instance of NFA::MatchData initialized to represent
