@@ -2,7 +2,9 @@
 #define LEXER_H
 
 #include "nfaBuilder.h"
-#include "dfa.h"
+#include "dfa/dfa.h"
+
+using namespace DeterministicFiniteAutomaton;
 
 /// \brief The Lexer class brings together the Classifier/NFA/DFA classes
 /// into the standard arrangement required for a simple Lexer.

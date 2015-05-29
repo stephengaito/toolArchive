@@ -9,19 +9,23 @@ using namespace bandit;
 #endif
 
 #include "nfaBuilder.h"
-#include <dfa.h>
+#include <dfa/dfa.h>
+
+using namespace DeterministicFiniteAutomaton;
 
 go_bandit([](){
 
   printf("\n----------------------------------\n");
   printf(  "dfa\n");
   printf(  "           DFA = %zu bytes (%zu bits)\n", sizeof(DFA), sizeof(DFA)*8);
-  printf(  "NFAStateNumber = %zu bytes (%zu bits)\n", sizeof(DFA::NFAStateNumber), sizeof(DFA::NFAStateNumber)*8);
   printf(  "----------------------------------\n");
 
   /// \brief Test the ability of a given DFA class to compile, on the fly,
   /// a DFA corresponding to a given NFA.
   describe("DFA", [](){
+
+
+#ifdef NOT_DEFINED
 
     /// Show that we can create an appropriately allocated DFA
     /// from a given NFA.
@@ -546,6 +550,8 @@ go_bandit([](){
       delete nfa;
       delete classifier;
     });
+
+#endif
 
   }); // dfa
 });
