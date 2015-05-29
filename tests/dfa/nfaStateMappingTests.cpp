@@ -16,15 +16,13 @@ using namespace DeterministicFiniteAutomaton;
 go_bandit([](){
 
   printf("\n----------------------------------\n");
-  printf(  "dfa\n");
-  printf(  "           DFA = %zu bytes (%zu bits)\n", sizeof(DFA), sizeof(DFA)*8);
+  printf(  "dfa-nfaStateMapping\n");
+  printf(  "NFAStateMapping = %zu bytes (%zu bits)\n", sizeof(NFAStateMapping), sizeof(NFAStateMapping)*8);
   printf(  "----------------------------------\n");
 
   /// \brief Test the ability of a given DFA class to compile, on the fly,
   /// a DFA corresponding to a given NFA.
   describe("DFA", [](){
-
-#ifdef NOT_DEFINED
 
     /// Show that we can create an appropriately allocated DFA
     /// from a given NFA.
@@ -34,139 +32,82 @@ go_bandit([](){
       NFABuilder *nfaBuilder = new NFABuilder(nfa);
       nfa->appendNFAToStartState(nfaBuilder->compileRegularExpressionForTokenId("(abab|abbb)", 1));
       AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
-      DFA *dfa = new DFA(nfa);
-      AssertThat(dfa->dfaStateSize, Is().EqualTo(2)); // at most 16 NFA state bits
-      AssertThat(dfa->dfaStateProbeSize, Is().EqualTo(2+sizeof(utf8Char_t)));
-      AssertThat(dfa->dfaStateProbe, Is().Not().EqualTo((void*)0));
-      AssertThat(dfa->nfaStatePtr2int, Is().Not().EqualTo((void*)0));
-      AssertThat(dfa->int2nfaStatePtr, Is().Not().EqualTo((NFA::State**)0));
-      AssertThat(dfa->nextDFAStateMap, Is().Not().EqualTo((void*)0));
-      AssertThat(dfa->allocatedUnusedDState0, Is().EqualTo((void*)0));
-      AssertThat(dfa->allocatedUnusedDState1, Is().EqualTo((void*)0));
-      AssertThat(dfa->allocatedUnusedDState2, Is().EqualTo((void*)0));
-      AssertThat(dfa->dStateAllocator->blocks, Is().Not().EqualTo((void*)0));
-      AssertThat(dfa->dStateAllocator->nextBlock, Is().EqualTo(1));
-      AssertThat(((void*)dfa->dfaStartState),
-        Is().EqualTo((void*)dfa->dStateAllocator->blocks[0]));
-      AssertThat(((void*)dfa->tokensDState),
-        Is().EqualTo((void*)(dfa->dStateAllocator->blocks[0]+dfa->dfaStateSize)));
-      for( size_t i = 0; i < dfa->dfaStateSize; i++) {
-        AssertThat(dfa->tokensDState[i], Is().EqualTo(0));
-      }
-      AssertThat(dfa->isSubDState(dfa->dfaStartState, dfa->tokensDState), Is().False());
-      delete dfa;
+      StateAllocator *allocator = new StateAllocator(nfa);
+      NFAStateMapping *stateMapping = allocator->nfaStateMapping;
+      AssertThat(stateMapping, Is().Not().EqualTo((void*)0));
+      AssertThat(stateMapping->allocator, Equals(allocator));
+      AssertThat(stateMapping->nfaStatePtr2int, Is().Not().EqualTo((void*)0));
+      AssertThat(stateMapping->int2nfaStatePtr, Is().Not().EqualTo((NFA::State**)0));
+      AssertThat(stateMapping->numKnownNFAStates, Equals(0));
+      // stateMapper is owned by allocator
+      delete allocator;
       delete nfa;
       delete classifier;
     });
 
-    /// Show that we can allocate and unallocate DFA::DStates, to/from
-    /// the three allocatedUnusedDState{0|1|2}.
-    it("Allocate and unallocate DStates", [&](){
-      Classifier *classifier = new Classifier();
-      NFA *nfa = new NFA(classifier);
-      NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfa->appendNFAToStartState(nfaBuilder->compileRegularExpressionForTokenId("(abab|abbb)", 1));
-      AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
-      DFA *dfa = new DFA(nfa);
-      AssertThat(dfa->allocatedUnusedDState0, Is().EqualTo((void*)0));
-      AssertThat(dfa->allocatedUnusedDState1, Is().EqualTo((void*)0));
-      AssertThat(dfa->allocatedUnusedDState2, Is().EqualTo((void*)0));
-      DFA::DState *aDState0 = dfa->allocateANewDState();
-      DFA::DState *aDState1 = dfa->allocateANewDState();
-      DFA::DState *aDState2 = dfa->allocateANewDState();
-      DFA::DState *aDState3 = dfa->allocateANewDState();
-      AssertThat(aDState0, Is().Not().EqualTo(aDState1));
-      AssertThat(aDState0, Is().Not().EqualTo(aDState2));
-      AssertThat(aDState1, Is().Not().EqualTo(aDState2));
-      AssertThat(dfa->allocatedUnusedDState0, Is().EqualTo((void*)0));
-      AssertThat(dfa->allocatedUnusedDState1, Is().EqualTo((void*)0));
-      AssertThat(dfa->allocatedUnusedDState2, Is().EqualTo((void*)0));
-      dfa->unallocateADState(aDState0);
-      AssertThat(dfa->allocatedUnusedDState0, Is().EqualTo(aDState0));
-      AssertThat(dfa->allocatedUnusedDState1, Is().EqualTo((void*)0));
-      AssertThat(dfa->allocatedUnusedDState2, Is().EqualTo((void*)0));
-      dfa->unallocateADState(aDState1);
-      AssertThat(dfa->allocatedUnusedDState0, Is().EqualTo(aDState0));
-      AssertThat(dfa->allocatedUnusedDState1, Is().EqualTo(aDState1));
-      AssertThat(dfa->allocatedUnusedDState2, Is().EqualTo((void*)0));
-      dfa->unallocateADState(aDState2);
-      AssertThat(dfa->allocatedUnusedDState0, Is().EqualTo(aDState0));
-      AssertThat(dfa->allocatedUnusedDState1, Is().EqualTo(aDState1));
-      AssertThat(dfa->allocatedUnusedDState2, Is().EqualTo(aDState2));
-      dfa->unallocateADState(aDState3); // quietly dropped aDState3 ;-(
-      AssertThat(dfa->allocatedUnusedDState0, Is().EqualTo(aDState0));
-      AssertThat(dfa->allocatedUnusedDState1, Is().EqualTo(aDState1));
-      AssertThat(dfa->allocatedUnusedDState2, Is().EqualTo(aDState2));
-      DFA::DState *aNewDState0 = dfa->allocateANewDState();
-      AssertThat(aDState0, Is().EqualTo(aNewDState0));
-      AssertThat(dfa->allocatedUnusedDState0, Is().EqualTo((void*)0));
-      AssertThat(dfa->allocatedUnusedDState1, Is().EqualTo(aDState1));
-      AssertThat(dfa->allocatedUnusedDState2, Is().EqualTo(aDState2));
-      dfa->unallocateADState(aNewDState0);
-      AssertThat(dfa->allocatedUnusedDState0, Is().EqualTo(aNewDState0));
-      AssertThat(dfa->allocatedUnusedDState1, Is().EqualTo(aDState1));
-      AssertThat(dfa->allocatedUnusedDState2, Is().EqualTo(aDState2));
-      for (size_t i = 0; i < 100; i++) {
-        DFA::DState *someNewDStates = dfa->allocateANewDState();
-        AssertThat(someNewDStates, Is().Not().EqualTo((void*)0));
-      }
-      delete dfa;
-      delete nfa;
-      delete classifier;
-    });
-
-    /// Show that DFA::getNFAStateNumber computes correct
-    /// DFA::NFAStateNumber(s). In particular we need to show that
-    /// we can deal with *more* than 8 NFA::States (i.e. more than the
-    /// first byte in the NFAStateNumber/DFA::DState bit set).
+    /// Show that NFAStateMapping::getNFAStateNumber computes correct
+    /// NFAStateMapping::NFAStateNumber(s). In particular we need to
+    /// show that we can deal with *more* than 8 NFA::States (i.e. more
+    /// than the first byte in the NFAStateNumber/DFA::DState bit set).
     it("Should compute correct NFAStateNumbers using getNFAStateNumber", [&](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
       NFABuilder *nfaBuilder = new NFABuilder(nfa);
       nfa->appendNFAToStartState(nfaBuilder->compileRegularExpressionForTokenId("thisisasimpletest", 1));
       AssertThat(nfa->getNumberStates(), Is().EqualTo(19));
-      DFA *dfa = new DFA(nfa);
-      AssertThat(dfa->numKnownNFAStates, Is().EqualTo(2));
+      StateAllocator *allocator = new StateAllocator(nfa);
+      NFAStateMapping *mapping = allocator->nfaStateMapping;
+      AssertThat(mapping->numKnownNFAStates, Is().EqualTo(0));
       NFA::State *nfaStartState = nfa->getNFAStartState();
-      AssertThat(dfa->int2nfaStatePtr[0], Is().EqualTo(nfaStartState));
+      AssertThat(nfaStartState, Is().Not().EqualTo((void*)0));
+      mapping->getNFAStateNumber(nfaStartState);
+      AssertThat(mapping->int2nfaStatePtr[0], Is().EqualTo(nfaStartState));
       long long tmpNFAState = (long long)nfaStartState;
       char nfaStatePtr[sizeof(NFA::State*)];
       for (size_t i = 0; i < sizeof(NFA::State*); i++) {
         nfaStatePtr[i] = tmpNFAState & 0xFF;
         tmpNFAState >>=8;
       }
-      AssertThat(*hattrie_get(dfa->nfaStatePtr2int, nfaStatePtr, sizeof(NFA::State*)), Is().EqualTo(1));
-      AssertThat(dfa->int2nfaStatePtr[1], Is().EqualTo(nfaStartState->out));
+      AssertThat(*hattrie_get(mapping->nfaStatePtr2int, nfaStatePtr, sizeof(NFA::State*)), Is().EqualTo(1));
+      AssertThat(nfaStartState->out, Is().Not().EqualTo((void*)0));
+      mapping->getNFAStateNumber(nfaStartState->out);
+      AssertThat(mapping->int2nfaStatePtr[1], Is().EqualTo(nfaStartState->out));
       tmpNFAState = (long long)(nfaStartState->out);
       for (size_t i = 0; i < sizeof(NFA::State*); i++) {
         nfaStatePtr[i] = tmpNFAState & 0xFF;
         tmpNFAState >>=8;
       }
-      AssertThat(*hattrie_get(dfa->nfaStatePtr2int, nfaStatePtr, sizeof(NFA::State*)), Is().EqualTo(2));
-      AssertThat(dfa->int2nfaStatePtr[2], Is().EqualTo((void*)0));
-      AssertThat(dfa->numKnownNFAStates, Is().EqualTo(2));
-      DFA::NFAStateNumber aStateNum = dfa->getNFAStateNumber(nfaStartState);
-      AssertThat(dfa->numKnownNFAStates, Is().EqualTo(2));
+      AssertThat(*hattrie_get(mapping->nfaStatePtr2int, nfaStatePtr, sizeof(NFA::State*)), Is().EqualTo(2));
+
+      AssertThat(mapping->int2nfaStatePtr[2], Is().EqualTo((void*)0));
+      AssertThat(mapping->numKnownNFAStates, Is().EqualTo(2));
+      NFAStateMapping::NFAStateNumber aStateNum = mapping->getNFAStateNumber(nfaStartState);
+      AssertThat(mapping->numKnownNFAStates, Is().EqualTo(2));
       AssertThat(aStateNum.stateByte, Is().EqualTo(0));
       AssertThat((int)aStateNum.stateBit, Is().EqualTo(1));
-      aStateNum = dfa->getNFAStateNumber(nfaStartState->out);
-      AssertThat(dfa->numKnownNFAStates, Is().EqualTo(2));
+      aStateNum = mapping->getNFAStateNumber(nfaStartState->out);
+      AssertThat(mapping->numKnownNFAStates, Is().EqualTo(2));
       AssertThat(aStateNum.stateByte, Is().EqualTo(0));
       AssertThat((int)aStateNum.stateBit, Is().EqualTo(2));
       NFA::State *nextState = nfaStartState->out;
-      aStateNum = dfa->getNFAStateNumber(nextState->out);
-      AssertThat(dfa->numKnownNFAStates, Is().EqualTo(3));
+      AssertThat(nextState, Is().Not().EqualTo((void*)0));
+      aStateNum = mapping->getNFAStateNumber(nextState->out);
+      AssertThat(mapping->numKnownNFAStates, Is().EqualTo(3));
       AssertThat(aStateNum.stateByte, Is().EqualTo(0));
       AssertThat((int)aStateNum.stateBit, Is().EqualTo(4));
       nextState = nextState->out;
-      aStateNum = dfa->getNFAStateNumber(nextState->out);
-      AssertThat(dfa->numKnownNFAStates, Is().EqualTo(4));
+      AssertThat(nextState, Is().Not().EqualTo((void*)0));
+      aStateNum = mapping->getNFAStateNumber(nextState->out);
+      AssertThat(mapping->numKnownNFAStates, Is().EqualTo(4));
       AssertThat(aStateNum.stateByte, Is().EqualTo(0));
       AssertThat((int)aStateNum.stateBit, Is().EqualTo(8));
-      delete dfa;
+      // stateMapper is owned by allocator
+      delete allocator;
       delete nfa;
       delete classifier;
     });
+
+#ifdef NOT_DEFINED
 
     it("Show that DFA::getNFAStateNumber can deal with lots of NFA::States", [&](){
       Classifier *classifier = new Classifier();

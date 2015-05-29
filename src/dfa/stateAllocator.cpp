@@ -33,6 +33,7 @@ using namespace DeterministicFiniteAutomaton;
 
 StateAllocator::StateAllocator(NFA *anNFA) {
   nfa = anNFA;
+  nfaStateMapping = new NFAStateMapping(this);
   stateSize = (nfa->getNumberStates() / 8) + 1;
   allocatedUnusedState0 = NULL;
   allocatedUnusedState1 = NULL;
@@ -42,6 +43,10 @@ StateAllocator::StateAllocator(NFA *anNFA) {
 
 StateAllocator::~StateAllocator(void) {
   nfa = NULL;
+
+  if (nfaStateMapping) delete nfaStateMapping;
+  nfaStateMapping = NULL;
+
   stateSize = 0;
   if (stateAllocator) delete stateAllocator;
   stateAllocator    = NULL;
