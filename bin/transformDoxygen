@@ -41,7 +41,7 @@ end
 def transformFilesInDir(aPath, aDir)
   Dir.glob(aPath+'/'+aDir+'/*') do | aFile |
     if File.directory?(aFile) then
-      transformFileInDir(aPath, aDir+'/'+File.basename(aFile))
+      transformFilesInDir(aPath, aDir+'/'+File.basename(aFile))
     else 
       transformFile(aPath, aDir, File.basename(aFile))
     end

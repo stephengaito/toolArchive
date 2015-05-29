@@ -62,6 +62,8 @@ function(defineTestsFor libraryName sourceDirectory
     target_compile_options("${libraryName}Tests"
       PRIVATE "-I${CMAKE_SOURCE_DIR}/${includeDir}")
   endforeach(includeDir)
+  target_compile_options("${libraryName}Tests"
+    PRIVATE "-I${CMAKE_SOURCE_DIR}/${sourceDirectory}")
   target_compile_options("${libraryName}Tests" 
     PRIVATE "-I${CMAKE_SOURCE_DIR}/${sourceDirectory}" "-Wall" "-std=c++11")
   target_link_libraries("${libraryName}Tests" ${libraryName})
@@ -83,6 +85,7 @@ function(defineLibrary libraryName sourceDirectory includeDirectories)
   foreach(includeDir IN LISTS includeDirectories)
     target_compile_options(${libraryName} PRIVATE "-I${CMAKE_SOURCE_DIR}/${includeDir}")
   endforeach(includeDir)
+  target_compile_options(${libraryName} PRIVATE "-I${CMAKE_SOURCE_DIR}/${sourceDirectory}")
 #  target_compile_options(${libraryName} PRIVATE "-Wall" "-std=c++11")
 endfunction(defineLibrary)
 
