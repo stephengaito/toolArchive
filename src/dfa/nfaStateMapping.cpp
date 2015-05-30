@@ -76,11 +76,6 @@ NFAStateMapping::NFAStateNumber NFAStateMapping::getNFAStateNumber(NFA::State *n
   }
   nfaStateNumber.stateByte = (*nfaStateIntPtr - 1) / 8;
   nfaStateNumber.stateBit  = 1 << ((*nfaStateIntPtr - 1) % 8);
-  // check to see if this NFAState is a token state
-  // .... if so record it in the tokensDState
-//TODO  if (nfaState->matchType == NFA::Token) {
-//TODO   tokensDState[nfaStateNumber.stateByte] |= nfaStateNumber.stateBit;
-//TODO  }
   return nfaStateNumber;
 }
 

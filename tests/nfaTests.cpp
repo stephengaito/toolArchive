@@ -115,6 +115,51 @@ go_bandit([](){
       delete classifier;
     });
 
+    it("Should build NFA for a regular expression with alternatives", [&](){
+      Classifier *classifier = new Classifier();
+      NFA *nfa = new NFA(classifier);
+      NFABuilder *nfaBuilder = new NFABuilder(nfa);
+      nfa->appendNFAToStartState(nfaBuilder->compileRegularExpressionForTokenId("(a|bc)", 1));
+      AssertThat(nfa->getNumberStates(), Equals(6));
+      NFA::State *startState = nfa->getNFAStartState();
+      AssertThat(startState, Is().Not().EqualTo((void*)0));
+      NFA::State *baseState =
+        (NFA::State*)nfa->stateAllocator->blocks[nfa->stateAllocator->nextBlock - 1];
+      AssertThat(startState, Equals(baseState));
+      AssertThat(startState->matchType, Equals(NFA::Split));
+      AssertThat(startState->out1, Equals((void*)0));
+      NFA::State *nextState = startState->out;
+      AssertThat(nextState, Is().Not().EqualTo((void*)0));
+      AssertThat(nextState, Equals(baseState+4));
+      AssertThat(nextState->matchType, Equals(NFA::Split));
+      NFA::State *aState = nextState->out;
+      AssertThat(aState, Is().Not().EqualTo((void*)0));
+      AssertThat(aState, Equals(baseState+1));
+      AssertThat(aState->matchType, Equals(NFA::Character));
+      AssertThat(aState->matchData.c.c[0], Equals('a'));
+      AssertThat(aState->out1, Equals((void*)0));
+      NFA::State *bState = nextState->out1;
+      AssertThat(bState, Is().Not().EqualTo((void*)0));
+      AssertThat(bState, Equals(baseState+2));
+      AssertThat(bState->matchType, Equals(NFA::Character));
+      AssertThat(bState->matchData.c.c[0], Equals('b'));
+      AssertThat(bState->out1, Equals((void*)0));
+      NFA::State *cState = bState->out;
+      AssertThat(cState, Is().Not().EqualTo((void*)0));
+      AssertThat(cState, Equals(baseState+3));
+      AssertThat(cState->matchType, Equals(NFA::Character));
+      AssertThat(cState->matchData.c.c[0], Equals('c'));
+      AssertThat(cState->out1, Equals((void*)0));
+      NFA::State *matchState = aState->out;
+      AssertThat(matchState, Is().Not().EqualTo((void*)0));
+      AssertThat(matchState, Equals(cState->out));
+      AssertThat(matchState, Equals(baseState+5));
+      AssertThat(matchState->matchType, Equals(NFA::Token));
+      AssertThat(matchState->matchData.t, Equals(1));
+      AssertThat(matchState->out, Equals((void*)0));
+      AssertThat(matchState->out1, Equals((void*)0));
+    });
+
     /// We build the NFA assocaited with a simple linear regular
     /// expression full of excape characters to show that our escaping
     /// mechanism is working correctly.

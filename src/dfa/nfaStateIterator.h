@@ -18,21 +18,19 @@ namespace DeterministicFiniteAutomaton {
 
       NFA::State *nextState(void) {
         while (curByte < endByte) {
-          if (*curByte & 0xFF) {
-            while (curBit < 256) {
-              if (*curByte & curBit) {
-                NFA::State *nfaState =
-                  nfaStateMapping->getNFAStateFor(curNFAStateNum);
-                curBit <<= 1;
-                curNFAStateNum++;
-                return nfaState;
-              } else {
-                curBit <<= 1;
-                curNFAStateNum++;
-              }
+          while (curBit < 256) {
+            if (*curByte & curBit) {
+              NFA::State *nfaState =
+                nfaStateMapping->getNFAStateFor(curNFAStateNum);
+              curBit <<= 1;
+              curNFAStateNum++;
+              return nfaState;
+            } else {
+              curBit <<= 1;
+              curNFAStateNum++;
             }
-            curBit = 1;
           }
+          curBit = 1;
           curByte++;
         }
         return NULL;

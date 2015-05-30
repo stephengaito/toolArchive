@@ -56,11 +56,17 @@ DFA::~DFA(void) {
 void DFA::addNFAStateToDFAState(State *dfaState, NFA::State *nfaState) {
   if (nfaState == NULL) return;
   allocator->setNFAState(dfaState, nfaState);
-  if (nfaState->matchType == NFA::Split) {
-    /* follow unlabeled arrows */
-    addNFAStateToDFAState(dfaState, nfaState->out);
-    addNFAStateToDFAState(dfaState, nfaState->out1);
-    return;
+  switch (nfaState->matchType) {
+    case NFA::Token:
+      allocator->setNFAState(tokensState, nfaState);
+      break;
+    case  NFA::Split:
+      /* follow unlabeled arrows */
+      addNFAStateToDFAState(dfaState, nfaState->out);
+      addNFAStateToDFAState(dfaState, nfaState->out1);
+      break;
+    default:
+      break;
   }
 }
 
@@ -152,7 +158,9 @@ State *DFA::computeNextDFAState(State *curDFAState,
       nextGenericDFAState = *resultNextState;
     }
   }
-  if (!resultNextState) return NULL;
+  if (!resultNextState) {
+    return NULL;
+  }
   return *resultNextState;
 }
 
