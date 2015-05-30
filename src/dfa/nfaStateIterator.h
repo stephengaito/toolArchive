@@ -26,6 +26,9 @@ namespace DeterministicFiniteAutomaton {
                 curBit <<= 1;
                 curNFAStateNum++;
                 return nfaState;
+              } else {
+                curBit <<= 1;
+                curNFAStateNum++;
               }
             }
             curBit = 1;
