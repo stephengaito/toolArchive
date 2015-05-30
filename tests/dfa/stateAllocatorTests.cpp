@@ -22,7 +22,7 @@ go_bandit([](){
 
   /// \brief Test the ability of a given DFA class to compile, on the fly,
   /// a DFA corresponding to a given NFA.
-  describe("DFA", [](){
+  describe("StateAllocator", [](){
 
     /// Show that we can create an appropriately allocated DFA
     /// from a given NFA.
