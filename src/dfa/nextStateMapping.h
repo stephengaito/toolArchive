@@ -10,18 +10,24 @@ namespace DeterministicFiniteAutomaton {
   class NextStateMapping {
     public:
 
-      /// \brief Create a DFA object corresponding to a given NFA.
+      /// \brief Create a NextStateMapping object corresponding to a
+      /// given collection of DFA::States for an NFA.
+      ///
+      /// The StateAllocator, is associated to a specific NFA.
       NextStateMapping(StateAllocator *anAllocator);
 
-      /// \brief Destroy the DFA object.
+      /// \brief Destroy the NextStateMapping object.
       ~NextStateMapping(void);
 
-      /// \brief Register the DFA::DState to ensure all DFA::DState bit
+      /// \brief Register the DFA::State to ensure all DFA::State bit
       /// sets use the *same* in memory object.
       ///
       /// This registration process makes use of the nextDFAStateMap.
       State *registerState(State *state);
 
+      /// \brief Using the current DFA::State and character, get the
+      /// next DFA::State (if known) from the nextDFAStateMap. If no
+      /// next DFA::State exits, register it with the nextDFAStateMap.
       State **getNextStateByCharacter(State *curState, utf8Char_t c) {
         assembleStateCharacterProbe(curState, c);
         return (State**)hattrie_get(nextDFAStateMap,
@@ -29,6 +35,10 @@ namespace DeterministicFiniteAutomaton {
                                     dfaStateProbeSize);
       }
 
+      /// \brief Using the current DFA::State and character, get the
+      /// next DFA::State (if known) from the nextDFAStateMap. If no
+      /// next DFA::State exists, *do* *not* register it with the
+      /// nextDFAStateMap.
       State **tryGetNextStateByCharacter(State *curState, utf8Char_t c) {
         assembleStateCharacterProbe(curState, c);
         return (State**)hattrie_tryget(nextDFAStateMap,
@@ -36,6 +46,10 @@ namespace DeterministicFiniteAutomaton {
                                        dfaStateProbeSize);
       }
 
+      /// \brief Using the current DFA::State and classification, get
+      /// the next DFA::State (if known) from the nextDFAStateMap. If
+      /// no next DFA::State exits, register it with the
+      /// nextDFAStateMap.
       State **getNextStateByClass(State *curState,
                                   Classifier::classSet_t classSet) {
         assembleStateClassificationProbe(curState, classSet);
@@ -44,6 +58,10 @@ namespace DeterministicFiniteAutomaton {
                                     dfaStateProbeSize);
       }
 
+      /// \brief Using the current DFA::State and classification, get
+      /// the next DFA::State (if known) from the nextDFAStateMap. If
+      /// no next DFA::State exists, *do* *not* register it with the
+      /// nextDFAStateMap.
       State **tryGetNextStateByClass(State *curState,
                                   Classifier::classSet_t classSet) {
         assembleStateClassificationProbe(curState, classSet);
@@ -77,18 +95,18 @@ namespace DeterministicFiniteAutomaton {
       /// DFA::States are allocated by this DFA::StateAllocator.
       StateAllocator *allocator;
 
-      /// \brief The Hat-Trie based next DFA::DState mapping.
+      /// \brief The Hat-Trie based next DFA::State mapping.
       ///
-      /// This mapping is used both to register the known DFA::DState(s),
-      /// as well as record any successor DFA::DState(s) for a given
-      /// DFA::DState + {character | classSet_t} combination.
+      /// This mapping is used both to register the known DFA::State(s),
+      /// as well as record any successor DFA::State(s) for a given
+      /// DFA::State + {character | classSet_t} combination.
       hattrie_t   *nextDFAStateMap;
 
       /// \brief The maximum size of a probe into the nextDFAStateMap
       /// mapping.
       size_t dfaStateProbeSize;
 
-      /// \brief Some (central-pre-DFA) storage for probing the
+      /// \brief Some (central-per-DFA) storage for probing the
       /// nextDFAStateMap.
       char  *dfaStateProbe;
 

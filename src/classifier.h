@@ -4,18 +4,13 @@
 #include <hat-trie.h>
 #include "utf8chars.h"
 
-/**
-
-\brief The Classifier class is used to classify UTF8 characters.
-
-Users can register new class names and associate with each class name a
-fixed class set.
-
-A classification class set is a bit set of base classification
-indicators (one for each bit) which can be combined using any C/C++
-bitwise operation.
-
-*/
+/// \brief The Classifier class is used to classify UTF8 characters.
+///
+/// Users can register new class names and associate with each class
+/// name a fixed class set.
+/// A classification class set is a bit set of base classification
+/// indicators (one for each bit) which can be combined using any C/C++
+/// bitwise operation.
 class Classifier {
 
   public:

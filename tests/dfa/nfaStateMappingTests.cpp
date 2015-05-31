@@ -11,7 +11,7 @@ using namespace bandit;
 #include "nfaBuilder.h"
 #include <dfa/dfa.h>
 
-using namespace DeterministicFiniteAutomaton;
+namespace DeterministicFiniteAutomaton {
 
 go_bandit([](){
 
@@ -20,8 +20,7 @@ go_bandit([](){
   printf(  "NFAStateMapping = %zu bytes (%zu bits)\n", sizeof(NFAStateMapping), sizeof(NFAStateMapping)*8);
   printf(  "----------------------------------\n");
 
-  /// \brief Test the ability of a given DFA class to compile, on the fly,
-  /// a DFA corresponding to a given NFA.
+  /// \brief Test the NFAStateMapping class.
   describe("NFAStateMapping", [](){
 
     /// Show that we can create an appropriately allocated DFA
@@ -195,3 +194,5 @@ go_bandit([](){
 
   }); // dfa
 });
+
+}; // namespace DeterministicFiniteAutomaton

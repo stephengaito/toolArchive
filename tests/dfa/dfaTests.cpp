@@ -11,7 +11,7 @@ using namespace bandit;
 #include "nfaBuilder.h"
 #include <dfa/dfa.h>
 
-using namespace DeterministicFiniteAutomaton;
+namespace DeterministicFiniteAutomaton {
 
 go_bandit([](){
 
@@ -338,3 +338,5 @@ go_bandit([](){
 
   }); // dfa
 });
+
+}; // namespace DeterministicFiniteAutomaton

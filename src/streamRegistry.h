@@ -24,7 +24,7 @@ class StreamRegistry {
     /// \brief Add a C-string as a stream to this stream registry.
     ///
     /// Internally a Utf8Chars instance will be created with the given
-    /// ownership models. The associated C-string will be freed depending
+    /// ownership model. The associated C-string will be freed depending
     /// upon the given owernship model.
     void addStream(const char *someUtf8Chars,
                    Utf8Chars::Ownership ownership = Utf8Chars::DoNotOwn);

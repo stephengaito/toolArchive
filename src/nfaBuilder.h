@@ -4,10 +4,10 @@
 #include "nfa.h"
 
 /// \brief An NFABuilder represents a partially specified NFA
-/// containing one or more NFA::States.
+/// containing one or more NFA::State(s).
 ///
 /// In particular NFABuilder::Frag structures represent an NFA which
-/// has yet to be defined output connections. Otherwise all NFA::States
+/// has yet to be defined output connections. Otherwise all NFA::State(s)
 /// are fully defined.
 ///
 /// NFABuilder::Frag structures are pushed and poped from a stack.
@@ -36,19 +36,22 @@ class NFABuilder {
     void concatenate(void) throw (LexerException);
 
     /// \brief Push an NFABuilder::Frag structure containing an
-    /// NFA::State suitable to check two possible successor NFA::States.
+    /// NFA::State suitable to check two possible successor NFA::State(s).
     void alternate(void) throw (LexerException);
 
     /// \brief Push an NFABuilder::Frag structure containing an
-    /// NFA::State suitable to check zero or one previous NFA::State.
+    /// NFA::State suitable to check zero or one instances of the
+    /// previous NFA::State.
     void zeroOrOne(void) throw (LexerException);
 
     /// \brief Push an NFABuilder::Frag structure containing an
-    /// NFA::State suitable to check zero or more previous NFA::State.
+    /// NFA::State suitable to check zero or more instances of the
+    /// previous NFA::State.
     void zeroOrMore(void) throw (LexerException);
 
     /// \brief Push an NFABuilder::Frag structure containing an
-    /// NFA::State suitable to check one or more previous NFA::State.
+    /// NFA::State suitable to check one or more instances of the
+    /// previous NFA::State.
     void oneOrMore(void) throw (LexerException);
 
     /// \brief Push an NFABuilder::Frag structure containing an
@@ -91,10 +94,10 @@ class NFABuilder {
     /// \brief Initialize new Frag structure.
     Frag frag(NFA::State *start, Ptrlist *out);
 
-    /// \brief Create singleton Ptrlist containing just outp.
+    /// \brief Create a singleton Ptrlist containing just outp.
     Ptrlist* list1(NFA::State **outp);
 
-    /// \brief Patch the Ptrlist of NFA::States at out to point to
+    /// \brief Patch the Ptrlist of NFA::State(s) at out to point to
     /// the start state of the NFA::State s.
     void patch(Ptrlist *l, NFA::State *s);
 
@@ -111,7 +114,7 @@ class NFABuilder {
     Frag pop(void) throw (LexerException);
 
   private:
-    /// \brief The NFA for which these NFABuilder are being constructed.
+    /// \brief The NFA for which this NFABuilder is being constructed.
     NFA *nfa;
 
     /// \brief The stack of partially constructed NFABuilder.

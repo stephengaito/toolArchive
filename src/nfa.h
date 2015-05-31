@@ -8,7 +8,7 @@
 /// \brief LexerExceptions provide simple messages detailing why the
 /// Lexer can not proceed.
 ///
-/// LexerExceptions are thrown when ever a regular expression
+/// LexerExceptions are thrown whenever a regular expression
 /// is malformed, or the DFA state used to recognize a token is corrupted.
 class LexerException: public std::exception {
   public:
@@ -28,14 +28,12 @@ class LexerException: public std::exception {
 ///
 /// Since these NFAs will be used as part of a Lexer with multiple
 /// tokens to be recognized, our NFAs have a specific structure.
-/// The NFA start state(s) consist of
-/// what is essentially a linked list of NFA::Split states whose
-/// out pointer points to the (sub)NFA to recognize a given token
-/// and whose out1 pointer points to the next (sub)NFA/token in
-/// the linked list. Each (sub)NFA which recognizes a given token, will
-/// end with an NFA::Token state
-/// whose matchData stores the token ID associated with the recognized
-/// token.
+/// The NFA start state(s) consist of what is essentially a linked list
+/// of NFA::Split states whose out pointer points to the (sub)NFA to
+/// recognize a given token and whose out1 pointer points to the next
+/// (sub)NFA/token in the linked list. Each (sub)NFA which recognizes a
+/// given token, will end with an NFA::Token state whose matchData
+/// stores the token ID associated with the recognized token.
 class NFA {
 
   public:
@@ -50,8 +48,8 @@ class NFA {
     /// of a given NFA::State structure.
     ///
     /// A given NFA::State can match a Character, a (character)
-    /// class set, a Token, or be an (internal) Split state. NFA::States
-    /// should never be Empty.
+    /// class set, a Token, or be an (internal) Split state. Correctly
+    /// formed NFA::State(s) should never be Empty.
     enum MatchType {
       Empty     = 0,
       Character = 1,
@@ -64,7 +62,7 @@ class NFA {
     typedef value_t TokenId;
 
     /// \brief The NFA::MatchData union provides the data required to
-    /// mathc a given NFA::State,
+    /// match a given NFA::State,
     ///
     /// The NFA::MatchType enumeration provides an explicit marker to
     /// determine which of the utf8Char_t, classSet_t or token_t structures
@@ -92,7 +90,7 @@ class NFA {
       /// used to determine a successful match of this NFA::State.
       MatchData matchData;
 
-      /// \brief One of two possible next NFA::States.
+      /// \brief One of two possible next NFA::State(s).
       ///
       /// Unless this NFA::State is a NFA::Token state, this out pointer
       /// always points at the next state to transition to if the
@@ -100,7 +98,7 @@ class NFA {
       /// structures.
       State *out;
 
-      /// \brief An alternate possiblee next NFA::States.
+      /// \brief An alternate possiblee next NFA::State(s).
       ///
       /// The out1 pointer is only ever used by an NFA::Split state.
       /// It is used to enable alternate successor states for, for example,

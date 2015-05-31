@@ -41,7 +41,8 @@ class Utf8Chars {
     /// will be freed as well.
     ~Utf8Chars(void);
 
-    /// Set next character back to the begining
+    /// Set next character back to the begining of the underlying
+    /// C-string.
     void restart();
 
     /// Backup ONE UTF8 character
@@ -82,7 +83,7 @@ class Utf8Chars {
 
     /// \brief Get the stream at the marked location.
     const char *getMark(void) {
-      return nextByte;
+      return currentMark;
     }
 
     /// \brief Returns the number of bytes, not neccessarily the number

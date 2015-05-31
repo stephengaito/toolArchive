@@ -5,9 +5,13 @@
 
 namespace DeterministicFiniteAutomaton {
 
+  /// \brief The NFAStateIterator class encapsulates the state required
+  /// to iterate over the NFA states in a DFA::State bit set.
   class NFAStateIterator {
 
     public:
+
+      /// \brief Destroy an NFAStateIterator object.
       ~NFAStateIterator(void) {
         curByte = NULL;
         endByte = NULL;
@@ -16,6 +20,7 @@ namespace DeterministicFiniteAutomaton {
         nfaStateMapping = NULL;
       };
 
+      /// \brief Return the next NFA::State in the DFA::State bit set.
       NFA::State *nextState(void) {
         while (curByte < endByte) {
           while (curBit < 256) {
@@ -37,6 +42,17 @@ namespace DeterministicFiniteAutomaton {
       }
 
     private:
+
+      /// \brief ALlow a StateAllocator direct access to the private
+      /// constructor method of an NFAStateIterator.
+      friend class StateAllocator;
+
+      /// \brief Create a new NFAStateIterator for a given
+      /// NFAStateMapping and a particular DFA::State bit set.
+      ///
+      /// This method can only be invoked by a StateAllocator, which is
+      /// the only object which has all of the information to
+      /// successfully create an NFAStateIterator.
       NFAStateIterator(NFAStateMapping *aMapping,
                        size_t stateSize,
                        State *state) {
@@ -47,13 +63,26 @@ namespace DeterministicFiniteAutomaton {
         nfaStateMapping = aMapping;
       }
 
+      /// \brief The NFAStateMapping which is used by the iterator to
+      /// map from a bit in a DFA::State bit set back to the NFA::State
+      /// that bit represents.
       NFAStateMapping *nfaStateMapping;
-      size_t   curNFAStateNum;
-      char    *curByte;
-      char    *endByte;
-      size_t  curBit;
 
-      friend class StateAllocator;
+      /// \brief The index into NFAStateMapping's int2nfaStatePtr
+      /// mapping for the current bit in the DFA::State bit set.
+      size_t   curNFAStateNum;
+
+      /// \brief A pointer to the current byte in the DFA::State bit
+      /// set (which is an array of bytes).
+      char    *curByte;
+
+      /// \brief A pointer to the end of the DFA::State bit sets array
+      /// of bytes.
+      char    *endByte;
+
+      /// \brief The current bit in the current byte in the DFA::State
+      /// bit set.
+      size_t  curBit;
 
   };
 
