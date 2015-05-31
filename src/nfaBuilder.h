@@ -32,6 +32,12 @@ class NFABuilder {
     throw (LexerException);
 
     /// \brief Push an NFABuilder::Frag structure containing an
+    /// NFA::State suitable to recursively (re)start the NFA
+    /// at a new start state, returning to the originally pushed down
+    /// state when the NFA has recognized the recursive start state.
+    void reStart(NFA::StartStateId aStartStateId) throw (LexerException);
+
+    /// \brief Push an NFABuilder::Frag structure containing an
     /// NFA::State suitable to check one successor NFA::State.
     void concatenate(void) throw (LexerException);
 

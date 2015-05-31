@@ -29,7 +29,7 @@ go_bandit([](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
       NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfa->appendNFAToStartState(nfaBuilder->compileRegularExpressionForTokenId("(abab|abbb)", 1));
+      nfa->appendNFAToStartState("start", nfaBuilder->compileRegularExpressionForTokenId("(abab|abbb)", 1));
       AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
       StateAllocator *allocator = new StateAllocator(nfa);
       NFAStateMapping *stateMapping = allocator->nfaStateMapping;
@@ -52,14 +52,14 @@ go_bandit([](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
       NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfa->appendNFAToStartState(nfaBuilder->compileRegularExpressionForTokenId("thisisasimpletest", 1));
+      nfa->appendNFAToStartState("start", nfaBuilder->compileRegularExpressionForTokenId("thisisasimpletest", 1));
       AssertThat(nfa->getNumberStates(), Is().EqualTo(19));
       StateAllocator *allocator = new StateAllocator(nfa);
       AssertThat(allocator, Is().Not().EqualTo((void*)0));
       NFAStateMapping *mapping = allocator->nfaStateMapping;
       AssertThat(mapping, Is().Not().EqualTo((void*)0));
       AssertThat(mapping->numKnownNFAStates, Is().EqualTo(0));
-      NFA::State *nfaStartState = nfa->getNFAStartState();
+      NFA::State *nfaStartState = nfa->getStartState("start");
       AssertThat(nfaStartState, Is().Not().EqualTo((void*)0));
       mapping->getNFAStateNumber(nfaStartState);
       AssertThat(mapping->int2nfaStatePtr[0], Is().EqualTo(nfaStartState));
@@ -112,7 +112,7 @@ go_bandit([](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
       NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfa->appendNFAToStartState(nfaBuilder->compileRegularExpressionForTokenId("thisisasimpletest", 1));
+      nfa->appendNFAToStartState("start", nfaBuilder->compileRegularExpressionForTokenId("thisisasimpletest", 1));
       AssertThat(nfa->getNumberStates(), Is().EqualTo(19));
       StateAllocator *allocator = new StateAllocator(nfa);
       AssertThat(allocator, Is().Not().EqualTo((void*)0));

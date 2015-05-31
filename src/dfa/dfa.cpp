@@ -73,7 +73,7 @@ void DFA::addNFAStateToDFAState(State *dfaState, NFA::State *nfaState) {
 /* Compute initial state list */
 void DFA::computeDFAStartState(void) {
 //  allocator->emptyState(dfaStartState);
-  addNFAStateToDFAState(dfaStartState, nfa->getNFAStartState());
+  addNFAStateToDFAState(dfaStartState, nfa->getStartState("start"));
   nextStateMapping->registerState(dfaStartState);
 }
 

@@ -42,11 +42,13 @@ NFA::State *NFABuilder::compileRegularExpressionForTokenId(const char *aUtf8RegE
     int nalt;
     int natom;
   } paren[reLen], *p;
-  size_t classNameBufSize = 255;
-  char classNameBuf[classNameBufSize+1];
+  size_t nameBufSize = 255;
+  char nameBuf[nameBufSize+1];
   char *className;
   bool classNegated;
   Classifier::classSet_t classSet;
+  char *reStartStateName;
+  NFA::StartStateId reStartStateId;
   NFA::MatchData noMatchData;
   noMatchData.c.u = 0;
   NFA::State *baseSplitState = nfa->addState(NFA::Split, noMatchData, NULL, NULL);
@@ -100,9 +102,9 @@ NFA::State *NFABuilder::compileRegularExpressionForTokenId(const char *aUtf8RegE
         break;
       case '[':
         // parse out the className
-        className = classNameBuf;
-        className[classNameBufSize] = 0;
-        for (size_t i = 0; i < classNameBufSize; i++) {
+        className = nameBuf;
+        className[nameBufSize] = 0;
+        for (size_t i = 0; i < nameBufSize; i++) {
           className[i] = re->getNextByte();
           if (className[i] == ']') { className[i] = 0; break; }
           if (className[i] == 0) break;
@@ -124,6 +126,26 @@ NFA::State *NFABuilder::compileRegularExpressionForTokenId(const char *aUtf8RegE
           concatenate();
         }
         checkClassification(classSet);
+        natom++;
+        break;
+      case '{':
+        // parse out the reStartStateName
+        reStartStateName = nameBuf;
+        reStartStateName[nameBufSize] = 0;
+        for (size_t i = 0; i < nameBufSize; i++) {
+          reStartStateName[i] = re->getNextByte();
+          if (reStartStateName[i] == ']') { reStartStateName[i] = 0; break; }
+          if (reStartStateName[i] == 0) break;
+        }
+        // find the reStartId for this reStartStateName
+        if (reStartStateName[0] == 0) throw LexerException("mallformed reStart name");
+        reStartStateId = nfa->findStartStateId(reStartStateName);
+        // now repeat the natom manipulate done for checkCharacter
+        if (natom > 1) {
+          --natom;
+          concatenate();
+        }
+        reStart(reStartStateId);
         natom++;
         break;
       case '\\': // escape character.... ignore and use next character instead

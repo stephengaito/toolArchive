@@ -29,21 +29,31 @@
 #define NUM_NFA_STATES_PER_BLOCK 20
 #endif
 
+#ifndef START_STATE_IDS_ARRAY_INCREMENT
+#define START_STATE_IDS_ARRAY_INCREMENT 10
+#endif
+
 NFA::NFA(Classifier *aUTF8Classifier) {
   stateAllocator = new BlockAllocator(NUM_NFA_STATES_PER_BLOCK*sizeof(State));
-  nfaStartState     = NULL;
-  nfaLastStartState = NULL;
-  numKnownStates    = 0;
-  utf8Classifier    = aUTF8Classifier;
+  startStateIds  = hattrie_create();
+  startState     = NULL;
+  nextStartState = 0;
+  numStartStates = 0;
+  numKnownStates = 0;
+  utf8Classifier = aUTF8Classifier;
 }
 
 NFA::~NFA(void) {
   if (stateAllocator) delete stateAllocator;
-  stateAllocator    = NULL;
-  nfaStartState     = NULL;
-  nfaLastStartState = NULL;
-  numKnownStates    = 0;
-  utf8Classifier    = NULL; // classifier is not "owned" by the NFA instance
+  stateAllocator = NULL;
+  if (startStateIds) hattrie_free(startStateIds);
+  startStateIds  = NULL;
+  if (startState) free(startState);
+  startState     = NULL;
+  nextStartState = 0;
+  numStartStates = 0;
+  numKnownStates = 0;
+  utf8Classifier = NULL; // classifier is not "owned" by the NFA instance
 }
 
 NFA::State *NFA::addState(NFA::MatchType aMatchType,
@@ -60,13 +70,41 @@ NFA::State *NFA::addState(NFA::MatchType aMatchType,
   return newState;
 }
 
-void NFA::appendNFAToStartState(NFA::State *baseSplitState) {
-  if (nfaLastStartState) {
-    nfaLastStartState->out1 = baseSplitState;
-    nfaLastStartState       = baseSplitState;
+void NFA::appendNFAToStartState(const char *startStateName,
+                                NFA::State *baseSplitState) {
+  StartStateId *startStateId = hattrie_get(startStateIds,
+                                           startStateName,
+                                           strlen(startStateName));
+  if (!startStateId) throw LexerException("corrupted startStateIds Hat-Trie");
+  if (!*startStateId) {
+    // we need to allocate a new startStateId
+    if (numStartStates <= nextStartState) {
+      // we need to allocate a larger array of start state ids
+      State **oldStartStates = startState;
+      startState =
+        (State**) calloc(numStartStates + START_STATE_IDS_ARRAY_INCREMENT,
+                         sizeof(State*));
+      if (oldStartStates) {
+        memcpy(startState, oldStartStates, numStartStates);
+        free(oldStartStates);
+      }
+      numStartStates += START_STATE_IDS_ARRAY_INCREMENT;
+    }
+    *startStateId = nextStartState;
+    startState[*startStateId] = NULL;
+    nextStartState++;
+  }
+  MatchData nulMatchData;
+  nulMatchData.c.u = 0;
+  if (!startState[*startStateId]) {
+    // we need to allocate an initial Split state
+    startState[*startStateId] =
+      addState(Split, nulMatchData, baseSplitState, NULL);
   } else {
-    nfaStartState     = baseSplitState;
-    nfaLastStartState = nfaStartState;
+    State *nextState = startState[*startStateId];
+    while (nextState->out1) nextState = nextState->out1;
+    nextState->out1 =
+      addState(Split, nulMatchData, baseSplitState, NULL);
   }
 }
 

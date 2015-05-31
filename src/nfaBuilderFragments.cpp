@@ -96,6 +96,13 @@ void NFABuilder::checkClassification(Classifier::classSet_t aClass)
   push(frag(s, list1(&s->out)));
 }
 
+void NFABuilder::reStart(NFA::StartStateId pushDownStartStateId) throw (LexerException) {
+  NFA::MatchData someMatchData;
+  someMatchData.p = pushDownStartStateId;
+  NFA::State *s = nfa->addState(NFA::ReStart, someMatchData, NULL, NULL);
+  push(frag(s, list1(&s->out)));
+}
+
 void NFABuilder::concatenate(void)
   throw (LexerException) {
   Frag e2 = pop();

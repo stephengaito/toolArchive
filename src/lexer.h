@@ -35,7 +35,7 @@ class Lexer {
     /// No addition is made if the Lexer has already been compiled.
     void addToken(const char *regExp, TokenId aTokenId) {
       if (!dfa) {
-        nfa->appendNFAToStartState(nfaBuilder->compileRegularExpressionForTokenId(regExp, aTokenId));
+        nfa->appendNFAToStartState("start", nfaBuilder->compileRegularExpressionForTokenId(regExp, aTokenId));
       }
     }
 

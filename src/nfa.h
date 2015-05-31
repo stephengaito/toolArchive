@@ -48,18 +48,23 @@ class NFA {
     /// of a given NFA::State structure.
     ///
     /// A given NFA::State can match a Character, a (character)
-    /// class set, a Token, or be an (internal) Split state. Correctly
-    /// formed NFA::State(s) should never be Empty.
+    /// class set, represent a (recursive) ReStart state, a Token, or
+    /// be an (internal) Split state. Correctly formed NFA::State(s)
+    /// should never be Empty.
     enum MatchType {
       Empty     = 0,
       Character = 1,
       ClassSet  = 2,
-      Split     = 3,
-      Token     = 4
+      ReStart   = 3,
+      Split     = 4,
+      Token     = 5
     };
 
-    /// \brief A token_t represents a given token ID.
+    /// \brief A TokenId represents a given token ID.
     typedef value_t TokenId;
+
+    /// \brief A StartStateId represents a starting state for the NFA.
+    typedef value_t StartStateId;
 
     /// \brief The NFA::MatchData union provides the data required to
     /// match a given NFA::State,
@@ -76,6 +81,9 @@ class NFA {
         Classifier::classSet_t s;
         /// \brief The token ID associated to a given matched (sub)NFA.
         TokenId  t;
+        /// \brief The StartState ID associated to a given (recursive)
+        /// push down state.
+        StartStateId p;
       } MatchData;
 
     /// \brief Every NFA is a graph of NFA::State stuctures which is
@@ -110,11 +118,33 @@ class NFA {
     Classifier *getClassifier(void) { return utf8Classifier; }
 
     /// \brief Append the (sub)NFA to the current start state.
-    void appendNFAToStartState(State *subNFAStartState);
+    void appendNFAToStartState(const char *startStateName,
+                               State *subNFAStartState);
 
     /// \brief Find the class set associated with the given className.
     Classifier::classSet_t findClassSet(const char *className) {
       return utf8Classifier->findClassSet(className);
+    }
+
+    /// \brief Find the StartState Id associated with the given StartStateName.
+    StartStateId findStartStateId(const char *startStateName) {
+      StartStateId *startStateId = hattrie_tryget(startStateIds,
+                                                  startStateName,
+                                                  strlen(startStateName));
+      if (!startStateId) return -1L;
+      return *startStateId;
+    }
+
+    /// \brief Get the named start state.
+    State *getStartState(const char *startStateName) {
+      return getStartState(findStartStateId(startStateName));
+    }
+
+    /// \brief Get the start state associated to the StartStateId.
+    State *getStartState(StartStateId startStateId) {
+      //if (startStateId < 0) return NULL;
+      if (nextStartState <= startStateId) return NULL;
+      return startState[startStateId];
     }
 
     /// \brief Add a new NFA state.
@@ -126,27 +156,24 @@ class NFA {
       return numKnownStates;
     }
 
-    /// \brief Return the initial state for this NFA.
-    ///
-    /// This initial state is the begining of a linked list
-    /// of NFA::Split states which each individualy point to
-    /// their associated (sub)NFA used to recognize a single Token.
-    State *getNFAStartState() { return nfaStartState; }
-
   private:
 
     /// \brief A BlockAllocator which allocates new NFA::States.
     BlockAllocator *stateAllocator;
 
-    /// \brief The start of the linked list of start states of the
-    /// various token recognizing (sub)NFA(s).
-    ///
-    /// The first NFA::State in this linked list is the start state
-    /// of the whole NFA.
-    State *nfaStartState;
+    /// \brief The Hat-Trie of startStateNames to startStateIds.
+    hattrie_t *startStateIds;
 
-    /// \brief The last start state in the linked list of NFA::State(s).
-    State *nfaLastStartState;
+    /// \brief The array of known start states for this NFA
+    State **startState;
+
+    /// \brief The next index to allocate in the array of NFA start
+    /// states.
+    size_t nextStartState;
+
+    /// \brief The total number of start states in the array of NFA
+    /// start states.
+    size_t numStartStates;
 
     /// \brief The number of NFA::States added to this NFA.
     size_t numKnownStates;
