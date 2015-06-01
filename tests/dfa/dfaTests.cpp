@@ -148,7 +148,7 @@ go_bandit([](){
                                  firstChar,
                                  classificationSet);
       AssertThat((void*)nextDFAState, Is().Not().EqualTo((void*)0));
-      AssertThat((void*)nextDFAState, Is().EqualTo((void*)aState0));
+      AssertThat((void*)nextDFAState, Is().EqualTo((void*)aState1));
       AssertThat(allocator->isStateEmpty(aState0), Is().False());
       AssertThat(((int)aState0[0]), Is().EqualTo((int)0x20));
       for (size_t i = 1; i < dfa->allocator->stateSize; i++) {
@@ -166,7 +166,7 @@ go_bandit([](){
                                 aState1, allocator->stateSize);
       AssertThat((void**)registeredState1, Is().Not().EqualTo((void*)0));
       AssertThat((void*)*registeredState1, Is().EqualTo((void*)aState1));
-      AssertThat(((int)nextDFAState[0]), Is().EqualTo((int)0x20));
+      AssertThat(((int)nextDFAState[0]), Is().EqualTo((int)0x30));
       for (size_t i = 1; i < dfa->allocator->stateSize; i++) {
         AssertThat(((int)nextDFAState[i]), Is().EqualTo((int)0x00));
       }

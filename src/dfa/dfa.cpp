@@ -112,28 +112,31 @@ State *DFA::computeNextDFAState(State *curDFAState,
     }
   }
 
-  State **resultNextState = NULL;
+  State **specificNextState = NULL;
+  State **genericNextState = NULL;
   // now check if we need to store the specific nextDFAState
   if (allocator->isSubStateOf(nextSpecificDFAState, nextGenericDFAState) ||
       allocator->isStateEmpty(nextSpecificDFAState)) {
-    // since the specific DState is a subState of the generic
-    // and since we have already registered the generic DState
-    // we do not need to do anything more
-    // this specific DState is no longer needed
+    // since the specific DFA::State is a subState of the generic
+    // and since we will register the generic DFA::State we do not
+    // need to do anything more this specific DFA::State is no longer
+    // needed
     allocator->unallocateState(nextSpecificDFAState);
   } else {
-    // the specific DState is NOT a substate of the generic DState
-    // so we want to store the specific state as well and return it
-    resultNextState =
+    // the specific DFA::State is NOT a substate of the generic
+    // DFA::State so we want to store the specific state as well and
+    // return it
+    specificNextState =
       nextStateMapping->getNextStateByCharacter(curDFAState, c);
+    ASSERT(specificNextState); // Hat-Trie error
     // merge the generic states into the specific...
     allocator->mergeStateWith(nextSpecificDFAState, nextGenericDFAState);
-    // ensure we use the registered DFAState if any...
-    *resultNextState =
+    // ensure we use the registered DFA::State if any...
+    *specificNextState =
       nextStateMapping->registerState(nextSpecificDFAState);
-    if (*resultNextState != nextSpecificDFAState) {
-      // This specific DState is a copy of the already registered DSstate
-      // so it is no longer needed
+    if (*specificNextState != nextSpecificDFAState) {
+      // This specific DFA::State is a copy of the already registered
+      // DFA::State so it is no longer needed
       allocator->unallocateState(nextSpecificDFAState);
     }
   }
@@ -141,27 +144,27 @@ State *DFA::computeNextDFAState(State *curDFAState,
     // the generic state is empty so we do not store it
     allocator->unallocateState(nextGenericDFAState);
   } else {
-    // there is a next generic DFAState...
+    // there is a next generic DFA::State...
     // SO ...
-    // always store the generic (classification based) nextGenericDState
-    resultNextState =
+    // always store the generic (classification based) nextGenericDFAState
+    genericNextState =
       nextStateMapping->getNextStateByClass(curDFAState, classificationSet);
-    // ensure we use the registered DFAState if any...
-    *resultNextState =
+    ASSERT(genericNextState); // Hat-Trie error
+    // ensure we use the registered DFA::State if any...
+    *genericNextState =
       nextStateMapping->registerState(nextGenericDFAState);
-    if (*resultNextState != nextGenericDFAState) {
-      // This generic DState is a copy of the already registered DSstate
-      // so it is no longer needed
+    if (*genericNextState != nextGenericDFAState) {
+      // This generic DFA::State is a copy of the already registered
+      // DFA::Sstate so it is no longer needed
       allocator->unallocateState(nextGenericDFAState);
-      // ensure nextGenericDFAState is a valid DState
+      // ensure nextGenericDFAState is a valid DFA::State
       // and the one used in the map
-      nextGenericDFAState = *resultNextState;
+      nextGenericDFAState = *genericNextState;
     }
   }
-  if (!resultNextState) {
-    return NULL;
-  }
-  return *resultNextState;
+  if (specificNextState && *specificNextState) return *specificNextState;
+  if (genericNextState  && *genericNextState)  return *genericNextState;
+  return NULL;
 }
 
 /* Run DFA to determine whether it matches s. */
