@@ -194,7 +194,7 @@ NFA::TokenId DFA::getNextTokenId(Utf8Chars *utf8Stream) {
           utf8Stream->backup();
           NFA::State *tokenState =
             allocator->stateMatchesToken(curDFAState, tokensState);
-          if (tokenState) return tokenState->matchData.t;
+          if (tokenState) return (tokenState->matchData.t)>>1;
           return -1;
         }
       }
@@ -204,7 +204,7 @@ NFA::TokenId DFA::getNextTokenId(Utf8Chars *utf8Stream) {
   }
   NFA::State *tokenNFAState =
     allocator->stateMatchesToken(curDFAState, tokensState);
-  if (tokenNFAState) return tokenNFAState->matchData.t;
+  if (tokenNFAState) return (tokenNFAState->matchData.t)>>1;
   return -1;
 }
 

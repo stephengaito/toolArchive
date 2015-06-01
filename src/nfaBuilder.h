@@ -69,7 +69,8 @@ class NFABuilder {
     /// startStateName.
     void compileRegularExpressionForTokenId(const char *startStateName,
                                             const char *re,
-                                            NFA::TokenId aTokenId)
+                                            NFA::TokenId aTokenId,
+                                            bool ignoreToken = false)
                                             throw (LexerException);
 
   private:
