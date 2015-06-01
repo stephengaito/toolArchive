@@ -158,8 +158,12 @@ class NFA {
                     State *out, State *out1);
 
     /// \brief Get the current number of NFA::States.
-    size_t getNumberStates() {
+    size_t getNumberStates(void) {
       return numKnownStates;
+    }
+
+    size_t getNumberStartStates(void) {
+      return numStartStates;
     }
 
   private:

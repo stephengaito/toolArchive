@@ -52,7 +52,10 @@ class Lexer {
     /// If the Lexer has not yet been compiled, the null tokenId (-1)
     //  is returned.
     TokenId getNextTokenId(Utf8Chars *someChars) {
-      if (dfa) return dfa->getNextTokenId(someChars);
+      if (dfa) {
+        return dfa->getNextTokenId(nfa->findStartStateId("start"),
+                                   someChars);
+      }
       return -1;
     }
 

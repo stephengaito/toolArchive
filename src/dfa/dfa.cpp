@@ -36,8 +36,9 @@ DFA::DFA(NFA *anNFA) {
   allocator = new StateAllocator(nfa);
   nextStateMapping = new NextStateMapping(allocator);
 
-  dfaStartState = allocator->allocateANewState(); // get space for the stateDState
-  computeDFAStartState();
+  numStartStates = nfa->getNumberStartStates();
+  startState = (State**)calloc(numStartStates, sizeof(State*));
+  computeDFAStartState((NFA::StartStateId)0);
   tokensState =  allocator->allocateANewState(); // get space for the tokensDState
 };
 
@@ -46,10 +47,13 @@ DFA::~DFA(void) {
   if (nextStateMapping) delete nextStateMapping;
   nextStateMapping = NULL;
 
-  dfaStartState      = NULL;
-  tokensState       = NULL;
+  if (startState) free(startState);
+  startState     = NULL;
+  numStartStates = 0;
+  tokensState    = NULL;
+
   if (allocator) delete allocator;
-  allocator          = NULL;
+  allocator       = NULL;
 }
 
 /* Add nfaState to dfaState, following unlabeled arrows. */
@@ -71,10 +75,18 @@ void DFA::addNFAStateToDFAState(State *dfaState, NFA::State *nfaState) {
 }
 
 /* Compute initial state list */
-void DFA::computeDFAStartState(void) {
-//  allocator->emptyState(dfaStartState);
-  addNFAStateToDFAState(dfaStartState, nfa->getStartState("start"));
-  nextStateMapping->registerState(dfaStartState);
+
+void DFA::computeDFAStartState(const char *startStateName) {
+  computeDFAStartState(nfa->findStartStateId(startStateName));
+}
+
+void DFA::computeDFAStartState(NFA::StartStateId startStateId) {
+  if ((startStateId < numStartStates) && (!startState[startStateId])) {
+    startState[startStateId] = allocator->allocateANewState();
+    addNFAStateToDFAState(startState[startStateId],
+                          nfa->getStartState(startStateId));
+    nextStateMapping->registerState(startState[startStateId]);
+  }
 }
 
 /*
@@ -168,10 +180,11 @@ State *DFA::computeNextDFAState(State *curDFAState,
 }
 
 /* Run DFA to determine whether it matches s. */
-NFA::TokenId DFA::getNextTokenId(Utf8Chars *utf8Stream) {
+NFA::TokenId DFA::getNextTokenId(NFA::StartStateId startStateId,
+                                 Utf8Chars *utf8Stream) {
   State *curDFAState, *nextDFAState;
 
-  curDFAState = dfaStartState;
+  curDFAState = startState[startStateId];
   utf8Char_t curChar = utf8Stream->nextUtf8Char();
   while (curChar.u) {
     State *nextDFAState = NULL;

@@ -39,13 +39,21 @@ namespace DeterministicFiniteAutomaton {
       /// following unlabeled (NFA::Split) transitions.
       void addNFAStateToDFAState(State *dfaState, NFA::State *nfaState);
 
-      /// \brief Compute the initial DFA::State bit set which represents
-      /// the start state of this DFA.
+      /// \brief Compute the initial DFA::State bit set for the NFA
+      /// start state associated with the given startStateName.
       ///
       /// The DFA::State start state is the bit set of all NFA::State(s)
-      /// reachable from the NFA::nfaStartState by following unlabeled
+      /// reachable from the give NFA StartState by following unlabeled
       /// (NFA::Split) transitions.
-      void computeDFAStartState(void);
+      void computeDFAStartState(const char *startStateName);
+
+      /// \brief Compute the initial DFA::State bit set for the NFA
+      /// start state NFA::StartStateId, startStateId.
+      ///
+      /// The DFA::State start state is the bit set of all NFA::State(s)
+      /// reachable from the give NFA StartState by following unlabeled
+      /// (NFA::Split) transitions.
+      void computeDFAStartState(NFA::StartStateId startStateId);
 
       /// \brief Find or compute the next DFA::State given a
       /// utf8Char_t character or a Classifier::classSet_t.
@@ -66,7 +74,8 @@ namespace DeterministicFiniteAutomaton {
                                   Classifier::classSet_t classificationSet);
 
       /// \brief Run the DFA until the next token is recognized.
-      NFA::TokenId getNextTokenId(Utf8Chars *utf8Stream);
+      NFA::TokenId getNextTokenId(NFA::StartStateId startStateId,
+                                  Utf8Chars *utf8Stream);
 
     private:
       /// \brief The NFA associated to this DFA.
@@ -78,15 +87,19 @@ namespace DeterministicFiniteAutomaton {
       /// \brief The DFA::NextStateMapping for this DFA interpretor.
       NextStateMapping *nextStateMapping;
 
-      /// \brief The initial starting state for this DFA.
-      State *dfaStartState;
-
       /// \brief The bit set of all known NFA::State(s) which are
       /// NFA::token recognizing states.
       ///
       /// This bit set is used to determine if/when a token has been
       /// recognized.
       State *tokensState;
+
+      /// \brief The array of DFA::State(s) corresponding to the 
+      /// NFA startStates indexed by the NFA::StartStateId.
+      State **startState;
+
+      /// \brief The total number of start states.
+      size_t numStartStates;
 
   }; // class DFA
 };  // namespace DeterministicFiniteAutomaton

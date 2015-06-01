@@ -38,16 +38,16 @@ go_bandit([](){
       AssertThat(dfa->nfa, Equals(nfa));
       AssertThat(dfa->allocator, Is().Not().EqualTo((void*)0));
       AssertThat(dfa->nextStateMapping, Is().Not().EqualTo((void*)0));
-      AssertThat(((void*)dfa->dfaStartState), Is().Not().EqualTo((void*)0));
-      AssertThat((int)dfa->dfaStartState[0], Equals(15));
+      AssertThat(dfa->startState, Is().Not().EqualTo((State**)0));
+      AssertThat((int)dfa->startState[0][0], Equals(15));
       for( size_t i = 1; i < dfa->allocator->stateSize; i++) {
-        AssertThat(dfa->dfaStartState[i], Equals(0));
+        AssertThat(dfa->startState[0][i], Equals(0));
       }
       AssertThat(((void*)dfa->tokensState), Is().Not().EqualTo((void*)0));
       for( size_t i = 0; i < dfa->allocator->stateSize; i++) {
         AssertThat(dfa->tokensState[i], Equals(0));
       }
-      AssertThat(dfa->allocator->isSubStateOf(dfa->dfaStartState, dfa->tokensState), Is().False());
+      AssertThat(dfa->allocator->isSubStateOf(dfa->startState[0], dfa->tokensState), Is().False());
       delete dfa;
       delete nfa;
       delete classifier;
@@ -82,7 +82,7 @@ go_bandit([](){
       firstChar.c[0] = 'a';
       Classifier::classSet_t classificationSet = 0;
       State *nextDFAState =
-        dfa->computeNextDFAState(dfa->dfaStartState,
+        dfa->computeNextDFAState(dfa->startState[0],
                                  firstChar,
                                  classificationSet);
       AssertThat((void*)nextDFAState, Is().Not().EqualTo((void*)0));
@@ -144,7 +144,7 @@ go_bandit([](){
         classifier->getClassSet(firstChar);
       AssertThat(classificationSet, Is().EqualTo(~1L));
       State *nextDFAState =
-        dfa->computeNextDFAState(dfa->dfaStartState,
+        dfa->computeNextDFAState(dfa->startState[0],
                                  firstChar,
                                  classificationSet);
       AssertThat((void*)nextDFAState, Is().Not().EqualTo((void*)0));
@@ -211,7 +211,7 @@ go_bandit([](){
         classifier->getClassSet(firstChar);
       AssertThat(classificationSet, Is().EqualTo(~1L));
       State *nextDFAState =
-        dfa->computeNextDFAState(dfa->dfaStartState,
+        dfa->computeNextDFAState(dfa->startState[0],
                                  firstChar,
                                  classificationSet);
       AssertThat((void*)nextDFAState, Is().Not().EqualTo((void*)0));
@@ -250,10 +250,10 @@ go_bandit([](){
       DFA *dfa = new DFA(nfa);
       AssertThat(dfa, Is().Not().EqualTo((void*)0));
       Utf8Chars *stream0 = new Utf8Chars("simple");
-      NFA::TokenId aTokenId = dfa->getNextTokenId(stream0);
+      NFA::TokenId aTokenId = dfa->getNextTokenId((NFA::StartStateId)0, stream0);
       AssertThat(aTokenId, Is().EqualTo(1));
       Utf8Chars *stream1 = new Utf8Chars("notSoSimple");
-      aTokenId = dfa->getNextTokenId(stream1);
+      aTokenId = dfa->getNextTokenId((NFA::StartStateId)0, stream1);
       AssertThat(aTokenId, Is().EqualTo(-1));
       delete dfa;
       delete nfa;
@@ -279,10 +279,10 @@ go_bandit([](){
       DFA *dfa = new DFA(nfa);
       AssertThat(dfa, Is().Not().EqualTo((void*)0));
       Utf8Chars *stream0 = new Utf8Chars("simple");
-      NFA::TokenId aTokenId = dfa->getNextTokenId(stream0);
+      NFA::TokenId aTokenId = dfa->getNextTokenId((NFA::StartStateId)0, stream0);
       AssertThat(aTokenId, Is().EqualTo(1));
       Utf8Chars *stream1 = new Utf8Chars("notSoSimple");
-      aTokenId = dfa->getNextTokenId(stream1);
+      aTokenId = dfa->getNextTokenId((NFA::StartStateId)0, stream1);
       AssertThat(aTokenId, Is().EqualTo(1));
       delete dfa;
       delete nfa;
@@ -302,7 +302,7 @@ go_bandit([](){
       DFA *dfa = new DFA(nfa);
       AssertThat(dfa, Is().Not().EqualTo((void*)0));
       Utf8Chars *stream0 = new Utf8Chars("sillysomeNonWhiteSpace");
-      NFA::TokenId aTokenId = dfa->getNextTokenId(stream0);
+      NFA::TokenId aTokenId = dfa->getNextTokenId((NFA::StartStateId)0, stream0);
       AssertThat(aTokenId, Is().EqualTo(1));
       delete dfa;
       delete nfa;
@@ -323,13 +323,13 @@ go_bandit([](){
       StateAllocator *allocator = dfa->allocator;
       AssertThat(allocator, Is().Not().EqualTo((void*)0));
       NFA::State *nfaState =
-        allocator->stateMatchesToken(dfa->dfaStartState, dfa->tokensState);
+        allocator->stateMatchesToken(dfa->startState[0], dfa->tokensState);
       AssertThat(nfaState, Is().EqualTo((void*)0));
       Utf8Chars *stream0 = new Utf8Chars("sillysomeNonWhiteSpace   ");
-      NFA::TokenId aTokenId = dfa->getNextTokenId(stream0);
+      NFA::TokenId aTokenId = dfa->getNextTokenId((NFA::StartStateId)0, stream0);
       AssertThat(aTokenId, Is().EqualTo(2));
       Utf8Chars *stream1 = new Utf8Chars("   sillysomeNonWhiteSpace");
-      aTokenId = dfa->getNextTokenId(stream1);
+      aTokenId = dfa->getNextTokenId((NFA::StartStateId)0, stream1);
       AssertThat(aTokenId, Is().EqualTo(1));
       delete dfa;
       delete nfa;
