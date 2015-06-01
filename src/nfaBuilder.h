@@ -66,10 +66,12 @@ class NFABuilder {
     NFA::State *match(NFA::TokenId aTokenId) throw (LexerException);
 
     /// \brief Compile the Regular Expression into a (sub)NFA used to
-    /// recognize a Token with Token ID aTokenId.
-    NFA::State *compileRegularExpressionForTokenId(const char *re,
-                                                   NFA::TokenId aTokenId)
-                                                   throw (LexerException);
+    /// recognize a Token with Token ID aTokenId with the given
+    /// startStateName.
+    void compileRegularExpressionForTokenId(const char *startStateName,
+                                            const char *re,
+                                            NFA::TokenId aTokenId)
+                                            throw (LexerException);
 
   private:
     /// \brief a Ptrlist is a linked list of NFA::State structures

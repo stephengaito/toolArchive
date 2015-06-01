@@ -98,7 +98,7 @@ void NFABuilder::checkClassification(Classifier::classSet_t aClass)
 
 void NFABuilder::reStart(NFA::StartStateId pushDownStartStateId) throw (LexerException) {
   NFA::MatchData someMatchData;
-  someMatchData.p = pushDownStartStateId;
+  someMatchData.r = pushDownStartStateId;
   NFA::State *s = nfa->addState(NFA::ReStart, someMatchData, NULL, NULL);
   push(frag(s, list1(&s->out)));
 }

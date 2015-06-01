@@ -5,6 +5,9 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <assert.h>
+#define ASSERT assert
+
 /// \brief The utf8Char_struct (utf8Char_t) is a simple union to allow
 /// a single UTF8 character to be viewed as either an array of 8 bytes, or
 /// as a single unsigned 64 bit integer.

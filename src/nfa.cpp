@@ -70,12 +70,11 @@ NFA::State *NFA::addState(NFA::MatchType aMatchType,
   return newState;
 }
 
-void NFA::appendNFAToStartState(const char *startStateName,
-                                NFA::State *baseSplitState) {
+void NFA::registerStartState(const char *startStateName) {
   StartStateId *startStateId = hattrie_get(startStateIds,
                                            startStateName,
                                            strlen(startStateName));
-  if (!startStateId) throw LexerException("corrupted startStateIds Hat-Trie");
+  ASSERT(startStateId); // corrupted startStateIds Hat-Trie
   if (!*startStateId) {
     // we need to allocate a new startStateId
     if (numStartStates <= nextStartState) {
@@ -97,12 +96,18 @@ void NFA::appendNFAToStartState(const char *startStateName,
     startState[*startStateId - 1] = NULL;
     nextStartState++;
   }
+}
+
+void NFA::appendNFAToStartState(const char *startStateName,
+                                NFA::State *baseSplitState) {
+  StartStateId startStateId = findStartStateId(startStateName);
+  ASSERT(startStateId < numStartStates); // Corrupted startStateIds Hat-Trie
   MatchData nulMatchData;
   nulMatchData.c.u = 0;
-  if (!startState[*startStateId - 1]) {
-    startState[*startStateId - 1] = baseSplitState;
+  if (!startState[startStateId]) {
+    startState[startStateId] = baseSplitState;
   } else {
-    State *nextState = startState[*startStateId - 1];
+    State *nextState = startState[startStateId];
     while (nextState->out1) nextState = nextState->out1;
     nextState->out1 = baseSplitState;
   }

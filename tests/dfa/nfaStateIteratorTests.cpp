@@ -29,7 +29,7 @@ go_bandit([](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
       NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfa->appendNFAToStartState("start", nfaBuilder->compileRegularExpressionForTokenId("(abab|abbb)", 1));
+      nfaBuilder->compileRegularExpressionForTokenId("start", "(abab|abbb)", 1);
       AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
       StateAllocator *allocator = new StateAllocator(nfa);
       AssertThat(allocator, Is().Not().EqualTo((void*)0));
@@ -52,7 +52,7 @@ go_bandit([](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
       NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfa->appendNFAToStartState("start", nfaBuilder->compileRegularExpressionForTokenId("thisisasimpletest", 1));
+      nfaBuilder->compileRegularExpressionForTokenId("start", "thisisasimpletest", 1);
       AssertThat(nfa->getNumberStates(), Is().EqualTo(19));
       StateAllocator *allocator = new StateAllocator(nfa);
       AssertThat(allocator, Is().Not().EqualTo((void*)0));

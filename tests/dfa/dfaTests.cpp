@@ -31,7 +31,7 @@ go_bandit([](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
       NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfa->appendNFAToStartState("start", nfaBuilder->compileRegularExpressionForTokenId("(abab|abbb)", 1));
+      nfaBuilder->compileRegularExpressionForTokenId("start", "(abab|abbb)", 1);
       AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
       DFA *dfa = new DFA(nfa);
       AssertThat(dfa, Is().Not().EqualTo((void*)0));
@@ -60,7 +60,7 @@ go_bandit([](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
       NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfa->appendNFAToStartState("start", nfaBuilder->compileRegularExpressionForTokenId("(abab|abbb)", 1));
+      nfaBuilder->compileRegularExpressionForTokenId("start", "(abab|abbb)", 1);
       AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
       DFA *dfa = new DFA(nfa);
       AssertThat(dfa, Is().Not().EqualTo((void*)0));
@@ -120,7 +120,7 @@ go_bandit([](){
       AssertThat(classifier->getClassSet("a"), Is().EqualTo(~1L));
       NFA *nfa = new NFA(classifier);
       NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfa->appendNFAToStartState("start", nfaBuilder->compileRegularExpressionForTokenId("(abab|[!whitespace]bbb)", 1));
+      nfaBuilder->compileRegularExpressionForTokenId("start", "(abab|[!whitespace]bbb)", 1);
       AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
       DFA *dfa = new DFA(nfa);
       AssertThat(dfa, Is().Not().EqualTo((void*)0));
@@ -187,7 +187,7 @@ go_bandit([](){
       AssertThat(classifier->getClassSet("a"), Is().EqualTo(~1L));
       NFA *nfa = new NFA(classifier);
       NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfa->appendNFAToStartState("start", nfaBuilder->compileRegularExpressionForTokenId("([!whitespace]bab|[!whitespace]bbb)", 1));
+      nfaBuilder->compileRegularExpressionForTokenId("start", "([!whitespace]bab|[!whitespace]bbb)", 1);
       AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
       DFA *dfa = new DFA(nfa);
       AssertThat(dfa, Is().Not().EqualTo((void*)0));
@@ -245,7 +245,7 @@ go_bandit([](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
       NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfa->appendNFAToStartState("start", nfaBuilder->compileRegularExpressionForTokenId("simple", 1));
+      nfaBuilder->compileRegularExpressionForTokenId("start", "simple", 1);
       AssertThat(nfa->getNumberStates(), Is().EqualTo(8));
       DFA *dfa = new DFA(nfa);
       AssertThat(dfa, Is().Not().EqualTo((void*)0));
@@ -264,7 +264,7 @@ go_bandit([](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
       NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfa->appendNFAToStartState("start", nfaBuilder->compileRegularExpressionForTokenId("(simple|notSoSimple)", 1));
+      nfaBuilder->compileRegularExpressionForTokenId("start", "(simple|notSoSimple)", 1);
       AssertThat(nfa->getNumberStates(), Is().EqualTo(20));
       NFA::State *baseState =
         (NFA::State*)nfa->stateAllocator->blocks[nfa->stateAllocator->nextBlock - 1];
@@ -297,7 +297,7 @@ go_bandit([](){
       AssertThat(classifier->getClassSet("a"), Is().EqualTo(~1L));
       NFA *nfa = new NFA(classifier);
       NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfa->appendNFAToStartState("start", nfaBuilder->compileRegularExpressionForTokenId("[!whitespace]+", 1));
+      nfaBuilder->compileRegularExpressionForTokenId("start", "[!whitespace]+", 1);
       AssertThat(nfa->getNumberStates(), Is().EqualTo(4));
       DFA *dfa = new DFA(nfa);
       AssertThat(dfa, Is().Not().EqualTo((void*)0));
@@ -315,8 +315,8 @@ go_bandit([](){
       classifier->classifyUtf8CharsAs(Utf8Chars::whiteSpaceChars,"whitespace");
       NFA *nfa = new NFA(classifier);
       NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfa->appendNFAToStartState("start", nfaBuilder->compileRegularExpressionForTokenId("[whitespace]+", 1));
-      nfa->appendNFAToStartState("start", nfaBuilder->compileRegularExpressionForTokenId("[!whitespace]+", 2));
+      nfaBuilder->compileRegularExpressionForTokenId("start", "[whitespace]+", 1);
+      nfaBuilder->compileRegularExpressionForTokenId("start", "[!whitespace]+", 2);
       AssertThat(nfa->getNumberStates(), Is().EqualTo(8));
       DFA *dfa = new DFA(nfa);
       AssertThat(dfa, Is().Not().EqualTo((void*)0));

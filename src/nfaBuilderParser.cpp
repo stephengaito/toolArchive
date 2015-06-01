@@ -30,10 +30,13 @@
  * Insert . as explicit concatenation operator.
  * Cheesy parser, return static buffer.
  */
-NFA::State *NFABuilder::compileRegularExpressionForTokenId(const char *aUtf8RegExp,
-                                                          NFA::TokenId aTokenId)
-                                                          throw (LexerException) {
+void NFABuilder::compileRegularExpressionForTokenId(
+  const char *startStateName,
+  const char *aUtf8RegExp,
+  NFA::TokenId aTokenId)
+  throw (LexerException) {
 
+  nfa->registerStartState(startStateName);
   size_t reLen = strlen(aUtf8RegExp);
   //TODO: we might want to preAddStates(reLen);
   Utf8Chars *re = new Utf8Chars(aUtf8RegExp);
@@ -134,12 +137,14 @@ NFA::State *NFABuilder::compileRegularExpressionForTokenId(const char *aUtf8RegE
         reStartStateName[nameBufSize] = 0;
         for (size_t i = 0; i < nameBufSize; i++) {
           reStartStateName[i] = re->getNextByte();
-          if (reStartStateName[i] == ']') { reStartStateName[i] = 0; break; }
+          if (reStartStateName[i] == '}') { reStartStateName[i] = 0; break; }
           if (reStartStateName[i] == 0) break;
         }
+        fprintf(stdout, "found reStartStateName [%s]\n", reStartStateName);
         // find the reStartId for this reStartStateName
         if (reStartStateName[0] == 0) throw LexerException("mallformed reStart name");
         reStartStateId = nfa->findStartStateId(reStartStateName);
+        fprintf(stdout, "reStartStateId = %lu\n", (long)reStartStateId);
         // now repeat the natom manipulate done for checkCharacter
         if (natom > 1) {
           --natom;
@@ -166,7 +171,7 @@ NFA::State *NFABuilder::compileRegularExpressionForTokenId(const char *aUtf8RegE
   while (--natom > 0) concatenate();
   for (; nalt > 0; nalt--) alternate();
   baseSplitState->out = match(aTokenId);
-  return baseSplitState;
+  nfa->appendNFAToStartState(startStateName, baseSplitState);
 }
 
 /*

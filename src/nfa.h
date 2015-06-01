@@ -83,7 +83,7 @@ class NFA {
         TokenId  t;
         /// \brief The StartState ID associated to a given (recursive)
         /// push down state.
-        StartStateId p;
+        StartStateId r; // (re)startState
       } MatchData;
 
     /// \brief Every NFA is a graph of NFA::State stuctures which is
@@ -116,6 +116,10 @@ class NFA {
 
     /// \brief Get the Classifier associated with this NFA.
     Classifier *getClassifier(void) { return utf8Classifier; }
+
+    /// \brief (pre)Register the name of a StartState that might be
+    /// used in one or more regular expressions.
+    void registerStartState(const char *startStateName);
 
     /// \brief Append the (sub)NFA to the current start state.
     void appendNFAToStartState(const char *startStateName,
