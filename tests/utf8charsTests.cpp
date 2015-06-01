@@ -30,14 +30,20 @@ go_bandit([](){
     it("create a Utf8Chars buffer", [&](){
       Utf8Chars *someChars = new Utf8Chars("silly");
       AssertThat(someChars,              Is().Not().EqualTo((Utf8Chars*)0));
-      AssertThat(someChars->nextByte,    Is().EqualTo(someChars->utf8Chars));
-      AssertThat(someChars->currentMark, Is().EqualTo(someChars->utf8Chars));
+      AssertThat(someChars->nextByte,    Equals(someChars->utf8Chars));
+      AssertThat(someChars->markStack,   Is().Not().EqualTo((void*)0));
+      AssertThat(someChars->markStackTop, Equals(0));
+      AssertThat(someChars->markStackSize, Is().Not().EqualTo(0));
+      AssertThat(someChars->markStack[0], Equals(someChars->utf8Chars));
       AssertThat(someChars->ownsString,  Is().False());
       delete someChars;
       someChars = new Utf8Chars("silly", Utf8Chars::DoNotOwn);
       AssertThat(someChars,              Is().Not().EqualTo((Utf8Chars*)0));
       AssertThat(someChars->nextByte,    Is().EqualTo(someChars->utf8Chars));
-      AssertThat(someChars->currentMark, Is().EqualTo(someChars->utf8Chars));
+      AssertThat(someChars->markStack,   Is().Not().EqualTo((void*)0));
+      AssertThat(someChars->markStackTop, Equals(0));
+      AssertThat(someChars->markStackSize, Is().Not().EqualTo(0));
+      AssertThat(someChars->markStack[0], Equals(someChars->utf8Chars));
       AssertThat(someChars->ownsString,  Is().False());
       delete someChars;
     });
@@ -49,7 +55,10 @@ go_bandit([](){
       Utf8Chars *someChars = new Utf8Chars(cString, Utf8Chars::Duplicate);
       AssertThat(someChars,              Is().Not().EqualTo((Utf8Chars*)0));
       AssertThat(someChars->nextByte,    Is().EqualTo(someChars->utf8Chars));
-      AssertThat(someChars->currentMark, Is().EqualTo(someChars->utf8Chars));
+      AssertThat(someChars->markStack,   Is().Not().EqualTo((void*)0));
+      AssertThat(someChars->markStackTop, Equals(0));
+      AssertThat(someChars->markStackSize, Is().Not().EqualTo(0));
+      AssertThat(someChars->markStack[0], Equals(someChars->utf8Chars));
       AssertThat(someChars->ownsString,  Is().True());
       AssertThat(someChars->utf8Chars,   Equals(cString));
       AssertThat(someChars->utf8Chars,   Is().Not().EqualTo((char*)cString));
@@ -63,7 +72,10 @@ go_bandit([](){
       Utf8Chars *someChars = new Utf8Chars(cString, Utf8Chars::TakeOwnership);
       AssertThat(someChars,              Is().Not().EqualTo((Utf8Chars*)0));
       AssertThat(someChars->nextByte,    Equals(someChars->utf8Chars));
-      AssertThat(someChars->currentMark, Equals(someChars->utf8Chars));
+      AssertThat(someChars->markStack,   Is().Not().EqualTo((void*)0));
+      AssertThat(someChars->markStackTop, Equals(0));
+      AssertThat(someChars->markStackSize, Is().Not().EqualTo(0));
+      AssertThat(someChars->markStack[0], Equals(someChars->utf8Chars));
       AssertThat(someChars->ownsString,  Is().True());
       AssertThat(someChars->utf8Chars,   Equals(cString));
       delete someChars;
@@ -73,27 +85,36 @@ go_bandit([](){
       Utf8Chars *someChars = new Utf8Chars("silly");
       AssertThat(someChars,              Is().Not().EqualTo((Utf8Chars*)0));
       AssertThat(someChars->nextByte,    Is().EqualTo(someChars->utf8Chars));
-      AssertThat(someChars->currentMark, Is().EqualTo(someChars->utf8Chars));
+      AssertThat(someChars->markStack,   Is().Not().EqualTo((void*)0));
+      AssertThat(someChars->markStackTop, Equals(0));
+      AssertThat(someChars->markStackSize, Is().Not().EqualTo(0));
+      AssertThat(someChars->markStack[0], Equals(someChars->utf8Chars));
       utf8Char_t expectedChar;
       expectedChar.u = 0;
       expectedChar.c[0] = 's';
       AssertThat(someChars->nextUtf8Char().u, Is().EqualTo(expectedChar.u));
-      someChars->mark();
+      someChars->pushMark();
       const char *markedChar = someChars->getMark();
-      AssertThat(someChars->currentMark, Is().Not().EqualTo(someChars->utf8Chars));
-      AssertThat(someChars->currentMark, Is().EqualTo(someChars->nextByte));
-      AssertThat(someChars->currentMark, Is().EqualTo(markedChar));
+      AssertThat(someChars->markStack[someChars->markStackTop],
+        Is().Not().EqualTo(someChars->utf8Chars));
+      AssertThat(someChars->markStack[someChars->markStackTop],
+        Is().EqualTo(someChars->nextByte));
+      AssertThat(someChars->markStack[someChars->markStackTop],
+        Is().EqualTo(markedChar));
       expectedChar.c[0] = 'i';
       AssertThat(someChars->nextUtf8Char().u, Is().EqualTo(expectedChar.u));
       expectedChar.c[0] = 'l';
       AssertThat(someChars->nextUtf8Char().u, Is().EqualTo(expectedChar.u));
       expectedChar.c[0] = 'l';
       AssertThat(someChars->nextUtf8Char().u, Is().EqualTo(expectedChar.u));
-      AssertThat(someChars->currentMark, Is().Not().EqualTo(someChars->nextByte));
-      AssertThat(someChars->currentMark, Is().EqualTo(markedChar));
+      AssertThat(someChars->markStack[someChars->markStackTop],
+        Is().Not().EqualTo(someChars->nextByte));
+      AssertThat(someChars->markStack[someChars->markStackTop],
+        Is().EqualTo(markedChar));
       AssertThat(someChars->getNumberOfBytesInMarkedText(), Is().EqualTo(3));
       char *ill = someChars->getCopyOfMarkedText();
-      AssertThat(someChars->currentMark, Is().Not().EqualTo(ill));
+      AssertThat(someChars->markStack[someChars->markStackTop],
+        Is().Not().EqualTo(ill));
       AssertThat(strlen(ill), Is().EqualTo(3));
       AssertThat(ill[0], Is().EqualTo('i'));
       AssertThat(ill[1], Is().EqualTo('l'));

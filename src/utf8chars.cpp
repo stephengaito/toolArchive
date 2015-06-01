@@ -3,6 +3,10 @@
 
 #include "utf8chars.h"
 
+#ifndef MARK_STACK_INCREMENT
+#define MARK_STACK_INCREMENT 10
+#endif
+
 //
 // This list of whitespace has been taken from
 // [In Python, how to listall characters matched by POSIX extended regex
@@ -59,6 +63,9 @@ Utf8Chars::Utf8Chars(const char* someUtf8Chars,
       break;
   }
   numBytes  = strlen(utf8Chars);
+  markStack     = NULL;
+  markStackTop  = 0;
+  markStackSize = 0;
   restart();
 }
 
@@ -68,12 +75,15 @@ Utf8Chars::~Utf8Chars(void) {
   ownsString  = false;
   numBytes    = 0;
   nextByte    = NULL;
-  currentMark = NULL;
+  if (markStack) free(markStack);
+  markStack     = NULL;
+  markStackTop  = 0;
+  markStackSize = 0;
 }
 
 void Utf8Chars::restart(void) {
   nextByte    = utf8Chars;
-  currentMark = utf8Chars;
+  clearMarks();
 }
 
 // We use the Wikipedia
@@ -96,6 +106,32 @@ void Utf8Chars::backup(void) {
       return;
     }
   }
+}
+
+void Utf8Chars::clearMarks(void) {
+  markStackTop = 0;
+  if (!markStack) {
+    markStackSize = MARK_STACK_INCREMENT;
+    markStack = (const char**)calloc(markStackSize, sizeof(const char*));
+  }
+  memset(markStack, 0, markStackSize*sizeof(const char*));
+  markStack[markStackTop] = utf8Chars;
+}
+
+void Utf8Chars::pushMark(void) {
+  markStackTop++;
+  if (markStackSize <= markStackTop) {
+    // we need to resize the stack
+    const char **oldStack = markStack;
+    markStack = (const char **)calloc(markStackSize + MARK_STACK_INCREMENT,
+                                      sizeof(const char*));
+    if (oldStack) {
+      memcpy(markStack, oldStack, markStackSize*sizeof(const char*));
+      free(oldStack);
+    }
+    markStackSize += MARK_STACK_INCREMENT;
+  }
+  markStack[markStackTop] = nextByte;
 }
 
 // We use the Wikipedia

@@ -79,20 +79,27 @@ class Utf8Chars {
       return *nextByte++;
     }
 
+    /// \brief Clear the stack of stream markers.
+    void clearMarks(void);
+
     /// \brief Remember the current location in the stream.
-    void mark(void) {
-      currentMark = nextByte;
+    void pushMark(void);
+
+    /// \brief Forget the most recent stream mark and remember the 
+    /// previous one.
+    void popMark(void) {
+      if (0 < markStackTop) markStackTop--;
     }
 
     /// \brief Get the stream at the marked location.
     const char *getMark(void) {
-      return currentMark;
+      return markStack[markStackTop];
     }
 
     /// \brief Returns the number of bytes, not neccessarily the number
     /// of UTF8 characters, in the marked text.
     size_t getNumberOfBytesInMarkedText(void) {
-      return nextByte - currentMark;
+      return nextByte - markStack[markStackTop];
     }
 
     /// \brief Returns a (strndup'ed) copy of the currently marked text.
@@ -100,7 +107,7 @@ class Utf8Chars {
     /// The currently marked text are the bytes from the currentMark
     /// until just before the nextByte.
     char *getCopyOfMarkedText(void) {
-      return strndup(currentMark, getNumberOfBytesInMarkedText());
+      return strndup(markStack[markStackTop], getNumberOfBytesInMarkedText());
     }
 
     /// \brief Returns true if the Utf8Chars contians the given UTF8 char
@@ -144,7 +151,11 @@ class Utf8Chars {
     ///
     /// This currentMark can be used to remember a previously marked
     /// location in the stream.
-    const char* currentMark;
+    const char **markStack;
+
+    size_t markStackTop;
+
+    size_t markStackSize;
 };
 
 #endif
