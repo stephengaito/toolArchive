@@ -68,9 +68,9 @@ go_bandit([](){
       AssertThat(allocator, Is().Not().EqualTo((void*)0));
       NextStateMapping *mapping = dfa->nextStateMapping;
       AssertThat(mapping, Is().Not().EqualTo((void*)0));
-      AssertThat(allocator->allocatedUnusedState0, Is().EqualTo((void*)0));
-      AssertThat(allocator->allocatedUnusedState1, Is().EqualTo((void*)0));
-      AssertThat(allocator->allocatedUnusedState2, Is().EqualTo((void*)0));
+      AssertThat(allocator->allocatedUnusedStack, Is().EqualTo((void*)0));
+      AssertThat(allocator->allocatedUnusedStackTop, Is().EqualTo(0));
+      AssertThat(allocator->allocatedUnusedStackSize, Is().EqualTo(0));
       State *aState0 = allocator->allocateANewState(); // this will be generic state
       State *aState1 = allocator->allocateANewState(); // this will be the specific state
       State *aState2 = allocator->allocateANewState(); // should never be used
@@ -128,15 +128,15 @@ go_bandit([](){
       AssertThat(allocator, Is().Not().EqualTo((void*)0));
       NextStateMapping *mapping = dfa->nextStateMapping;
       AssertThat(mapping, Is().Not().EqualTo((void*)0));
-      AssertThat(allocator->allocatedUnusedState0, Is().EqualTo((void*)0));
-      AssertThat(allocator->allocatedUnusedState1, Is().EqualTo((void*)0));
-      AssertThat(allocator->allocatedUnusedState2, Is().EqualTo((void*)0));
-      State *aState0 = allocator->allocateANewState(); // this will be generic state
-      State *aState1 = allocator->allocateANewState(); // this will be the specific state
-      State *aState2 = allocator->allocateANewState(); // should never be used
-      allocator->unallocateState(aState0);
-      allocator->unallocateState(aState1);
-      allocator->unallocateState(aState2);
+      AssertThat(allocator->allocatedUnusedStack, Is().EqualTo((void*)0));
+      AssertThat(allocator->allocatedUnusedStackTop, Is().EqualTo(0));
+      AssertThat(allocator->allocatedUnusedStackSize, Is().EqualTo(0));
+      State *specificState = allocator->allocateANewState(); // this will be the specific state
+      State *genericState  = allocator->allocateANewState(); // this will be generic state
+      allocator->unallocateState(specificState);
+      allocator->unallocateState(genericState); // last in first out of stack
+      AssertThat(allocator->allocatedUnusedStack[0], Equals(specificState));
+      AssertThat(allocator->allocatedUnusedStack[1], Equals(genericState));
       utf8Char_t firstChar;
       firstChar.u = 0;
       firstChar.c[0] = 'a';
@@ -148,27 +148,27 @@ go_bandit([](){
                                  firstChar,
                                  classificationSet);
       AssertThat((void*)nextDFAState, Is().Not().EqualTo((void*)0));
-      AssertThat((void*)nextDFAState, Is().EqualTo((void*)aState1));
-      AssertThat(allocator->isStateEmpty(aState0), Is().False());
-      AssertThat(((int)aState0[0]), Is().EqualTo((int)0x20));
+      AssertThat((void*)nextDFAState, Is().EqualTo((void*)specificState));
+      AssertThat(allocator->isStateEmpty(specificState), Is().False());
+      AssertThat(((int)specificState[0]), Is().EqualTo((int)0x30));
       for (size_t i = 1; i < dfa->allocator->stateSize; i++) {
-        AssertThat(((int)aState0[i]), Is().EqualTo((int)0x00));
+        AssertThat(((int)specificState[i]), Is().EqualTo((int)0x00));
       }
-      State **registeredState0 =
+      State **registeredSpecificState =
         (State**)hattrie_tryget(mapping->nextDFAStateMap,
-                                aState0, allocator->stateSize);
-      AssertThat((void**)registeredState0, Is().Not().EqualTo((void*)0));
-      AssertThat((void*)*registeredState0, Is().EqualTo((void*)aState0));
+                                specificState, allocator->stateSize);
+      AssertThat((void**)registeredSpecificState, Is().Not().EqualTo((void*)0));
+      AssertThat((void*)*registeredSpecificState, Is().EqualTo((void*)specificState));
 
-      AssertThat(allocator->isStateEmpty(aState1), Is().False());
-      State **registeredState1 =
+      AssertThat(allocator->isStateEmpty(genericState), Is().False());
+      State **registeredGenericState =
         (State**)hattrie_tryget(mapping->nextDFAStateMap,
-                                aState1, allocator->stateSize);
-      AssertThat((void**)registeredState1, Is().Not().EqualTo((void*)0));
-      AssertThat((void*)*registeredState1, Is().EqualTo((void*)aState1));
-      AssertThat(((int)nextDFAState[0]), Is().EqualTo((int)0x30));
+                                genericState, allocator->stateSize);
+      AssertThat((void**)registeredGenericState, Is().Not().EqualTo((void*)0));
+      AssertThat((void*)*registeredGenericState, Is().EqualTo((void*)genericState));
+      AssertThat(((int)genericState[0]), Is().EqualTo((int)0x20));
       for (size_t i = 1; i < dfa->allocator->stateSize; i++) {
-        AssertThat(((int)nextDFAState[i]), Is().EqualTo((int)0x00));
+        AssertThat(((int)genericState[i]), Is().EqualTo((int)0x00));
       }
       delete dfa;
       delete nfa;
@@ -195,15 +195,15 @@ go_bandit([](){
       AssertThat(allocator, Is().Not().EqualTo((void*)0));
       NextStateMapping *mapping = dfa->nextStateMapping;
       AssertThat(mapping, Is().Not().EqualTo((void*)0));
-      AssertThat(allocator->allocatedUnusedState0, Is().EqualTo((void*)0));
-      AssertThat(allocator->allocatedUnusedState1, Is().EqualTo((void*)0));
-      AssertThat(allocator->allocatedUnusedState2, Is().EqualTo((void*)0));
-      State *aState0 = allocator->allocateANewState(); // this will be generic state
-      State *aState1 = allocator->allocateANewState(); // this will be the specific state
-      State *aState2 = allocator->allocateANewState(); // should never be used
-      allocator->unallocateState(aState0);
-      allocator->unallocateState(aState1);
-      allocator->unallocateState(aState2);
+      AssertThat(allocator->allocatedUnusedStack, Is().EqualTo((void*)0));
+      AssertThat(allocator->allocatedUnusedStackTop, Is().EqualTo(0));
+      AssertThat(allocator->allocatedUnusedStackSize, Is().EqualTo(0));
+      State *specificState = allocator->allocateANewState(); // this will be the specific state
+      State *genericState = allocator->allocateANewState(); // this will be generic state
+      allocator->unallocateState(specificState);
+      allocator->unallocateState(genericState); // last in first out stack
+      AssertThat(allocator->allocatedUnusedStack[0], Equals(specificState));
+      AssertThat(allocator->allocatedUnusedStack[1], Equals(genericState));
       utf8Char_t firstChar;
       firstChar.u = 0;
       firstChar.c[0] = 'a';
@@ -215,23 +215,23 @@ go_bandit([](){
                                  firstChar,
                                  classificationSet);
       AssertThat((void*)nextDFAState, Is().Not().EqualTo((void*)0));
-      AssertThat((void*)nextDFAState, Is().EqualTo((void*)aState0));
-      AssertThat(allocator->isStateEmpty(aState0), Is().False());
-      AssertThat(((int)aState0[0]), Is().EqualTo((int)0x30));
+      AssertThat((void*)nextDFAState, Is().EqualTo((void*)genericState));
+      AssertThat(allocator->isStateEmpty(genericState), Is().False());
+      AssertThat(((int)genericState[0]), Is().EqualTo((int)0x30));
       for (size_t i = 1; i < allocator->stateSize; i++) {
-        AssertThat(((int)aState0[i]), Is().EqualTo((int)0x00));
+        AssertThat(((int)genericState[i]), Is().EqualTo((int)0x00));
       }
-      State **registeredState0 =
+      State **registeredGenericState =
         (State**)hattrie_tryget(mapping->nextDFAStateMap,
-                                aState0, allocator->stateSize);
-      AssertThat((void**)registeredState0, Is().Not().EqualTo((void*)0));
-      AssertThat((void*)*registeredState0, Is().EqualTo((void*)aState0));
+                                genericState, allocator->stateSize);
+      AssertThat((void**)registeredGenericState, Is().Not().EqualTo((void*)0));
+      AssertThat((void*)*registeredGenericState, Is().EqualTo((void*)genericState));
 
-      AssertThat(allocator->isStateEmpty(aState1), Is().True());
-      State **registeredState1 =
+      AssertThat(allocator->isStateEmpty(specificState), Is().True());
+      State **registeredSpecificState =
         (State**)hattrie_tryget(mapping->nextDFAStateMap,
-                                aState1, allocator->stateSize);
-      AssertThat((void**)registeredState1, Is().EqualTo((void*)0));
+                                specificState, allocator->stateSize);
+      AssertThat((void**)registeredSpecificState, Is().EqualTo((void*)0));
       AssertThat(((int)nextDFAState[0]), Is().EqualTo((int)0x30));
       for (size_t i = 1; i < allocator->stateSize; i++) {
         AssertThat(((int)nextDFAState[i]), Is().EqualTo((int)0x00));

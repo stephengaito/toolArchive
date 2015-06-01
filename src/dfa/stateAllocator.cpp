@@ -31,13 +31,17 @@ using namespace DeterministicFiniteAutomaton;
 #define NUM_DFA_STATES_PER_BLOCK 20
 #endif
 
+#ifndef ALLOCATED_UNUSED_STACK_INCREMENT
+#define ALLOCATED_UNUSED_STACK_INCREMENT 10
+#endif
+
 StateAllocator::StateAllocator(NFA *anNFA) {
   nfa = anNFA;
   nfaStateMapping = new NFAStateMapping(this);
   stateSize = (nfa->getNumberStates() / 8) + 1;
-  allocatedUnusedState0 = NULL;
-  allocatedUnusedState1 = NULL;
-  allocatedUnusedState2 = NULL;
+  allocatedUnusedStack     = NULL;
+  allocatedUnusedStackTop  = 0;
+  allocatedUnusedStackSize = 0;
   stateAllocator = new BlockAllocator(NUM_DFA_STATES_PER_BLOCK*stateSize);
 };
 
@@ -50,30 +54,21 @@ StateAllocator::~StateAllocator(void) {
   stateSize = 0;
   if (stateAllocator) delete stateAllocator;
   stateAllocator    = NULL;
-  allocatedUnusedState0 = NULL;
-  allocatedUnusedState1 = NULL;
-  allocatedUnusedState2 = NULL;
+
+  if (allocatedUnusedStack) free(allocatedUnusedStack);
+  allocatedUnusedStack     = NULL;
+  allocatedUnusedStackTop  = 0;
+  allocatedUnusedStackSize = 0;
 }
 
 State *StateAllocator::allocateANewState(void) {
   State *newState = NULL;
 
   // start by checking if we have any allocated but unused DStates...
-  if (allocatedUnusedState0) {
-    newState = allocatedUnusedState0;
-    allocatedUnusedState0 = NULL;
-    emptyState(newState);
-    return newState;
-  }
-  if (allocatedUnusedState1) {
-    newState = allocatedUnusedState1;
-    allocatedUnusedState1 = NULL;
-    emptyState(newState);
-    return newState;
-  }
-  if (allocatedUnusedState2) {
-    newState = allocatedUnusedState2;
-    allocatedUnusedState2 = NULL;
+  if (0 < allocatedUnusedStackTop) {
+    allocatedUnusedStackTop--;
+    newState = allocatedUnusedStack[allocatedUnusedStackTop];
+    allocatedUnusedStack[allocatedUnusedStackTop] = NULL;
     emptyState(newState);
     return newState;
   }
@@ -85,20 +80,21 @@ State *StateAllocator::allocateANewState(void) {
 }
 
 void StateAllocator::unallocateState(State *aState) {
-  if (!allocatedUnusedState0) {
-    allocatedUnusedState0 = aState;
-    return;
+  if (allocatedUnusedStackSize <= allocatedUnusedStackTop) {
+    // we need to increase the size of the stack
+    State **oldStack = allocatedUnusedStack;
+    allocatedUnusedStack =
+      (State**)calloc(allocatedUnusedStackSize+ALLOCATED_UNUSED_STACK_INCREMENT,
+                      sizeof(State*));
+    if (oldStack) {
+      memcpy(allocatedUnusedStack, oldStack,
+             allocatedUnusedStackSize*sizeof(State*));
+      free(oldStack);
+    }
+    allocatedUnusedStackSize += ALLOCATED_UNUSED_STACK_INCREMENT;
   }
-  if (!allocatedUnusedState1) {
-    allocatedUnusedState1 = aState;
-    return;
-  }
-  if (!allocatedUnusedState2) {
-    allocatedUnusedState2 = aState;
-    return;
-  }
-  // Oops we have allocated too many temporary DStates
-  // just quietly drop this one
+  allocatedUnusedStack[allocatedUnusedStackTop] = aState;
+  allocatedUnusedStackTop++;
 }
 
 /*

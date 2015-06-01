@@ -101,17 +101,11 @@ namespace DeterministicFiniteAutomaton {
       /// \brief One of three allocated but currently unused DFA::State(s).
       ///
       /// Since this DFA::State is unused it can be re-allocated as needed.
-      State *allocatedUnusedState0;
+      State **allocatedUnusedStack;
 
-      /// \brief One of three allocated but currently unused DFA::State(s).
-      ///
-      /// Since this DFA::State is unused it can be re-allocated as needed.
-      State *allocatedUnusedState1;
+      size_t allocatedUnusedStackTop;
 
-      /// \brief One of three allocated but currently unused DFA::State(s).
-      ///
-      /// Since this DFA::State is unused it can be re-allocated as needed.
-      State *allocatedUnusedState2;
+      size_t allocatedUnusedStackSize;
 
   }; // class StateAllocator
 };  // namespace DeterministicFiniteAutomaton
