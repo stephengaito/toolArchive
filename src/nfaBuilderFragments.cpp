@@ -54,8 +54,7 @@ NFABuilder::Ptrlist* NFABuilder::append(
   return oldl1;
 }
 
-void NFABuilder::push(NFABuilder::Frag aFrag)
-  throw (LexerException) {
+void NFABuilder::push(NFABuilder::Frag aFrag) {
   if (stackSize <= stackTop) {
     // we need to increase the size of the stack
     Frag *oldStack = stack;
@@ -70,80 +69,68 @@ void NFABuilder::push(NFABuilder::Frag aFrag)
   stackTop++;
 };
 
-NFABuilder::Frag NFABuilder::pop(void)
-  throw (LexerException) {
-  if (0 < stackTop) {
-    --stackTop;
-  } else {
-    throw LexerException("malformed regular expression missing atom");
-  }
+NFABuilder::Frag NFABuilder::pop(void) {
+  ASSERT(0 < stackTop); // incorrectly matched push/pops
+  --stackTop;
   return stack[stackTop];
 };
 
-void NFABuilder::checkCharacter(utf8Char_t aChar)
-  throw (LexerException) {
+void NFABuilder::checkCharacter(utf8Char_t aChar) {
   NFA::MatchData someMatchData;
   someMatchData.c = aChar;
   NFA::State *s = nfa->addState(NFA::Character, someMatchData, NULL, NULL);
   push(frag(s, list1(&s->out)));
 }
 
-void NFABuilder::checkClassification(Classifier::classSet_t aClass)
-  throw (LexerException) {
+void NFABuilder::checkClassification(Classifier::classSet_t aClass) {
   NFA::MatchData someMatchData;
   someMatchData.s = aClass;
   NFA::State *s = nfa->addState(NFA::ClassSet, someMatchData, NULL, NULL);
   push(frag(s, list1(&s->out)));
 }
 
-void NFABuilder::reStart(NFA::StartStateId pushDownStartStateId) throw (LexerException) {
+void NFABuilder::reStart(NFA::StartStateId pushDownStartStateId) {
   NFA::MatchData someMatchData;
   someMatchData.r = pushDownStartStateId;
   NFA::State *s = nfa->addState(NFA::ReStart, someMatchData, NULL, NULL);
   push(frag(s, list1(&s->out)));
 }
 
-void NFABuilder::concatenate(void)
-  throw (LexerException) {
+void NFABuilder::concatenate(void) {
   Frag e2 = pop();
   Frag e1 = pop();
   patch(e1.out, e2.start);
   push(frag(e1.start, e2.out));
 };
 
-void NFABuilder::alternate(void)
-  throw (LexerException) {
+void NFABuilder::alternate(void) {
   Frag e2 = pop();
   Frag e1 = pop();
   NFA::State *s = nfa->addState(NFA::Split, noMatchData, e1.start, e2.start);
   push(frag(s, append(e1.out, e2.out)));
 };
 
-void NFABuilder::zeroOrOne(void)
-  throw (LexerException) {
+void NFABuilder::zeroOrOne(void) {
   Frag   e = pop();
   NFA::State *s = nfa->addState(NFA::Split, noMatchData, e.start, NULL);
   push(frag(s, append(e.out, list1(&s->out1))));
 };
 
-void NFABuilder::zeroOrMore(void)
-  throw (LexerException) {
+void NFABuilder::zeroOrMore(void) {
   Frag   e = pop();
   NFA::State *s = nfa->addState(NFA::Split, noMatchData, e.start, NULL);
   patch(e.out, s);
   push(frag(s, list1(&s->out1)));
 };
 
-void NFABuilder::oneOrMore(void)
-  throw (LexerException) {
+void NFABuilder::oneOrMore(void) {
   Frag   e = pop();
   NFA::State *s = nfa->addState(NFA::Split, noMatchData, e.start, NULL);
   patch(e.out, s);
   push(frag(e.start, list1(&s->out1)));
 };
 
-NFA::State *NFABuilder::match(NFA::TokenId aTokenId)
-  throw (LexerException) {
+NFA::State *NFABuilder::match(NFA::TokenId aTokenId) {
   Frag e = pop();
   NFA::MatchData tokenData;
   tokenData.c.u = 0;

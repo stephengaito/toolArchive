@@ -23,47 +23,46 @@ class NFABuilder {
 
     /// \brief Push an NFABuilder::Frag structure containing an
     /// NFA::State suitable to check a given UTF8 character.
-    void checkCharacter(utf8Char_t aChar) throw (LexerException);
+    void checkCharacter(utf8Char_t aChar);
 
     /// \brief Push an NFABuilder::Frag structure containing an
     /// NFA::State suitable to check that the current UTF8 character
     /// is a member of a given Classifier::classSet_t.
-    void checkClassification(Classifier::classSet_t aClass)
-    throw (LexerException);
+    void checkClassification(Classifier::classSet_t aClass);
 
     /// \brief Push an NFABuilder::Frag structure containing an
     /// NFA::State suitable to recursively (re)start the NFA
     /// at a new start state, returning to the originally pushed down
     /// state when the NFA has recognized the recursive start state.
-    void reStart(NFA::StartStateId aStartStateId) throw (LexerException);
+    void reStart(NFA::StartStateId aStartStateId);
 
     /// \brief Push an NFABuilder::Frag structure containing an
     /// NFA::State suitable to check one successor NFA::State.
-    void concatenate(void) throw (LexerException);
+    void concatenate(void);
 
     /// \brief Push an NFABuilder::Frag structure containing an
     /// NFA::State suitable to check two possible successor NFA::State(s).
-    void alternate(void) throw (LexerException);
+    void alternate(void);
 
     /// \brief Push an NFABuilder::Frag structure containing an
     /// NFA::State suitable to check zero or one instances of the
     /// previous NFA::State.
-    void zeroOrOne(void) throw (LexerException);
+    void zeroOrOne(void);
 
     /// \brief Push an NFABuilder::Frag structure containing an
     /// NFA::State suitable to check zero or more instances of the
     /// previous NFA::State.
-    void zeroOrMore(void) throw (LexerException);
+    void zeroOrMore(void);
 
     /// \brief Push an NFABuilder::Frag structure containing an
     /// NFA::State suitable to check one or more instances of the
     /// previous NFA::State.
-    void oneOrMore(void) throw (LexerException);
+    void oneOrMore(void);
 
     /// \brief Push an NFABuilder::Frag structure containing an
     /// NFA::State which represents a terminal state which recognizes a
     /// token with id, aTokenId.
-    NFA::State *match(NFA::TokenId aTokenId) throw (LexerException);
+    NFA::State *match(NFA::TokenId aTokenId);
 
     /// \brief Compile the Regular Expression into a (sub)NFA used to
     /// recognize a Token with Token ID aTokenId with the given
@@ -115,11 +114,11 @@ class NFABuilder {
 
     /// \brief Push the Frag onto the NFABuilder stack of partial NFA
     /// fragments.
-    void push(Frag aFrag) throw (LexerException);
+    void push(Frag aFrag);
 
     /// \brief Pop a Frag off the NFABuilder stack of partial NFA
     /// fragments.
-    Frag pop(void) throw (LexerException);
+    Frag pop(void);
 
   private:
     /// \brief The NFA for which this NFABuilder is being constructed.
