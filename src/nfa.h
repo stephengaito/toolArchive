@@ -132,7 +132,9 @@ class NFA {
                                                   startStateName,
                                                   strlen(startStateName));
       if (!startStateId) return -1L;
-      return *startStateId;
+      // internally *startStateId is 1-relative
+      // so we convert it to 0-relative externally.
+      return *startStateId - 1; 
     }
 
     /// \brief Get the named start state.

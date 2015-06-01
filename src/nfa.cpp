@@ -90,21 +90,21 @@ void NFA::appendNFAToStartState(const char *startStateName,
       }
       numStartStates += START_STATE_IDS_ARRAY_INCREMENT;
     }
-    *startStateId = nextStartState;
-    startState[*startStateId] = NULL;
+    // to be able to interact with the above check for a newly
+    // allocated startStateName Hat-Trie, the *startStateId
+    // MUST be one-relative rather than the usual zero-relative.
+    *startStateId = nextStartState + 1;
+    startState[*startStateId - 1] = NULL;
     nextStartState++;
   }
   MatchData nulMatchData;
   nulMatchData.c.u = 0;
-  if (!startState[*startStateId]) {
-    // we need to allocate an initial Split state
-    startState[*startStateId] =
-      addState(Split, nulMatchData, baseSplitState, NULL);
+  if (!startState[*startStateId - 1]) {
+    startState[*startStateId - 1] = baseSplitState;
   } else {
-    State *nextState = startState[*startStateId];
+    State *nextState = startState[*startStateId - 1];
     while (nextState->out1) nextState = nextState->out1;
-    nextState->out1 =
-      addState(Split, nulMatchData, baseSplitState, NULL);
+    nextState->out1 = baseSplitState;
   }
 }
 
