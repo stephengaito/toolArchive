@@ -74,8 +74,8 @@ namespace DeterministicFiniteAutomaton {
                                   Classifier::classSet_t classificationSet);
 
       /// \brief Run the DFA until the next token is recognized.
-      ParseTrees::Token *getNextTokenId(NFA::StartStateId startStateId,
-                                        Utf8Chars *utf8Stream);
+      ParseTrees::Token *getNextToken(NFA::StartStateId startStateId,
+                                      Utf8Chars *utf8Stream);
 
     private:
       /// \brief The NFA associated to this DFA.

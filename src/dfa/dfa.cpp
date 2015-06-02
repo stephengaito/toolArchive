@@ -184,8 +184,8 @@ State *DFA::computeNextDFAState(State *curDFAState,
 }
 
 /* Run DFA to determine whether it matches s. */
-ParseTrees::Token *DFA::getNextTokenId(NFA::StartStateId startStateId,
-                                       Utf8Chars *utf8Stream) {
+ParseTrees::Token *DFA::getNextToken(NFA::StartStateId startStateId,
+                                     Utf8Chars *utf8Stream) {
   VarArray<ParseTrees::Token*> tokens;
   State *curDFAState, *nextDFAState;
 
@@ -220,6 +220,22 @@ ParseTrees::Token *DFA::getNextTokenId(NFA::StartStateId startStateId,
                                                NULL, 0, tokens);
           }
           return NULL;
+        }
+        NFAStateIterator nfaStateIter = allocator->newIteratorOn(nextDFAState);
+        while(NFA::State *nfaState = nfaStateIter.nextState()) {
+          if (nfaState->matchType == NFA::ReStart) {
+            // we need to try this path
+            ParseTrees::Token *newToken =
+              getNextToken(nfaState->matchData.r, utf8Stream);
+            if (newToken) {
+              tokens.pushItem(newToken);
+              // we now need to try to follow the current NFA starting
+              // at the *internal* start state *just* after this
+              // NFA::State.
+            } else {
+              // failed this path... clean up and try the next
+            }
+          }
         }
       }
     }
