@@ -221,10 +221,16 @@ ParseTrees::Token *DFA::getNextToken(NFA::StartStateId startStateId,
           }
           return NULL;
         }
+        // try all restart/pushDown paths first...
+        // we need to remove them so we need to make a copy of
+        // nextDFAState. We remove them so that if none of the restart
+        // states work but there are still non-restart states we can
+        // have the DFA follow the non-restart states as normal.
         NFAStateIterator nfaStateIter = allocator->newIteratorOn(nextDFAState);
         while(NFA::State *nfaState = nfaStateIter.nextState()) {
           if (nfaState->matchType == NFA::ReStart) {
             // we need to try this path
+            // prepare to clean up if this path fails.
             ParseTrees::Token *newToken =
               getNextToken(nfaState->matchData.r, utf8Stream);
             if (newToken) {
