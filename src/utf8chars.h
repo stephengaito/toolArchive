@@ -8,6 +8,8 @@
 #include <assert.h>
 #define ASSERT assert
 
+#include "varArray.h"
+
 /// \brief The utf8Char_struct (utf8Char_t) is a simple union to allow
 /// a single UTF8 character to be viewed as either an array of 8 bytes, or
 /// as a single unsigned 64 bit integer.
@@ -80,26 +82,31 @@ class Utf8Chars {
     }
 
     /// \brief Clear the stack of stream markers.
-    void clearMarks(void);
+    void clearMarks(void) {
+      markStack.clearItems();
+      markStack.pushItem(utf8Chars);
+    }
 
     /// \brief Remember the current location in the stream.
-    void pushMark(void);
+    void pushMark(void) {
+      markStack.pushItem(nextByte);
+    }
 
     /// \brief Forget the most recent stream mark and remember the 
     /// previous one.
     void popMark(void) {
-      if (0 < markStackTop) markStackTop--;
+      if (markStack.getNumItems()) markStack.popItem();
     }
 
     /// \brief Get the stream at the marked location.
     const char *getMark(void) {
-      return markStack[markStackTop];
+      return markStack.getTop();
     }
 
     /// \brief Returns the number of bytes, not neccessarily the number
     /// of UTF8 characters, in the marked text.
     size_t getNumberOfBytesInMarkedText(void) {
-      return nextByte - markStack[markStackTop];
+      return nextByte - markStack.getTop();
     }
 
     /// \brief Returns a (strndup'ed) copy of the currently marked text.
@@ -107,7 +114,7 @@ class Utf8Chars {
     /// The currently marked text are the bytes from the currentMark
     /// until just before the nextByte.
     char *getCopyOfMarkedText(void) {
-      return strndup(markStack[markStackTop], getNumberOfBytesInMarkedText());
+      return strndup(markStack.getTop(), getNumberOfBytesInMarkedText());
     }
 
     /// \brief Returns true if the Utf8Chars contians the given UTF8 char
@@ -151,11 +158,7 @@ class Utf8Chars {
     ///
     /// This currentMark can be used to remember a previously marked
     /// location in the stream.
-    const char **markStack;
-
-    size_t markStackTop;
-
-    size_t markStackSize;
+    VarArray<const char*> markStack;
 };
 
 #endif

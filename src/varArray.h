@@ -89,6 +89,11 @@ class VarArray {
       memcpy(buffer, itemArray, bufferSize);
     }
 
+    /// \brief Remove all items from this array.
+    void clearItems(void) {
+      numItems = 0;
+    }
+
   private:
 
     /// \brief The current number of items in the array.
