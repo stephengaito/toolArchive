@@ -3,10 +3,6 @@
 
 #include "utf8chars.h"
 
-#ifndef MARK_STACK_INCREMENT
-#define MARK_STACK_INCREMENT 10
-#endif
-
 //
 // This list of whitespace has been taken from
 // [In Python, how to listall characters matched by POSIX extended regex

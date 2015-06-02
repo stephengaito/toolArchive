@@ -2,10 +2,6 @@
 
 #include "nfaBuilder.h"
 
-#ifndef NFA_BUILDER_STACK_INCREMENT
-#define NFA_BUILDER_STACK_INCREMENT 10
-#endif
-
 NFABuilder::NFABuilder(NFA *anNFA) {
   nfa             = anNFA;
   noMatchData.c.u = 0;

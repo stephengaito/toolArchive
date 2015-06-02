@@ -31,10 +31,6 @@ using namespace DeterministicFiniteAutomaton;
 #define NUM_DFA_STATES_PER_BLOCK 20
 #endif
 
-#ifndef ALLOCATED_UNUSED_STACK_INCREMENT
-#define ALLOCATED_UNUSED_STACK_INCREMENT 10
-#endif
-
 StateAllocator::StateAllocator(NFA *anNFA) {
   nfa = anNFA;
   nfaStateMapping = new NFAStateMapping(this);

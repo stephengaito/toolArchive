@@ -29,10 +29,6 @@
 #define NUM_NFA_STATES_PER_BLOCK 20
 #endif
 
-#ifndef START_STATE_IDS_ARRAY_INCREMENT
-#define START_STATE_IDS_ARRAY_INCREMENT 10
-#endif
-
 NFA::NFA(Classifier *aUTF8Classifier) {
   stateAllocator = new BlockAllocator(NUM_NFA_STATES_PER_BLOCK*sizeof(State));
   startStateIds  = hattrie_create();
