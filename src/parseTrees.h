@@ -4,6 +4,7 @@
 #include "hat-trie.h"
 #include "blockAllocator.h"
 #include "streamRegistry.h"
+#include "varArray.h"
 
 #ifndef NUM_TOKEN_PTRS_PER_BLOCK
 #define NUM_TOKEN_PTRS_PER_BLOCK 100
@@ -69,7 +70,11 @@ class ParseTrees {
       streams->addStream(someUtf8Chars);
     }
 
-//    Token *getNewToken(size_t numSubTokens);
+    /// \brief Allocate a new token with tokenId aTokenId.
+    Token *allocateNewToken(TokenId aTokenId,
+                            const char *textStart,
+                            size_t textLength,
+                            VarArray<Token*> &someTokens);
 
   private:
 

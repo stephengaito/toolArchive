@@ -31,8 +31,9 @@ using namespace DeterministicFiniteAutomaton;
 #define NUM_DFA_STATES_PER_BLOCK 20
 #endif
 
-DFA::DFA(NFA *anNFA) {
+DFA::DFA(NFA *anNFA, ParseTrees *aParseTree) {
   nfa = anNFA;
+  parseTree = aParseTree;
   allocator = new StateAllocator(nfa);
   nextStateMapping = new NextStateMapping(allocator);
 
@@ -42,7 +43,8 @@ DFA::DFA(NFA *anNFA) {
 };
 
 DFA::~DFA(void) {
-  nfa = NULL;  // we do NOT own the NFA.
+  nfa       = NULL;  // we do NOT own the NFA.
+  parseTree = NULL; // we do NOT own the ParseTrees.
   if (nextStateMapping) delete nextStateMapping;
   nextStateMapping = NULL;
 
@@ -182,8 +184,9 @@ State *DFA::computeNextDFAState(State *curDFAState,
 }
 
 /* Run DFA to determine whether it matches s. */
-ParseTrees::TokenId DFA::getNextTokenId(NFA::StartStateId startStateId,
-                                        Utf8Chars *utf8Stream) {
+ParseTrees::Token *DFA::getNextTokenId(NFA::StartStateId startStateId,
+                                       Utf8Chars *utf8Stream) {
+  VarArray<ParseTrees::Token*> tokens;
   State *curDFAState, *nextDFAState;
 
   curDFAState = getDFAStartState(startStateId);
@@ -212,8 +215,11 @@ ParseTrees::TokenId DFA::getNextTokenId(NFA::StartStateId startStateId,
           utf8Stream->backup();
           NFA::State *tokenState =
             allocator->stateMatchesToken(curDFAState, tokensState);
-          if (tokenState) return (tokenState->matchData.t)>>1;
-          return -1;
+          if (tokenState) {
+            return parseTree->allocateNewToken(((tokenState->matchData.t)>>1),
+                                               NULL, 0, tokens);
+          }
+          return NULL;
         }
       }
     }
@@ -222,8 +228,11 @@ ParseTrees::TokenId DFA::getNextTokenId(NFA::StartStateId startStateId,
   }
   NFA::State *tokenNFAState =
     allocator->stateMatchesToken(curDFAState, tokensState);
-  if (tokenNFAState) return (tokenNFAState->matchData.t)>>1;
-  return -1;
+  if (tokenNFAState) {
+    return parseTree->allocateNewToken(((tokenNFAState->matchData.t)>>1),
+                                       NULL, 0, tokens);
+  }
+  return NULL;
 }
 
 /*

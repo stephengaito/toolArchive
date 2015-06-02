@@ -44,19 +44,22 @@ class Lexer {
     /// After a Lexer has been compiled no further classifications can
     /// be made, or Regular-Expression/TokenIds can be added.
     void compile(void) {
-      if (!dfa) dfa = new DFA(nfa);
+      if (!dfa) {
+        parseTree = new ParseTrees();
+        dfa = new DFA(nfa, parseTree);
+      }
     }
 
     /// \brief Get the next token while scanning the Utr8Chars provided.
     ///
     /// If the Lexer has not yet been compiled, the null tokenId (-1)
     //  is returned.
-    TokenId getNextTokenId(Utf8Chars *someChars) {
+    ParseTrees::Token *getNextTokenId(Utf8Chars *someChars) {
       if (dfa) {
         return dfa->getNextTokenId(nfa->findStartStateId("start"),
                                    someChars);
       }
-      return -1;
+      return NULL;
     }
 
   private:
@@ -70,11 +73,14 @@ class Lexer {
     /// \brief The NFABuilder used to build the NFA from regular expressions.
     NFABuilder *nfaBuilder;
 
+    /// \brief The forest of parse trees from which all tokens will be
+    /// allocated.
+    ParseTrees *parseTree;
+
     /// \brief The DFA used to scan Utf8Chars streams.
     ///
     /// The DFA is compiled from the NFA by the compile method.
     DFA *dfa;
-
 };
 
 #endif

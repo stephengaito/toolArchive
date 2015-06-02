@@ -16,6 +16,19 @@ ParseTrees::~ParseTrees(void) {
   streams = NULL;
 }
 
-//ParseTrees::Token *ParseTrees::getNewToken(size_t numSubTokens) {
-//  return (Token*)tokenAllocator->allocateNewStructure(sizeof(Token)+numSubTokens);
-//}
+ParseTrees::Token *ParseTrees::allocateNewToken(ParseTrees::TokenId tokenId,
+  const char *textStart, size_t textLength,
+  VarArray<ParseTrees::Token*> &someTokens) {
+  Token *newToken =
+    (Token*)tokenAllocator->allocateNewStructure(sizeof(Token) +
+      someTokens.getNumItems()*sizeof(Token*));
+  newToken->id         = tokenId,
+  newToken->textStart  = textStart;
+  newToken->textLength = textLength;
+  newToken->numTokens  = someTokens.getNumItems();
+  if (newToken->numTokens) {
+    someTokens.copyItems(newToken+sizeof(Token),
+                         someTokens.getNumItems()*sizeof(Token*));
+  }
+  return newToken;
+}

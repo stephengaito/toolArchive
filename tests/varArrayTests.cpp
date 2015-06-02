@@ -42,6 +42,28 @@ go_bandit([](){
         AssertThat(aVarArray.arraySize, Is().Not().EqualTo(0));
         AssertThat(aVarArray.itemArray[i], Equals(i));
       }
+      //
+      // test copyItems with a large buffer size
+      //
+      int someInts[200];
+      for (size_t i = 0; i < 200; i++) someInts[i] = 0;
+      aVarArray.copyItems(someInts, 200*sizeof(int));
+      for (size_t i = 0; i < 100; i++) {
+        AssertThat(someInts[i], Equals(i));
+      }
+      for (size_t i = 100; i < 200; i++) {
+        AssertThat(someInts[i], Equals(0));
+      }
+      //
+      // test copyItems with a small non-multiple sizeof(int) buffer size
+      for (size_t i = 0; i < 200; i++) someInts[i] = 0;
+      aVarArray.copyItems(someInts, (51*sizeof(int)-2));
+      for (size_t i = 0; i < 50; i++) {
+        AssertThat(someInts[i], Equals(i));
+      }
+      for (size_t i = 50; i < 200; i++) {
+        AssertThat(someInts[i], Equals(0));
+      }
       size_t arraySize = aVarArray.arraySize;
       for(size_t i = 100; 0 < i; i--) {
         AssertThat(aVarArray.popItem(), Equals(i-1));

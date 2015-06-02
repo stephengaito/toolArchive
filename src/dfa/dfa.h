@@ -30,7 +30,7 @@ namespace DeterministicFiniteAutomaton {
     public:
 
       /// \brief Create a DFA object corresponding to a given NFA.
-      DFA(NFA *anNFA);
+      DFA(NFA *anNFA, ParseTrees *aParseTree);
 
       /// \brief Destroy the DFA object.
       ~DFA(void);
@@ -74,12 +74,16 @@ namespace DeterministicFiniteAutomaton {
                                   Classifier::classSet_t classificationSet);
 
       /// \brief Run the DFA until the next token is recognized.
-      ParseTrees::TokenId getNextTokenId(NFA::StartStateId startStateId,
-                                         Utf8Chars *utf8Stream);
+      ParseTrees::Token *getNextTokenId(NFA::StartStateId startStateId,
+                                        Utf8Chars *utf8Stream);
 
     private:
       /// \brief The NFA associated to this DFA.
       NFA *nfa;
+
+      /// \brief The forest of parse trees from which all tokens
+      /// will be allocated.
+      ParseTrees *parseTree;
 
       /// \brief The DFA::StateAllocator for this DFA interpretor.
       StateAllocator *allocator;
@@ -94,7 +98,7 @@ namespace DeterministicFiniteAutomaton {
       /// recognized.
       State *tokensState;
 
-      /// \brief The array of DFA::State(s) corresponding to the 
+      /// \brief The array of DFA::State(s) corresponding to the
       /// NFA startStates indexed by the NFA::StartStateId.
       State **startState;
 

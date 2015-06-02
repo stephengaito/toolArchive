@@ -33,7 +33,8 @@ go_bandit([](){
       NFABuilder *nfaBuilder = new NFABuilder(nfa);
       nfaBuilder->compileRegularExpressionForTokenId("start", "(abab|abbb)", 1);
       AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
-      DFA *dfa = new DFA(nfa);
+      ParseTrees *parseTrees = new ParseTrees();
+      DFA *dfa = new DFA(nfa, parseTrees);
       AssertThat(dfa, Is().Not().EqualTo((void*)0));
       AssertThat(dfa->nfa, Equals(nfa));
       AssertThat(dfa->allocator, Is().Not().EqualTo((void*)0));
@@ -54,6 +55,7 @@ go_bandit([](){
       }
       AssertThat(dfa->allocator->isSubStateOf(dfa->startState[0], dfa->tokensState), Is().False());
       delete dfa;
+      delete parseTrees;
       delete nfa;
       delete classifier;
     });
@@ -80,7 +82,8 @@ go_bandit([](){
         AssertThat(nfa->getStartState(buffer), Equals(states[i]));
         AssertThat(nfa->getStartState((NFA::StartStateId)i), Equals(states[i]));
       }
-      DFA *dfa = new DFA(nfa);
+      ParseTrees *parseTrees = new ParseTrees();
+      DFA *dfa = new DFA(nfa, parseTrees);
       AssertThat(nfa->getNumberStartStates(), Equals(100));
       AssertThat(dfa->startState, Is().Not().EqualTo((void*)0));
       AssertThat(dfa->numStartStates, Equals(100));
@@ -91,6 +94,7 @@ go_bandit([](){
         AssertThat((State*)dfa->startState[i], Is().Not().EqualTo((State*)0));
       }
       delete dfa;
+      delete parseTrees;
       delete nfa;
       delete classifier;
     });
@@ -104,7 +108,8 @@ go_bandit([](){
       NFABuilder *nfaBuilder = new NFABuilder(nfa);
       nfaBuilder->compileRegularExpressionForTokenId("start", "(abab|abbb)", 1);
       AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
-      DFA *dfa = new DFA(nfa);
+      ParseTrees *parseTrees = new ParseTrees();
+      DFA *dfa = new DFA(nfa, parseTrees);
       AssertThat(dfa, Is().Not().EqualTo((void*)0));
       StateAllocator *allocator = dfa->allocator;
       AssertThat(allocator, Is().Not().EqualTo((void*)0));
@@ -148,6 +153,7 @@ go_bandit([](){
         AssertThat(((int)nextDFAState[i]), Is().EqualTo((int)0x00));
       }
       delete dfa;
+      delete parseTrees;
       delete nfa;
       delete classifier;
     });
@@ -166,7 +172,8 @@ go_bandit([](){
       NFABuilder *nfaBuilder = new NFABuilder(nfa);
       nfaBuilder->compileRegularExpressionForTokenId("start", "(abab|[!whitespace]bbb)", 1);
       AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
-      DFA *dfa = new DFA(nfa);
+      ParseTrees *parseTrees = new ParseTrees();
+      DFA *dfa = new DFA(nfa, parseTrees);
       AssertThat(dfa, Is().Not().EqualTo((void*)0));
       StateAllocator *allocator = dfa->allocator;
       AssertThat(allocator, Is().Not().EqualTo((void*)0));
@@ -217,6 +224,7 @@ go_bandit([](){
         AssertThat(((int)genericState[i]), Is().EqualTo((int)0x00));
       }
       delete dfa;
+      delete parseTrees;
       delete nfa;
       delete classifier;
     });
@@ -235,7 +243,8 @@ go_bandit([](){
       NFABuilder *nfaBuilder = new NFABuilder(nfa);
       nfaBuilder->compileRegularExpressionForTokenId("start", "([!whitespace]bab|[!whitespace]bbb)", 1);
       AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
-      DFA *dfa = new DFA(nfa);
+      ParseTrees *parseTrees = new ParseTrees();
+      DFA *dfa = new DFA(nfa, parseTrees);
       AssertThat(dfa, Is().Not().EqualTo((void*)0));
       StateAllocator *allocator = dfa->allocator;
       AssertThat(allocator, Is().Not().EqualTo((void*)0));
@@ -285,6 +294,7 @@ go_bandit([](){
         AssertThat(((int)nextDFAState[i]), Is().EqualTo((int)0x00));
       }
       delete dfa;
+      delete parseTrees;
       delete nfa;
       delete classifier;
     });
@@ -295,15 +305,20 @@ go_bandit([](){
       NFABuilder *nfaBuilder = new NFABuilder(nfa);
       nfaBuilder->compileRegularExpressionForTokenId("start", "simple", 1);
       AssertThat(nfa->getNumberStates(), Is().EqualTo(8));
-      DFA *dfa = new DFA(nfa);
+      ParseTrees *parseTrees = new ParseTrees();
+      DFA *dfa = new DFA(nfa, parseTrees);
       AssertThat(dfa, Is().Not().EqualTo((void*)0));
       Utf8Chars *stream0 = new Utf8Chars("simple");
-      ParseTrees::TokenId aTokenId = dfa->getNextTokenId((NFA::StartStateId)0, stream0);
-      AssertThat(aTokenId, Is().EqualTo(1));
+      ParseTrees::Token *aToken = dfa->getNextTokenId((NFA::StartStateId)0, stream0);
+      AssertThat(aToken->id, Is().EqualTo(1));
+//      AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
+//      AssertThat(aToken->textLength, Is().Not().EqualTo(0));
+      AssertThat(aToken->numTokens, Equals(0));
       Utf8Chars *stream1 = new Utf8Chars("notSoSimple");
-      aTokenId = dfa->getNextTokenId((NFA::StartStateId)0, stream1);
-      AssertThat(aTokenId, Is().EqualTo(-1));
+      aToken = dfa->getNextTokenId((NFA::StartStateId)0, stream1);
+      AssertThat(aToken, Equals((void*)0));
       delete dfa;
+      delete parseTrees;
       delete nfa;
       delete classifier;
     });
@@ -324,15 +339,23 @@ go_bandit([](){
         AssertThat(baseState[i].out, Equals(baseState+i+1));
       }
       AssertThat(baseState[6].out, Equals(baseState+19));
-      DFA *dfa = new DFA(nfa);
+      ParseTrees *parseTrees = new ParseTrees();
+      DFA *dfa = new DFA(nfa, parseTrees);
       AssertThat(dfa, Is().Not().EqualTo((void*)0));
       Utf8Chars *stream0 = new Utf8Chars("simple");
-      ParseTrees::TokenId aTokenId = dfa->getNextTokenId((NFA::StartStateId)0, stream0);
-      AssertThat(aTokenId, Is().EqualTo(1));
+      ParseTrees::Token *aToken = dfa->getNextTokenId((NFA::StartStateId)0, stream0);
+//      AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
+//      AssertThat(aToken->textLength, Is().Not().EqualTo(0));
+      AssertThat(aToken->numTokens, Equals(0));
+      AssertThat(aToken->id, Is().EqualTo(1));
       Utf8Chars *stream1 = new Utf8Chars("notSoSimple");
-      aTokenId = dfa->getNextTokenId((NFA::StartStateId)0, stream1);
-      AssertThat(aTokenId, Is().EqualTo(1));
+      aToken = dfa->getNextTokenId((NFA::StartStateId)0, stream1);
+//      AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
+//      AssertThat(aToken->textLength, Is().Not().EqualTo(0));
+      AssertThat(aToken->numTokens, Equals(0));
+      AssertThat(aToken->id, Is().EqualTo(1));
       delete dfa;
+      delete parseTrees;
       delete nfa;
       delete classifier;
     });
@@ -347,12 +370,17 @@ go_bandit([](){
       NFABuilder *nfaBuilder = new NFABuilder(nfa);
       nfaBuilder->compileRegularExpressionForTokenId("start", "[!whitespace]+", 1);
       AssertThat(nfa->getNumberStates(), Is().EqualTo(4));
-      DFA *dfa = new DFA(nfa);
+      ParseTrees *parseTrees = new ParseTrees();
+      DFA *dfa = new DFA(nfa, parseTrees);
       AssertThat(dfa, Is().Not().EqualTo((void*)0));
       Utf8Chars *stream0 = new Utf8Chars("sillysomeNonWhiteSpace");
-      ParseTrees::TokenId aTokenId = dfa->getNextTokenId((NFA::StartStateId)0, stream0);
-      AssertThat(aTokenId, Is().EqualTo(1));
+      ParseTrees::Token *aToken = dfa->getNextTokenId((NFA::StartStateId)0, stream0);
+//      AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
+//      AssertThat(aToken->textLength, Is().Not().EqualTo(0));
+      AssertThat(aToken->numTokens, Equals(0));
+      AssertThat(aToken->id, Is().EqualTo(1));
       delete dfa;
+      delete parseTrees;
       delete nfa;
       delete classifier;
     });
@@ -366,7 +394,8 @@ go_bandit([](){
       nfaBuilder->compileRegularExpressionForTokenId("start", "[whitespace]+", 1);
       nfaBuilder->compileRegularExpressionForTokenId("start", "[!whitespace]+", 2);
       AssertThat(nfa->getNumberStates(), Is().EqualTo(8));
-      DFA *dfa = new DFA(nfa);
+      ParseTrees *parseTrees = new ParseTrees();
+      DFA *dfa = new DFA(nfa, parseTrees);
       AssertThat(dfa, Is().Not().EqualTo((void*)0));
       StateAllocator *allocator = dfa->allocator;
       AssertThat(allocator, Is().Not().EqualTo((void*)0));
@@ -375,12 +404,19 @@ go_bandit([](){
         allocator->stateMatchesToken(dfa->startState[0], dfa->tokensState);
       AssertThat(nfaState, Is().EqualTo((void*)0));
       Utf8Chars *stream0 = new Utf8Chars("sillysomeNonWhiteSpace   ");
-      ParseTrees::TokenId aTokenId = dfa->getNextTokenId((NFA::StartStateId)0, stream0);
-      AssertThat(aTokenId, Is().EqualTo(2));
+      ParseTrees::Token *aToken = dfa->getNextTokenId((NFA::StartStateId)0, stream0);
+//      AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
+//      AssertThat(aToken->textLength, Is().Not().EqualTo(0));
+      AssertThat(aToken->numTokens, Equals(0));
+      AssertThat(aToken->id, Is().EqualTo(2));
       Utf8Chars *stream1 = new Utf8Chars("   sillysomeNonWhiteSpace");
-      aTokenId = dfa->getNextTokenId((NFA::StartStateId)0, stream1);
-      AssertThat(aTokenId, Is().EqualTo(1));
+      aToken = dfa->getNextTokenId((NFA::StartStateId)0, stream1);
+//      AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
+//      AssertThat(aToken->textLength, Is().Not().EqualTo(0));
+      AssertThat(aToken->numTokens, Equals(0));
+      AssertThat(aToken->id, Is().EqualTo(1));
       delete dfa;
+      delete parseTrees;
       delete nfa;
       delete classifier;
     });
