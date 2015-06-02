@@ -62,7 +62,7 @@ go_bandit([](){
       State *state = allocator->allocateANewState();
       AssertThat(state, Is().Not().EqualTo((void*)0));
       NFA::State *baseState =
-       (NFA::State*)nfa->stateAllocator->blocks[nfa->stateAllocator->nextBlock - 1];
+       (NFA::State*)nfa->stateAllocator->blocks.getTop();
       NFAStateMapping::NFAStateNumber aStateNum =
         mapping->getNFAStateNumber(baseState);
       AssertThat(aStateNum.stateByte, Is().EqualTo(0));

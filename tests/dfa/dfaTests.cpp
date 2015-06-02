@@ -330,7 +330,7 @@ go_bandit([](){
       nfaBuilder->compileRegularExpressionForTokenId("start", "(simple|notSoSimple)", 1);
       AssertThat(nfa->getNumberStates(), Is().EqualTo(20));
       NFA::State *baseState =
-        (NFA::State*)nfa->stateAllocator->blocks[nfa->stateAllocator->nextBlock - 1];
+        (NFA::State*)nfa->stateAllocator->blocks.getTop();
       for (size_t i = 0; i < 19; i++) {
         AssertThat(baseState[i].matchType, Is().Not().EqualTo(NFA::Token));
       }

@@ -27,9 +27,9 @@ go_bandit([](){
       BlockAllocator *blockAllocator = new BlockAllocator(10);
       AssertThat(blockAllocator, Is().Not().EqualTo((void*)0));
       AssertThat(blockAllocator->blockSize, Is().EqualTo(10));
-      for (size_t i = 0; i < blockAllocator->numBlocks; i++) {
-        AssertThat(blockAllocator->blocks[i], Is().EqualTo((void*)0));
-      }
+//      for (size_t i = 0; i < blockAllocator->numBlocks; i++) {
+//        AssertThat(blockAllocator->blocks[i], Is().EqualTo((void*)0));
+//      }
       delete blockAllocator;
     });
 
@@ -39,10 +39,10 @@ go_bandit([](){
       for (size_t j = 0; j < 25; j++) {
         blockAllocator->addNewBlock();
         prevPtrs[j] = blockAllocator->curAllocationByte;
-        AssertThat(blockAllocator->nextBlock, Is().EqualTo(j+1));
+        AssertThat(blockAllocator->blocks.getNumItems(), Is().EqualTo(j+1));
         for (size_t i = 0; i <= j; i++) {
-         AssertThat(blockAllocator->blocks[i], Is().Not().EqualTo((void*)0));
-         AssertThat(blockAllocator->blocks[i], Is().EqualTo(prevPtrs[i]));
+         AssertThat(blockAllocator->blocks.getItem(i, NULL), Is().Not().EqualTo((void*)0));
+         AssertThat(blockAllocator->blocks.getItem(i, NULL), Is().EqualTo(prevPtrs[i]));
         }
       }
       delete blockAllocator;
@@ -57,10 +57,10 @@ go_bandit([](){
       for (size_t j = 0; j < 25; j++) {
         blockAllocator->addNewBlock();
         prevPtrs[j] = blockAllocator->curAllocationByte;
-        AssertThat(blockAllocator->nextBlock, Is().EqualTo(j+1));
+        AssertThat(blockAllocator->blocks.getNumItems(), Is().EqualTo(j+1));
         for (size_t i = 0; i <= j; i++) {
-         AssertThat(blockAllocator->blocks[i], Is().Not().EqualTo((void*)0));
-         AssertThat(blockAllocator->blocks[i], Is().EqualTo(prevPtrs[i]));
+         AssertThat(blockAllocator->blocks.getItem(i, NULL), Is().Not().EqualTo((void*)0));
+         AssertThat(blockAllocator->blocks.getItem(i, NULL), Is().EqualTo(prevPtrs[i]));
         }
       }
       //
@@ -73,10 +73,10 @@ go_bandit([](){
       for (size_t j = 0; j < 25; j++) {
         blockAllocator->addNewBlock();
         prevPtrs[j] = blockAllocator->curAllocationByte;
-        AssertThat(blockAllocator->nextBlock, Is().EqualTo(j+1));
+        AssertThat(blockAllocator->blocks.getNumItems(), Is().EqualTo(j+1));
         for (size_t i = 0; i <= j; i++) {
-         AssertThat(blockAllocator->blocks[i], Is().Not().EqualTo((void*)0));
-         AssertThat(blockAllocator->blocks[i], Is().EqualTo(prevPtrs[i]));
+         AssertThat(blockAllocator->blocks.getItem(i, NULL), Is().Not().EqualTo((void*)0));
+         AssertThat(blockAllocator->blocks.getItem(i, NULL), Is().EqualTo(prevPtrs[i]));
         }
       }
       delete blockAllocator;
@@ -88,14 +88,13 @@ go_bandit([](){
         char *aStructure = blockAllocator->allocateNewStructure(2);
         AssertThat(aStructure, Is().Not().EqualTo((char*)0));
       }
-      AssertThat(blockAllocator->numBlocks, Is().EqualTo(10));
-      AssertThat(blockAllocator->nextBlock, Is().EqualTo(5));
+      AssertThat(blockAllocator->blocks.getNumItems(), Is().EqualTo(5));
       size_t i = 0;
       for ( ; i < 5; i++) {
-        AssertThat(blockAllocator->blocks[i], Is().Not().EqualTo((char*)0));
+        AssertThat(blockAllocator->blocks.getItem(i, NULL), Is().Not().EqualTo((char*)0));
       }
-      for ( ; i < blockAllocator->numBlocks; i++) {
-        AssertThat(blockAllocator->blocks[i], Is().EqualTo((char*)0));
+      for ( ; i < blockAllocator->blocks.getNumItems(); i++) {
+        AssertThat(blockAllocator->blocks.getItem(i, NULL), Is().EqualTo((char*)0));
       }
       delete blockAllocator;
     });

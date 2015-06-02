@@ -58,6 +58,19 @@ class VarArray {
       numItems++;
     }
 
+    /// \brief Get the requested item.
+    ///
+    /// Returns the default provided if the itemNumber is out of range.
+    ItemT getItem(size_t itemNumber, ItemT defaultItem) {
+      if (numItems <= itemNumber) return defaultItem;
+      return itemArray[itemNumber];
+    }
+
+    /// \brief Get the top item
+    ItemT getTop(void) {
+      return itemArray[numItems-1];
+    }
+
     /// \brief Remove and return the "top" item on the array.
     ItemT popItem(void) {
       ASSERT(numItems); // incorrectly matched push/pops
