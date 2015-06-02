@@ -49,14 +49,6 @@ class StreamRegistry {
 
     /// \brief The collection of Ut8Chars streams.
     VarArray<Utf8Chars*> streams;
-//    Utf8Chars **streams;
-
-    /// \brief The index, in the streams array, of the next Utf8Chars
-    /// pointer to be added to the streams array.
-//    size_t nextStreamToAdd;
-
-    /// \brief The (current) size of the streams array.
-//    size_t numPossibleStreams;
 };
 
 
