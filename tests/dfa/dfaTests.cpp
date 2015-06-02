@@ -64,9 +64,7 @@ go_bandit([](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
       AssertThat(nfa->startStateIds,  Is().Not().EqualTo((void*)0));
-      AssertThat(nfa->startState,     Equals((NFA::State**)0));
-      AssertThat(nfa->nextStartState, Equals(0));
-      AssertThat(nfa->numStartStates, Equals(0));
+      AssertThat(nfa->startState.getNumItems(), Equals(0));
       char buffer[100];
       NFA::State *states[100];
       NFA::MatchData noMatchData;

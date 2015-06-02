@@ -117,7 +117,20 @@ class NFA {
 
     /// \brief (pre)Register the name of a StartState that might be
     /// used in one or more regular expressions.
-    void registerStartState(const char *startStateName);
+    void registerStartState(const char *startStateName) {
+      StartStateId *startStateId = hattrie_get(startStateIds,
+                                               startStateName,
+                                               strlen(startStateName));
+      ASSERT(startStateId); // corrupted startStateIds Hat-Trie
+      if (!*startStateId) {
+        // we need to allocate a new startStateId
+        // to be able to interact with the above check for a newly
+        // allocated startStateName Hat-Trie, the *startStateId
+        // MUST be one-relative rather than the usual zero-relative.
+        *startStateId = startState.getNumItems() + 1;
+        startState.pushItem(NULL);
+      }
+    }
 
     /// \brief Append the (sub)NFA to the current start state.
     void appendNFAToStartState(const char *startStateName,
@@ -146,9 +159,7 @@ class NFA {
 
     /// \brief Get the start state associated to the StartStateId.
     State *getStartState(StartStateId startStateId) {
-      //if (startStateId < 0) return NULL;
-      if (nextStartState <= startStateId) return NULL;
-      return startState[startStateId];
+      return startState.getItem(startStateId, NULL);
     }
 
     /// \brief Add a new NFA state.
@@ -162,7 +173,7 @@ class NFA {
 
     /// \brief Get the number of registered start states.
     size_t getNumberStartStates(void) {
-      return nextStartState;
+      return startState.getNumItems();
     }
 
     /// \brief Print the NFA::State state on the FILE
@@ -180,15 +191,7 @@ class NFA {
     hattrie_t *startStateIds;
 
     /// \brief The array of known start states for this NFA
-    State **startState;
-
-    /// \brief The next index to allocate in the array of NFA start
-    /// states.
-    size_t nextStartState;
-
-    /// \brief The total number of start states in the array of NFA
-    /// start states.
-    size_t numStartStates;
+    VarArray<State*> startState;
 
     /// \brief The number of NFA::States added to this NFA.
     size_t numKnownStates;

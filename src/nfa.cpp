@@ -36,9 +36,6 @@
 NFA::NFA(Classifier *aUTF8Classifier) {
   stateAllocator = new BlockAllocator(NUM_NFA_STATES_PER_BLOCK*sizeof(State));
   startStateIds  = hattrie_create();
-  startState     = NULL;
-  nextStartState = 0;
-  numStartStates = 0;
   numKnownStates = 0;
   utf8Classifier = aUTF8Classifier;
 }
@@ -48,10 +45,6 @@ NFA::~NFA(void) {
   stateAllocator = NULL;
   if (startStateIds) hattrie_free(startStateIds);
   startStateIds  = NULL;
-  if (startState) free(startState);
-  startState     = NULL;
-  nextStartState = 0;
-  numStartStates = 0;
   numKnownStates = 0;
   utf8Classifier = NULL; // classifier is not "owned" by the NFA instance
 }
@@ -70,44 +63,16 @@ NFA::State *NFA::addState(NFA::MatchType aMatchType,
   return newState;
 }
 
-void NFA::registerStartState(const char *startStateName) {
-  StartStateId *startStateId = hattrie_get(startStateIds,
-                                           startStateName,
-                                           strlen(startStateName));
-  ASSERT(startStateId); // corrupted startStateIds Hat-Trie
-  if (!*startStateId) {
-    // we need to allocate a new startStateId
-    if (numStartStates <= nextStartState) {
-      // we need to allocate a larger array of start state ids
-      State **oldStartStates = startState;
-      startState =
-        (State**) calloc(numStartStates + START_STATE_IDS_ARRAY_INCREMENT,
-                         sizeof(State*));
-      if (oldStartStates) {
-        memcpy(startState, oldStartStates, numStartStates*sizeof(State*));
-        free(oldStartStates);
-      }
-      numStartStates += START_STATE_IDS_ARRAY_INCREMENT;
-    }
-    // to be able to interact with the above check for a newly
-    // allocated startStateName Hat-Trie, the *startStateId
-    // MUST be one-relative rather than the usual zero-relative.
-    *startStateId = nextStartState + 1;
-    startState[*startStateId - 1] = NULL;
-    nextStartState++;
-  }
-}
-
 void NFA::appendNFAToStartState(const char *startStateName,
                                 NFA::State *baseSplitState) {
   StartStateId startStateId = findStartStateId(startStateName);
-  ASSERT(startStateId < numStartStates); // Corrupted startStateIds Hat-Trie
+  ASSERT(startStateId < startState.getNumItems()); // Corrupted startStateIds Hat-Trie
   MatchData nulMatchData;
   nulMatchData.c.u = 0;
-  if (!startState[startStateId]) {
-    startState[startStateId] = baseSplitState;
+  if (!startState.getItem(startStateId, NULL)) {
+    startState.setItem(startStateId, baseSplitState);
   } else {
-    State *nextState = startState[startStateId];
+    State *nextState = startState.getItem(startStateId, NULL);
     while (nextState->out1) nextState = nextState->out1;
     nextState->out1 = baseSplitState;
   }

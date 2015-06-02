@@ -51,9 +51,7 @@ go_bandit([](){
       NFA *nfa = new NFA(classifier);
       AssertThat(nfa->stateAllocator, Is().Not().EqualTo((void*)0));
       AssertThat(nfa->startStateIds,  Is().Not().EqualTo((void*)0));
-      AssertThat(nfa->startState,     Equals((NFA::State**)0));
-      AssertThat(nfa->nextStartState, Equals(0));
-      AssertThat(nfa->numStartStates, Equals(0));
+      AssertThat(nfa->startState.getNumItems(), Equals(0));
       AssertThat(nfa->numKnownStates, Equals(0));
       AssertThat(nfa->utf8Classifier, Equals(classifier));
       delete nfa;
@@ -64,9 +62,7 @@ go_bandit([](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
       AssertThat(nfa->startStateIds,  Is().Not().EqualTo((void*)0));
-      AssertThat(nfa->startState,     Equals((NFA::State**)0));
-      AssertThat(nfa->nextStartState, Equals(0));
-      AssertThat(nfa->numStartStates, Equals(0));
+      AssertThat(nfa->startState.getNumItems(), Equals(0));
       char buffer[100];
       NFA::State *states[100];
       NFA::MatchData noMatchData;
@@ -99,7 +95,7 @@ go_bandit([](){
       nfaBuilder->compileRegularExpressionForTokenId("start", "simple", 1);
       NFA::State *anNFAState = nfa->getStartState("start");
       AssertThat(nfa->getNumberStates(), Is().EqualTo(8));
-      AssertThat(anNFAState, Is().EqualTo(nfa->startState[0]));
+      AssertThat(anNFAState, Is().EqualTo(nfa->startState.getItem(0, NULL)));
       AssertThat(nfa->getNumberStartStates(), Equals(1));
       NFA::State *baseState =
         (NFA::State*)nfa->stateAllocator->blocks.getTop();
@@ -210,7 +206,7 @@ go_bandit([](){
       nfaBuilder->compileRegularExpressionForTokenId("start", "\\s\\(\\)\\|\\*\\+\\?\\\\", 1);
       NFA::State *anNFAState = nfa->getStartState("start");
       AssertThat(nfa->getNumberStates(), Is().EqualTo(10));
-      AssertThat(anNFAState, Is().EqualTo(nfa->startState[0]));
+      AssertThat(anNFAState, Is().EqualTo(nfa->startState.getItem(0, NULL)));
 //      AssertThat(anNFAState, Is().EqualTo(nfa->nfaLastStartState));
       NFA::State *baseState =
         (NFA::State*)nfa->stateAllocator->blocks.getTop();
@@ -323,7 +319,7 @@ go_bandit([](){
         AssertThat(true, Is().True());
         NFA::State *anNFAState = nfa->getStartState("start");
         AssertThat(nfa->getNumberStates(), Is().EqualTo(3));
-        AssertThat(anNFAState, Is().EqualTo(nfa->startState[0]));
+        AssertThat(anNFAState, Is().EqualTo(nfa->startState.getItem(0, NULL)));
 //        AssertThat(anNFAState, Is().EqualTo(nfa->nfaLastStartState));
         NFA::State *baseState =
           (NFA::State*)nfa->stateAllocator->blocks.getTop();
@@ -371,7 +367,7 @@ go_bandit([](){
       nfaBuilder->compileRegularExpressionForTokenId("start", "[!whitespace]+", 1);
       NFA::State *anNFAState = nfa->getStartState("start");
       AssertThat(nfa->getNumberStates(), Is().EqualTo(4));
-      AssertThat(anNFAState, Is().EqualTo(nfa->startState[0]));
+      AssertThat(anNFAState, Is().EqualTo(nfa->startState.getItem(0, NULL)));
 //      AssertThat(anNFAState, Is().EqualTo(nfa->nfaLastStartState));
       NFA::State *baseState =
         (NFA::State*)nfa->stateAllocator->blocks.getTop();
@@ -413,7 +409,7 @@ go_bandit([](){
       nfaBuilder->compileRegularExpressionForTokenId("start", "{start}+", 1);
       NFA::State *anNFAState = nfa->getStartState("start");
 //      AssertThat(nfa->getNumberStates(), Is().EqualTo(4));
-      AssertThat(anNFAState, Is().EqualTo(nfa->startState[0]));
+      AssertThat(anNFAState, Is().EqualTo(nfa->startState.getItem(0, NULL)));
       NFA::State *baseState =
         (NFA::State*)nfa->stateAllocator->blocks.getTop();
       AssertThat(anNFAState, Is().EqualTo(baseState));
@@ -454,7 +450,7 @@ go_bandit([](){
       // check to ensure we have the regExp: /[whitespace]+/
       //
       NFA::State *nfaStartState0 = nfa->getStartState("start");
-      AssertThat(nfaStartState0, Is().EqualTo(nfa->startState[0]));
+      AssertThat(nfaStartState0, Is().EqualTo(nfa->startState.getItem(0, NULL)));
 //      AssertThat(nfaStartState0, Is().EqualTo(nfa->nfaLastStartState));
       AssertThat(nfaStartState0, Is().EqualTo(baseState));
       AssertThat(nfaStartState0->matchType, Is().EqualTo(NFA::Split));
@@ -488,7 +484,7 @@ go_bandit([](){
       //
       // check to ensure that the FIRST branch is the regExp: /[whitespace]+/
       //
-      AssertThat(nfaStartState0, Is().EqualTo(nfa->startState[0]));
+      AssertThat(nfaStartState0, Is().EqualTo(nfa->startState.getItem(0, NULL)));
 //      AssertThat(nfaStartState0, Is().Not().EqualTo(nfa->nfaLastStartState));
       AssertThat(nfaStartState0, Is().EqualTo(baseState));
       AssertThat(nfaStartState0->matchType, Is().EqualTo(NFA::Split));
@@ -519,7 +515,7 @@ go_bandit([](){
       // check to ensure that the SECOND branch is the regExp: /[!whitespace]+/
       //
       nextState = nfaStartState0->out1;
-      AssertThat(nextState, Is().Not().EqualTo(nfa->startState[0]));
+      AssertThat(nextState, Is().Not().EqualTo(nfa->startState.getItem(0, NULL)));
 //      AssertThat(nextState, Is().EqualTo(nfa->nfaLastStartState));
       AssertThat(nextState, Is().EqualTo(baseState+4));
       AssertThat(nextState->matchType, Is().EqualTo(NFA::Split));

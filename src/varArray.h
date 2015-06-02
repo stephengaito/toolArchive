@@ -66,6 +66,11 @@ class VarArray {
       return itemArray[itemNumber];
     }
 
+    /// \brief Set the requested item to the value provided.
+    void setItem(size_t itemNumber, ItemT anItem) {
+      if (itemNumber < numItems) itemArray[itemNumber] = anItem;
+    }
+
     /// \brief Get the top item
     ItemT getTop(void) {
       return itemArray[numItems-1];
