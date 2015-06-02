@@ -115,11 +115,16 @@ class NFABuilder {
 
     /// \brief Push the Frag onto the NFABuilder stack of partial NFA
     /// fragments.
-    void push(Frag aFrag);
+    void push(Frag aFrag) {
+      stack.pushItem(aFrag);
+    }
 
     /// \brief Pop a Frag off the NFABuilder stack of partial NFA
     /// fragments.
-    Frag pop(void);
+    Frag pop(void) {
+      ASSERT(stack.getNumItems()); // incorrectly matched push/pop
+      return stack.popItem();
+    }
 
   private:
     /// \brief The NFA for which this NFABuilder is being constructed.
@@ -129,13 +134,14 @@ class NFABuilder {
     ///
     /// A given regular expression is parsed directly into an impliclit
     /// reverse polish structure using this stack.
-    Frag *stack;
+    VarArray<Frag> stack;
+//    Frag *stack;
 
     /// \brief The current top of the NFABuilder stack.
-    size_t stackTop;
+//    size_t stackTop;
 
     /// \brief The size of the allocated NFABuilder stack.
-    size_t stackSize;
+//    size_t stackSize;
 
     /// \brief An instance of NFA::MatchData initialized to represent
     /// no/empty/null match data.

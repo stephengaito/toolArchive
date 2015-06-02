@@ -176,7 +176,7 @@ void NFABuilder::compileRegularExpressionForTokenId(
   if (p != paren) throw LexerException("mismatched parentheses");
   while (--natom > 0) concatenate();
   for (; nalt > 0; nalt--) alternate();
-  if (!stackTop) throw LexerException("empty regular expression - nothing to match");
+  if (!stack.getNumItems()) throw LexerException("empty regular expression - nothing to match");
   baseSplitState->out = match(aTokenId);
   nfa->appendNFAToStartState(startStateName, baseSplitState);
 }

@@ -8,18 +8,11 @@
 
 NFABuilder::NFABuilder(NFA *anNFA) {
   nfa             = anNFA;
-  stack           = NULL;
-  stackTop        = 0;
-  stackSize       = 0;
   noMatchData.c.u = 0;
 }
 
 NFABuilder::~NFABuilder(void) {
   nfa             = NULL;
-  if (stack) free(stack);
-  stack           = NULL;
-  stackTop        = 0;
-  stackSize       = 0;
   noMatchData.c.u = 0;
 }
 
@@ -53,27 +46,6 @@ NFABuilder::Ptrlist* NFABuilder::append(
   l1->next = l2;
   return oldl1;
 }
-
-void NFABuilder::push(NFABuilder::Frag aFrag) {
-  if (stackSize <= stackTop) {
-    // we need to increase the size of the stack
-    Frag *oldStack = stack;
-    stack = (Frag*) calloc(stackSize+NFA_BUILDER_STACK_INCREMENT, sizeof(Frag));
-    if (oldStack) {
-      memcpy(stack, oldStack, stackSize*sizeof(Frag));
-      free(oldStack);
-    }
-    stackSize += NFA_BUILDER_STACK_INCREMENT;
-  }
-  stack[stackTop] = aFrag;
-  stackTop++;
-};
-
-NFABuilder::Frag NFABuilder::pop(void) {
-  ASSERT(0 < stackTop); // incorrectly matched push/pops
-  --stackTop;
-  return stack[stackTop];
-};
 
 void NFABuilder::checkCharacter(utf8Char_t aChar) {
   NFA::MatchData someMatchData;
