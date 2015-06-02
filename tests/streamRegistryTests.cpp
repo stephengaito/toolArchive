@@ -24,39 +24,36 @@ go_bandit([](){
     it("Should be able to create a stream registry", [](){
       StreamRegistry *someStreams = new StreamRegistry();
       AssertThat(someStreams, Is().Not().EqualTo((void*)0));
-      AssertThat(someStreams->streams, Equals((void*)0));
-      AssertThat(someStreams->nextStreamToAdd, Equals(0));
+      AssertThat(someStreams->streams.getNumItems(), Equals(0));
       delete someStreams;
     });
 
     it("Should be able to add streams to the registry", [](){
       StreamRegistry *someStreams = new StreamRegistry();
       AssertThat(someStreams, Is().Not().EqualTo((void*)0));
-      AssertThat(someStreams->streams, Equals((void*)0));
-      AssertThat(someStreams->nextStreamToAdd, Equals(0));
+      AssertThat(someStreams->streams.getNumItems(), Equals(0));
       const char* cString0 = "silly";
       someStreams->addStream(cString0);
-      AssertThat(someStreams->streams, Is().Not().EqualTo((void*)0));
-      AssertThat(someStreams->nextStreamToAdd, Equals(1));
-      AssertThat(someStreams->streams[0]->utf8Chars, Equals((char*)cString0));
-      AssertThat(someStreams->streams[0]->ownsString, Is().False());
+      AssertThat(someStreams->streams.getNumItems(), Equals(1));
+      AssertThat(someStreams->streams.getItem(0, NULL)->utf8Chars, Equals((char*)cString0));
+      AssertThat(someStreams->streams.getItem(0, NULL)->ownsString, Is().False());
       someStreams->addStream(cString0, Utf8Chars::Duplicate);
-      AssertThat(someStreams->nextStreamToAdd, Equals(2));
-      AssertThat(someStreams->streams[1]->utf8Chars,
+      AssertThat(someStreams->streams.getNumItems(), Equals(2));
+      AssertThat(someStreams->streams.getItem(1, NULL)->utf8Chars,
                  Is().Not().EqualTo((char*)cString0));
-      AssertThat(someStreams->streams[1]->ownsString, Is().True());
+      AssertThat(someStreams->streams.getItem(1, NULL)->ownsString, Is().True());
       char *cString1 = strdup("sillier");
       someStreams->addStream(cString1, Utf8Chars::TakeOwnership);
-      AssertThat(someStreams->nextStreamToAdd, Equals(3));
-      AssertThat(someStreams->streams[2]->utf8Chars, Equals((char*)cString1));
-      AssertThat(someStreams->streams[2]->ownsString, Is().True());
+      AssertThat(someStreams->streams.getNumItems(), Equals(3));
+      AssertThat(someStreams->streams.getItem(2, NULL)->utf8Chars, Equals((char*)cString1));
+      AssertThat(someStreams->streams.getItem(2, NULL)->ownsString, Is().True());
       const char* cString2 = "silliest";
       Utf8Chars *aUtf8Char = new Utf8Chars(cString2);
       someStreams->addStream(aUtf8Char);
-      AssertThat(someStreams->nextStreamToAdd, Equals(4));
-      AssertThat(someStreams->streams[3], Equals((Utf8Chars*)aUtf8Char));
-      AssertThat(someStreams->streams[3]->utf8Chars, Equals((char*)cString2));
-      AssertThat(someStreams->streams[3]->ownsString, Is().False());
+      AssertThat(someStreams->streams.getNumItems(), Equals(4));
+      AssertThat(someStreams->streams.getItem(3, NULL), Equals((Utf8Chars*)aUtf8Char));
+      AssertThat(someStreams->streams.getItem(3, NULL)->utf8Chars, Equals((char*)cString2));
+      AssertThat(someStreams->streams.getItem(3, NULL)->ownsString, Is().False());
       delete someStreams;
     });
 
@@ -64,15 +61,13 @@ go_bandit([](){
       Utf8Chars *prevChars[30];
       StreamRegistry *someStreams = new StreamRegistry();
       AssertThat(someStreams, Is().Not().EqualTo((void*)0));
-      AssertThat(someStreams->streams, Equals((void*)0));
-      AssertThat(someStreams->nextStreamToAdd, Equals(0));
+      AssertThat(someStreams->streams.getNumItems(), Equals(0));
       for (size_t i = 0; i < 25; i++) {
         someStreams->addStream("silly");
-        AssertThat(someStreams->streams, Is().Not().EqualTo((void*)0));
-        AssertThat(someStreams->nextStreamToAdd, Equals(i+1));
-        prevChars[i] = someStreams->streams[i];
+        AssertThat(someStreams->streams.getNumItems(), Equals(i+1));
+        prevChars[i] = someStreams->streams.getItem(i, NULL);
         for (size_t j = 0; j < i; j++) {
-          AssertThat(someStreams->streams[j],
+          AssertThat(someStreams->streams.getItem(j, NULL),
                      Equals((Utf8Chars*)prevChars[j]));
         }
       }
