@@ -38,7 +38,6 @@ DFA::DFA(NFA *anNFA) {
 
   numStartStates = nfa->getNumberStartStates();
   startState = (State**)calloc(numStartStates, sizeof(State*));
-  computeDFAStartState((NFA::StartStateId)0);
   tokensState =  allocator->allocateANewState(); // get space for the tokensDState
 };
 
@@ -76,17 +75,20 @@ void DFA::addNFAStateToDFAState(State *dfaState, NFA::State *nfaState) {
 
 /* Compute initial state list */
 
-void DFA::computeDFAStartState(const char *startStateName) {
-  computeDFAStartState(nfa->findStartStateId(startStateName));
+State *DFA::getDFAStartState(const char *startStateName) {
+  return getDFAStartState(nfa->findStartStateId(startStateName));
 }
 
-void DFA::computeDFAStartState(NFA::StartStateId startStateId) {
-  if ((startStateId < numStartStates) && (!startState[startStateId])) {
+State *DFA::getDFAStartState(NFA::StartStateId startStateId) {
+  if (numStartStates <= startStateId) return NULL;
+  if (!startState[startStateId]) {
+    // we have not previously computed this startState... so compute it now
     startState[startStateId] = allocator->allocateANewState();
     addNFAStateToDFAState(startState[startStateId],
                           nfa->getStartState(startStateId));
     nextStateMapping->registerState(startState[startStateId]);
   }
+  return startState[startStateId];
 }
 
 /*
@@ -184,7 +186,7 @@ NFA::TokenId DFA::getNextTokenId(NFA::StartStateId startStateId,
                                  Utf8Chars *utf8Stream) {
   State *curDFAState, *nextDFAState;
 
-  curDFAState = startState[startStateId];
+  curDFAState = getDFAStartState(startStateId);
   utf8Char_t curChar = utf8Stream->nextUtf8Char();
   while (curChar.u) {
     State *nextDFAState = NULL;

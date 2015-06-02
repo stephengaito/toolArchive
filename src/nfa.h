@@ -162,9 +162,16 @@ class NFA {
       return numKnownStates;
     }
 
+    /// \brief Get the number of registered start states.
     size_t getNumberStartStates(void) {
-      return numStartStates;
+      return nextStartState;
     }
+
+    /// \brief Print the NFA::State state on the FILE
+    /// filePtr together with the message message.
+    void printStateOnWithMessage(FILE *filePtr,
+                                 const char *message,
+                                 State *state);
 
   private:
 

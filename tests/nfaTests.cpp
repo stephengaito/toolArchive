@@ -46,6 +46,46 @@ go_bandit([](){
   /// and final NFA::Token states.
   describe("NFA", [](){
 
+    it("should create NFA object with correct instance variables", [](){
+      Classifier *classifier = new Classifier();
+      NFA *nfa = new NFA(classifier);
+      AssertThat(nfa->stateAllocator, Is().Not().EqualTo((void*)0));
+      AssertThat(nfa->startStateIds,  Is().Not().EqualTo((void*)0));
+      AssertThat(nfa->startState,     Equals((NFA::State**)0));
+      AssertThat(nfa->nextStartState, Equals(0));
+      AssertThat(nfa->numStartStates, Equals(0));
+      AssertThat(nfa->numKnownStates, Equals(0));
+      AssertThat(nfa->utf8Classifier, Equals(classifier));
+      delete nfa;
+      delete classifier;
+    });
+
+    it("should be able to register lots of start states", [](){
+      Classifier *classifier = new Classifier();
+      NFA *nfa = new NFA(classifier);
+      AssertThat(nfa->startStateIds,  Is().Not().EqualTo((void*)0));
+      AssertThat(nfa->startState,     Equals((NFA::State**)0));
+      AssertThat(nfa->nextStartState, Equals(0));
+      AssertThat(nfa->numStartStates, Equals(0));
+      char buffer[100];
+      NFA::State *states[100];
+      NFA::MatchData noMatchData;
+      noMatchData.c.u = 0;
+      for (size_t i = 0; i < 100; i++) {
+        memset(buffer, 0, 100);
+        sprintf(buffer, "%zu", i);
+        nfa->registerStartState(buffer);
+        states[i] = nfa->addState(NFA::Split, noMatchData, NULL, NULL);
+        nfa->appendNFAToStartState(buffer, states[i]);
+        AssertThat(nfa->getNumberStartStates(), Equals(i+1));
+        AssertThat(nfa->findStartStateId(buffer), Equals(i));
+        AssertThat(nfa->getStartState(buffer), Equals(states[i]));
+        AssertThat(nfa->getStartState((NFA::StartStateId)i), Equals(states[i]));
+      }
+      delete nfa;
+      delete classifier;
+    });
+
     /// We build the NFA associated with the very simple regular
     /// expression: /simple/. This yeilds a deep linear linked
     /// list of character comparisions started by a single
@@ -60,7 +100,7 @@ go_bandit([](){
       NFA::State *anNFAState = nfa->getStartState("start");
       AssertThat(nfa->getNumberStates(), Is().EqualTo(8));
       AssertThat(anNFAState, Is().EqualTo(nfa->startState[0]));
-//      AssertThat(anNFAState, Is().EqualTo(nfa->nfaLastStartState));
+      AssertThat(nfa->getNumberStartStates(), Equals(1));
       NFA::State *baseState =
         (NFA::State*)nfa->stateAllocator->blocks[nfa->stateAllocator->nextBlock - 1];
       AssertThat(anNFAState, Is().EqualTo(baseState));

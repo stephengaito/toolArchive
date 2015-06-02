@@ -60,7 +60,7 @@ void NFABuilder::push(NFABuilder::Frag aFrag) {
     Frag *oldStack = stack;
     stack = (Frag*) calloc(stackSize+NFA_BUILDER_STACK_INCREMENT, sizeof(Frag));
     if (oldStack) {
-      memcpy(stack, oldStack, stackSize);
+      memcpy(stack, oldStack, stackSize*sizeof(Frag));
       free(oldStack);
     }
     stackSize += NFA_BUILDER_STACK_INCREMENT;

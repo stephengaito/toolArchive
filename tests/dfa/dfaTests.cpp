@@ -39,15 +39,57 @@ go_bandit([](){
       AssertThat(dfa->allocator, Is().Not().EqualTo((void*)0));
       AssertThat(dfa->nextStateMapping, Is().Not().EqualTo((void*)0));
       AssertThat(dfa->startState, Is().Not().EqualTo((State**)0));
-      AssertThat((int)dfa->startState[0][0], Equals(15));
-      for( size_t i = 1; i < dfa->allocator->stateSize; i++) {
-        AssertThat(dfa->startState[0][i], Equals(0));
-      }
+      AssertThat(dfa->numStartStates, Equals(1));
+      AssertThat(dfa->startState[0], Equals((State*)0));
       AssertThat(((void*)dfa->tokensState), Is().Not().EqualTo((void*)0));
       for( size_t i = 0; i < dfa->allocator->stateSize; i++) {
         AssertThat(dfa->tokensState[i], Equals(0));
       }
+      State *startState = dfa->getDFAStartState((NFA::StartStateId)0);
+      AssertThat(dfa->startState[0], Is().Not().EqualTo((State*)0));
+      AssertThat(dfa->startState[0], Equals(startState));
+      AssertThat((int)dfa->startState[0][0], Equals(15));
+      for( size_t i = 1; i < dfa->allocator->stateSize; i++) {
+        AssertThat(dfa->startState[0][i], Equals(0));
+      }
       AssertThat(dfa->allocator->isSubStateOf(dfa->startState[0], dfa->tokensState), Is().False());
+      delete dfa;
+      delete nfa;
+      delete classifier;
+    });
+
+    it("should be able to register lots of start states", [](){
+      Classifier *classifier = new Classifier();
+      NFA *nfa = new NFA(classifier);
+      AssertThat(nfa->startStateIds,  Is().Not().EqualTo((void*)0));
+      AssertThat(nfa->startState,     Equals((NFA::State**)0));
+      AssertThat(nfa->nextStartState, Equals(0));
+      AssertThat(nfa->numStartStates, Equals(0));
+      char buffer[100];
+      NFA::State *states[100];
+      NFA::MatchData noMatchData;
+      noMatchData.c.u = 0;
+      for (size_t i = 0; i < 100; i++) {
+        memset(buffer, 0, 100);
+        sprintf(buffer, "%zu", i);
+        nfa->registerStartState(buffer);
+        states[i] = nfa->addState(NFA::Split, noMatchData, NULL, NULL);
+        nfa->appendNFAToStartState(buffer, states[i]);
+        AssertThat(nfa->getNumberStartStates(), Equals(i+1));
+        AssertThat(nfa->findStartStateId(buffer), Equals(i));
+        AssertThat(nfa->getStartState(buffer), Equals(states[i]));
+        AssertThat(nfa->getStartState((NFA::StartStateId)i), Equals(states[i]));
+      }
+      DFA *dfa = new DFA(nfa);
+      AssertThat(nfa->getNumberStartStates(), Equals(100));
+      AssertThat(dfa->startState, Is().Not().EqualTo((void*)0));
+      AssertThat(dfa->numStartStates, Equals(100));
+      for (size_t i = 0; i < 100; i++) {
+        AssertThat((State*)dfa->startState[i], Equals((State*)0));
+        AssertThat(nfa->getStartState((NFA::StartStateId)i), Equals(states[i]));
+        dfa->getDFAStartState(i);
+        AssertThat((State*)dfa->startState[i], Is().Not().EqualTo((State*)0));
+      }
       delete dfa;
       delete nfa;
       delete classifier;
@@ -71,34 +113,36 @@ go_bandit([](){
       AssertThat(allocator->allocatedUnusedStack, Is().EqualTo((void*)0));
       AssertThat(allocator->allocatedUnusedStackTop, Is().EqualTo(0));
       AssertThat(allocator->allocatedUnusedStackSize, Is().EqualTo(0));
-      State *aState0 = allocator->allocateANewState(); // this will be generic state
-      State *aState1 = allocator->allocateANewState(); // this will be the specific state
-      State *aState2 = allocator->allocateANewState(); // should never be used
-      allocator->unallocateState(aState0);
-      allocator->unallocateState(aState1);
-      allocator->unallocateState(aState2);
+      State *specificState = allocator->allocateANewState(); // this will be the specific state
+      State *genericState  = allocator->allocateANewState(); // this will be generic state
+      State *startState    = allocator->allocateANewState(); // this will be the start state
+      allocator->unallocateState(specificState);
+      allocator->unallocateState(genericState);
+      allocator->unallocateState(startState); // last in first out of stack
       utf8Char_t firstChar;
       firstChar.u = 0;
       firstChar.c[0] = 'a';
       Classifier::classSet_t classificationSet = 0;
       State *nextDFAState =
-        dfa->computeNextDFAState(dfa->startState[0],
+        dfa->computeNextDFAState(dfa->getDFAStartState("start"),
                                  firstChar,
                                  classificationSet);
       AssertThat((void*)nextDFAState, Is().Not().EqualTo((void*)0));
-      AssertThat((void*)nextDFAState, Is().EqualTo((void*)aState1));
-      AssertThat(allocator->isStateEmpty(aState0), Is().True());
-      State **registeredState0 =
+      AssertThat((void*)nextDFAState, Is().EqualTo((void*)specificState));
+      AssertThat(allocator->isStateEmpty(genericState), Is().True());
+      State **registeredGenericState =
         (State**)hattrie_tryget(mapping->nextDFAStateMap,
-                                aState0, allocator->stateSize);
-      AssertThat((void**)registeredState0, Is().EqualTo((void*)0));
+                                genericState, allocator->stateSize);
+      AssertThat((void**)registeredGenericState, Is().EqualTo((void*)0));
 
-      AssertThat(allocator->isStateEmpty(aState1), Is().False());
-      State **registeredState1 =
+      AssertThat(allocator->isStateEmpty(specificState), Is().False());
+      State **registeredSpecificState =
         (State**)hattrie_tryget(mapping->nextDFAStateMap,
-                                aState1, allocator->stateSize);
-      AssertThat((void**)registeredState1, Is().Not().EqualTo((void*)0));
-      AssertThat((void*)*registeredState1, Is().EqualTo((void*)aState1));
+                                specificState, allocator->stateSize);
+      AssertThat((void**)registeredSpecificState,
+        Is().Not().EqualTo((void*)0));
+      AssertThat((void*)*registeredSpecificState,
+        Is().EqualTo((void*)specificState));
       AssertThat(((int)nextDFAState[0]), Is().EqualTo((int)0x30));
       for (size_t i = 1; i < allocator->stateSize; i++) {
         AssertThat(((int)nextDFAState[i]), Is().EqualTo((int)0x00));
@@ -133,8 +177,10 @@ go_bandit([](){
       AssertThat(allocator->allocatedUnusedStackSize, Is().EqualTo(0));
       State *specificState = allocator->allocateANewState(); // this will be the specific state
       State *genericState  = allocator->allocateANewState(); // this will be generic state
+      State *startState    = allocator->allocateANewState(); // this will be the start state
       allocator->unallocateState(specificState);
-      allocator->unallocateState(genericState); // last in first out of stack
+      allocator->unallocateState(genericState);
+      allocator->unallocateState(startState); // last in first out of stack
       AssertThat(allocator->allocatedUnusedStack[0], Equals(specificState));
       AssertThat(allocator->allocatedUnusedStack[1], Equals(genericState));
       utf8Char_t firstChar;
@@ -144,7 +190,7 @@ go_bandit([](){
         classifier->getClassSet(firstChar);
       AssertThat(classificationSet, Is().EqualTo(~1L));
       State *nextDFAState =
-        dfa->computeNextDFAState(dfa->startState[0],
+        dfa->computeNextDFAState(dfa->getDFAStartState("start"),
                                  firstChar,
                                  classificationSet);
       AssertThat((void*)nextDFAState, Is().Not().EqualTo((void*)0));
@@ -200,8 +246,10 @@ go_bandit([](){
       AssertThat(allocator->allocatedUnusedStackSize, Is().EqualTo(0));
       State *specificState = allocator->allocateANewState(); // this will be the specific state
       State *genericState = allocator->allocateANewState(); // this will be generic state
+      State *startState    = allocator->allocateANewState(); // this will be the start state
       allocator->unallocateState(specificState);
-      allocator->unallocateState(genericState); // last in first out stack
+      allocator->unallocateState(genericState);
+      allocator->unallocateState(startState); // last in first out stack
       AssertThat(allocator->allocatedUnusedStack[0], Equals(specificState));
       AssertThat(allocator->allocatedUnusedStack[1], Equals(genericState));
       utf8Char_t firstChar;
@@ -211,7 +259,7 @@ go_bandit([](){
         classifier->getClassSet(firstChar);
       AssertThat(classificationSet, Is().EqualTo(~1L));
       State *nextDFAState =
-        dfa->computeNextDFAState(dfa->startState[0],
+        dfa->computeNextDFAState(dfa->getDFAStartState("start"),
                                  firstChar,
                                  classificationSet);
       AssertThat((void*)nextDFAState, Is().Not().EqualTo((void*)0));
@@ -322,6 +370,7 @@ go_bandit([](){
       AssertThat(dfa, Is().Not().EqualTo((void*)0));
       StateAllocator *allocator = dfa->allocator;
       AssertThat(allocator, Is().Not().EqualTo((void*)0));
+      dfa->getDFAStartState("start");
       NFA::State *nfaState =
         allocator->stateMatchesToken(dfa->startState[0], dfa->tokensState);
       AssertThat(nfaState, Is().EqualTo((void*)0));

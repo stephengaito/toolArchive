@@ -79,7 +79,7 @@ void StateAllocator::mergeStateWith(State *state, State *other) {
 void StateAllocator::printStateOnWithMessage(FILE *filePtr,
                                         const char* message,
                                         State *state) {
-  fprintf(filePtr, "\n%s (%zu bytes) ", message, stateSize);
+  fprintf(filePtr, "\n%s [%p](%zu bytes) ", message, state, stateSize);
   for (size_t i = 0; i < stateSize; i++) {
     fprintf(filePtr, " %u ", (int)state[i]&0xFF);
   }

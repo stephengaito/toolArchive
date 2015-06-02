@@ -84,7 +84,7 @@ void NFA::registerStartState(const char *startStateName) {
         (State**) calloc(numStartStates + START_STATE_IDS_ARRAY_INCREMENT,
                          sizeof(State*));
       if (oldStartStates) {
-        memcpy(startState, oldStartStates, numStartStates);
+        memcpy(startState, oldStartStates, numStartStates*sizeof(State*));
         free(oldStartStates);
       }
       numStartStates += START_STATE_IDS_ARRAY_INCREMENT;
@@ -111,6 +111,16 @@ void NFA::appendNFAToStartState(const char *startStateName,
     while (nextState->out1) nextState = nextState->out1;
     nextState->out1 = baseSplitState;
   }
+}
+
+void NFA::printStateOnWithMessage(FILE *filePtr,
+                                  const char *message,
+                                  NFA::State *state) {
+  fprintf(filePtr, "%s (%p)\n", message, state);
+  fprintf(filePtr, "  MatchType: %u\n", state->matchType);
+  fprintf(filePtr, "  MatchData: %lu\n", state->matchData.c.u);
+  fprintf(filePtr, "  Out: %p\n", state->out);
+  fprintf(filePtr, "  Out1: %p\n", state->out1);
 }
 
 /*

@@ -45,7 +45,7 @@ namespace DeterministicFiniteAutomaton {
       /// The DFA::State start state is the bit set of all NFA::State(s)
       /// reachable from the give NFA StartState by following unlabeled
       /// (NFA::Split) transitions.
-      void computeDFAStartState(const char *startStateName);
+      State *getDFAStartState(const char *startStateName);
 
       /// \brief Compute the initial DFA::State bit set for the NFA
       /// start state NFA::StartStateId, startStateId.
@@ -53,7 +53,7 @@ namespace DeterministicFiniteAutomaton {
       /// The DFA::State start state is the bit set of all NFA::State(s)
       /// reachable from the give NFA StartState by following unlabeled
       /// (NFA::Split) transitions.
-      void computeDFAStartState(NFA::StartStateId startStateId);
+      State *getDFAStartState(NFA::StartStateId startStateId);
 
       /// \brief Find or compute the next DFA::State given a
       /// utf8Char_t character or a Classifier::classSet_t.
