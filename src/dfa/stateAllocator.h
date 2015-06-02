@@ -27,7 +27,9 @@ namespace DeterministicFiniteAutomaton {
 
       /// \brief Mark an allocated DFA::State as unused and store it in
       /// one of the allocated but unused DFA::State(s).
-      void unallocateState(State *aState);
+      void unallocateState(State *aState) {
+        allocatedUnusedStack.pushItem(aState);
+      }
 
       /// \brief Ensure that all bits in the DFA::State bit set are
       /// turned *off*.
@@ -101,11 +103,7 @@ namespace DeterministicFiniteAutomaton {
       /// \brief One of three allocated but currently unused DFA::State(s).
       ///
       /// Since this DFA::State is unused it can be re-allocated as needed.
-      State **allocatedUnusedStack;
-
-      size_t allocatedUnusedStackTop;
-
-      size_t allocatedUnusedStackSize;
+      VarArray<State*> allocatedUnusedStack;
 
   }; // class StateAllocator
 };  // namespace DeterministicFiniteAutomaton

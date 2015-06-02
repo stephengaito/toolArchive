@@ -113,9 +113,7 @@ go_bandit([](){
       AssertThat(allocator, Is().Not().EqualTo((void*)0));
       NextStateMapping *mapping = dfa->nextStateMapping;
       AssertThat(mapping, Is().Not().EqualTo((void*)0));
-      AssertThat(allocator->allocatedUnusedStack, Is().EqualTo((void*)0));
-      AssertThat(allocator->allocatedUnusedStackTop, Is().EqualTo(0));
-      AssertThat(allocator->allocatedUnusedStackSize, Is().EqualTo(0));
+      AssertThat(allocator->allocatedUnusedStack.getNumItems(), Equals(0));
       State *specificState = allocator->allocateANewState(); // this will be the specific state
       State *genericState  = allocator->allocateANewState(); // this will be generic state
       State *startState    = allocator->allocateANewState(); // this will be the start state
@@ -177,17 +175,17 @@ go_bandit([](){
       AssertThat(allocator, Is().Not().EqualTo((void*)0));
       NextStateMapping *mapping = dfa->nextStateMapping;
       AssertThat(mapping, Is().Not().EqualTo((void*)0));
-      AssertThat(allocator->allocatedUnusedStack, Is().EqualTo((void*)0));
-      AssertThat(allocator->allocatedUnusedStackTop, Is().EqualTo(0));
-      AssertThat(allocator->allocatedUnusedStackSize, Is().EqualTo(0));
+      AssertThat(allocator->allocatedUnusedStack.getNumItems(), Equals(0));
       State *specificState = allocator->allocateANewState(); // this will be the specific state
       State *genericState  = allocator->allocateANewState(); // this will be generic state
       State *startState    = allocator->allocateANewState(); // this will be the start state
       allocator->unallocateState(specificState);
       allocator->unallocateState(genericState);
       allocator->unallocateState(startState); // last in first out of stack
-      AssertThat(allocator->allocatedUnusedStack[0], Equals(specificState));
-      AssertThat(allocator->allocatedUnusedStack[1], Equals(genericState));
+      AssertThat(allocator->allocatedUnusedStack.getItem(0, NULL),
+        Equals(specificState));
+      AssertThat(allocator->allocatedUnusedStack.getItem(1, NULL),
+        Equals(genericState));
       utf8Char_t firstChar;
       firstChar.u = 0;
       firstChar.c[0] = 'a';
@@ -248,17 +246,17 @@ go_bandit([](){
       AssertThat(allocator, Is().Not().EqualTo((void*)0));
       NextStateMapping *mapping = dfa->nextStateMapping;
       AssertThat(mapping, Is().Not().EqualTo((void*)0));
-      AssertThat(allocator->allocatedUnusedStack, Is().EqualTo((void*)0));
-      AssertThat(allocator->allocatedUnusedStackTop, Is().EqualTo(0));
-      AssertThat(allocator->allocatedUnusedStackSize, Is().EqualTo(0));
+      AssertThat(allocator->allocatedUnusedStack.getNumItems(), Equals(0));
       State *specificState = allocator->allocateANewState(); // this will be the specific state
       State *genericState = allocator->allocateANewState(); // this will be generic state
       State *startState    = allocator->allocateANewState(); // this will be the start state
       allocator->unallocateState(specificState);
       allocator->unallocateState(genericState);
       allocator->unallocateState(startState); // last in first out stack
-      AssertThat(allocator->allocatedUnusedStack[0], Equals(specificState));
-      AssertThat(allocator->allocatedUnusedStack[1], Equals(genericState));
+      AssertThat(allocator->allocatedUnusedStack.getItem(0, NULL),
+        Equals(specificState));
+      AssertThat(allocator->allocatedUnusedStack.getItem(1, NULL),
+        Equals(genericState));
       utf8Char_t firstChar;
       firstChar.u = 0;
       firstChar.c[0] = 'a';
