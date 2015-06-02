@@ -298,7 +298,7 @@ go_bandit([](){
       DFA *dfa = new DFA(nfa);
       AssertThat(dfa, Is().Not().EqualTo((void*)0));
       Utf8Chars *stream0 = new Utf8Chars("simple");
-      NFA::TokenId aTokenId = dfa->getNextTokenId((NFA::StartStateId)0, stream0);
+      ParseTrees::TokenId aTokenId = dfa->getNextTokenId((NFA::StartStateId)0, stream0);
       AssertThat(aTokenId, Is().EqualTo(1));
       Utf8Chars *stream1 = new Utf8Chars("notSoSimple");
       aTokenId = dfa->getNextTokenId((NFA::StartStateId)0, stream1);
@@ -327,7 +327,7 @@ go_bandit([](){
       DFA *dfa = new DFA(nfa);
       AssertThat(dfa, Is().Not().EqualTo((void*)0));
       Utf8Chars *stream0 = new Utf8Chars("simple");
-      NFA::TokenId aTokenId = dfa->getNextTokenId((NFA::StartStateId)0, stream0);
+      ParseTrees::TokenId aTokenId = dfa->getNextTokenId((NFA::StartStateId)0, stream0);
       AssertThat(aTokenId, Is().EqualTo(1));
       Utf8Chars *stream1 = new Utf8Chars("notSoSimple");
       aTokenId = dfa->getNextTokenId((NFA::StartStateId)0, stream1);
@@ -350,7 +350,7 @@ go_bandit([](){
       DFA *dfa = new DFA(nfa);
       AssertThat(dfa, Is().Not().EqualTo((void*)0));
       Utf8Chars *stream0 = new Utf8Chars("sillysomeNonWhiteSpace");
-      NFA::TokenId aTokenId = dfa->getNextTokenId((NFA::StartStateId)0, stream0);
+      ParseTrees::TokenId aTokenId = dfa->getNextTokenId((NFA::StartStateId)0, stream0);
       AssertThat(aTokenId, Is().EqualTo(1));
       delete dfa;
       delete nfa;
@@ -375,7 +375,7 @@ go_bandit([](){
         allocator->stateMatchesToken(dfa->startState[0], dfa->tokensState);
       AssertThat(nfaState, Is().EqualTo((void*)0));
       Utf8Chars *stream0 = new Utf8Chars("sillysomeNonWhiteSpace   ");
-      NFA::TokenId aTokenId = dfa->getNextTokenId((NFA::StartStateId)0, stream0);
+      ParseTrees::TokenId aTokenId = dfa->getNextTokenId((NFA::StartStateId)0, stream0);
       AssertThat(aTokenId, Is().EqualTo(2));
       Utf8Chars *stream1 = new Utf8Chars("   sillysomeNonWhiteSpace");
       aTokenId = dfa->getNextTokenId((NFA::StartStateId)0, stream1);

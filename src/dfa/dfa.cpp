@@ -182,8 +182,8 @@ State *DFA::computeNextDFAState(State *curDFAState,
 }
 
 /* Run DFA to determine whether it matches s. */
-NFA::TokenId DFA::getNextTokenId(NFA::StartStateId startStateId,
-                                 Utf8Chars *utf8Stream) {
+ParseTrees::TokenId DFA::getNextTokenId(NFA::StartStateId startStateId,
+                                        Utf8Chars *utf8Stream) {
   State *curDFAState, *nextDFAState;
 
   curDFAState = getDFAStartState(startStateId);

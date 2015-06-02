@@ -62,14 +62,14 @@ class NFABuilder {
     /// \brief Push an NFABuilder::Frag structure containing an
     /// NFA::State which represents a terminal state which recognizes a
     /// token with id, aTokenId.
-    NFA::State *match(NFA::TokenId aTokenId);
+    NFA::State *match(ParseTrees::TokenId aTokenId);
 
     /// \brief Compile the Regular Expression into a (sub)NFA used to
     /// recognize a Token with Token ID aTokenId with the given
     /// startStateName.
     void compileRegularExpressionForTokenId(const char *startStateName,
                                             const char *re,
-                                            NFA::TokenId aTokenId,
+                                            ParseTrees::TokenId aTokenId,
                                             bool ignoreToken = false)
                                             throw (LexerException);
 

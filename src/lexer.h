@@ -12,7 +12,7 @@ class Lexer {
   public:
 
     /// \brief A TokenId is a user assigned NFA::TokenId (Hat-Trie::value_t).
-    typedef NFA::TokenId TokenId;
+    typedef ParseTrees::TokenId TokenId;
 
     /// \brief Create a Lexer.
     Lexer(void) {
