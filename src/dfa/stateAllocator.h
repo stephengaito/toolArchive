@@ -67,6 +67,14 @@ namespace DeterministicFiniteAutomaton {
         state[nfaStateNumber.stateByte] |= nfaStateNumber.stateBit;
       };
 
+      /// \brief Clear the bit corresponding the the NFA::State nfaState
+      /// in the DFA::State state's bit set.
+      void clearNFAState(State *state, NFA::State *nfaState) {
+        NFAStateMapping::NFAStateNumber nfaStateNumber =
+          nfaStateMapping->getNFAStateNumber(nfaState);
+        state[nfaStateNumber.stateByte] &= ~nfaStateNumber.stateBit;
+      };
+
       /// \brief Return the size of any and all DFA::State bit sets
       /// allocated by this allocator.
       size_t getStateSize() {

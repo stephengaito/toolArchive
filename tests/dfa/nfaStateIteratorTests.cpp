@@ -178,6 +178,50 @@ go_bandit([](){
         AssertThat(iterator.nextState(), Equals(baseState+i));
       }
       AssertThat(iterator.nextState(), Equals((void*)0));
+      allocator->clearNFAState(state, baseState);
+      AssertThat((uint8_t)state[0], Equals(254));
+      AssertThat((uint8_t)state[1], Equals(255));
+      AssertThat((uint8_t)state[2], Equals(7));
+      allocator->clearNFAState(state, baseState+1);
+      AssertThat((uint8_t)state[0], Equals(252));
+      AssertThat((uint8_t)state[1], Equals(255));
+      AssertThat((uint8_t)state[2], Equals(7));
+      allocator->clearNFAState(state, baseState+2);
+      AssertThat((uint8_t)state[0], Equals(248));
+      AssertThat((uint8_t)state[1], Equals(255));
+      AssertThat((uint8_t)state[2], Equals(7));
+      allocator->clearNFAState(state, baseState+3);
+      AssertThat((uint8_t)state[0], Equals(240));
+      AssertThat((uint8_t)state[1], Equals(255));
+      AssertThat((uint8_t)state[2], Equals(7));
+      allocator->clearNFAState(state, baseState+4);
+      AssertThat((uint8_t)state[0], Equals(224));
+      AssertThat((uint8_t)state[1], Equals(255));
+      AssertThat((uint8_t)state[2], Equals(7));
+      allocator->clearNFAState(state, baseState+5);
+      AssertThat((uint8_t)state[0], Equals(192));
+      AssertThat((uint8_t)state[1], Equals(255));
+      AssertThat((uint8_t)state[2], Equals(7));
+      allocator->clearNFAState(state, baseState+6);
+      AssertThat((uint8_t)state[0], Equals(128));
+      AssertThat((uint8_t)state[1], Equals(255));
+      AssertThat((uint8_t)state[2], Equals(7));
+      allocator->clearNFAState(state, baseState+7);
+      AssertThat((uint8_t)state[0], Equals(0));
+      AssertThat((uint8_t)state[1], Equals(255));
+      AssertThat((uint8_t)state[2], Equals(7));
+      allocator->clearNFAState(state, baseState+8);
+      AssertThat((uint8_t)state[0], Equals(0));
+      AssertThat((uint8_t)state[1], Equals(254));
+      AssertThat((uint8_t)state[2], Equals(7));
+      allocator->clearNFAState(state, baseState+9);
+      AssertThat((uint8_t)state[0], Equals(0));
+      AssertThat((uint8_t)state[1], Equals(252));
+      AssertThat((uint8_t)state[2], Equals(7));
+      iterator = allocator->newIteratorOn(state);
+      for (size_t i = 10; i < 19; i++) {
+        AssertThat(iterator.nextState(), Equals(baseState+i));
+      }
       // mapping is owned by allocator
       delete allocator;
       delete nfa;
