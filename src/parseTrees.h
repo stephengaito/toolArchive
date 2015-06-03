@@ -42,6 +42,8 @@ class ParseTrees {
       struct Token *tokens[0];
     } Token;
 
+    typedef VarArray<Token*> TokenArray;
+
     /// \brief Create a forest of ParseTrees.
     ParseTrees(void);
 

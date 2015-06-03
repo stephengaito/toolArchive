@@ -45,7 +45,19 @@ namespace DeterministicFiniteAutomaton {
       /// The DFA::State start state is the bit set of all NFA::State(s)
       /// reachable from the give NFA StartState by following unlabeled
       /// (NFA::Split) transitions.
-      State *getDFAStartState(const char *startStateName);
+      State *getDFAStartState(const char *startStateName) {
+        return getDFAStartState(nfa->findStartStateId(startStateName));
+      }
+
+      /// \brief Compute the initial DFA::State bit set for the NFA
+      /// start state.
+      ///
+      /// The DFA::State start state is the bit set of all NFA::State(s)
+      /// reachable from the give NFA StartState by following unlabeled
+      /// (NFA::Split) transitions.
+      State *getDFAStartState(NFA::State *startStatePtr) {
+        return getDFAStartState(nfa->findStartStateId(startStatePtr));
+      }
 
       /// \brief Compute the initial DFA::State bit set for the NFA
       /// start state NFA::StartStateId, startStateId.
@@ -73,9 +85,39 @@ namespace DeterministicFiniteAutomaton {
                                   utf8Char_t c,
                                   Classifier::classSet_t classificationSet);
 
-      /// \brief Run the DFA until the next token is recognized.
-      ParseTrees::Token *getNextToken(NFA::StartStateId startStateId,
-                                      Utf8Chars *utf8Stream);
+      /// \brief Run the DFA parsing tokens until the whole string is
+      /// recognized by the (sub)DFA.
+      ///
+      /// Returns true if the (sub)DFA recognizes the stream, false
+      /// otherwise.
+      bool parsedStreamInto(const char *startStateName,
+                            Utf8Chars *utf8Stream,
+                            ParseTrees::TokenArray &parentTokens) {
+        return parsedStreamInto(nfa->findStartStateId(startStateName),
+                                utf8Stream, parentTokens);
+      }
+
+      /// \brief Run the DFA parsing tokens until the whole string is
+      /// recognized by the (sub)DFA.
+      ///
+      /// Returns true if the (sub)DFA recognizes the stream, false
+      /// otherwise.
+      bool parsedStreamInto(NFA::StartStateId startStateId,
+                            Utf8Chars *utf8Stream,
+                            ParseTrees::TokenArray &parentTokens) {
+        return parsedStreamInto(nfa->getStartState(startStateId),
+                                utf8Stream, parentTokens);
+      }
+
+      /// \brief Run the DFA parsing tokens until the whole string is
+      /// recognized by the (sub)DFA.
+      ///
+      /// Returns true if the (sub)DFA recognizes the stream, false
+      /// otherwise.
+      bool parsedStreamInto(NFA::State *reStartState,
+                            Utf8Chars *utf8Stream,
+                            ParseTrees::TokenArray &parentTokens);
+
 
     private:
       /// \brief The NFA associated to this DFA.
@@ -104,6 +146,9 @@ namespace DeterministicFiniteAutomaton {
 
       /// \brief The total number of start states.
       size_t numStartStates;
+
+      /// \brief The stack of AutomataState(s).
+      VarArray<AutomataState*> automataStack;
 
   }; // class DFA
 };  // namespace DeterministicFiniteAutomaton

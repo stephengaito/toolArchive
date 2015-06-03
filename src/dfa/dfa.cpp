@@ -77,10 +77,6 @@ void DFA::addNFAStateToDFAState(State *dfaState, NFA::State *nfaState) {
 
 /* Compute initial state list */
 
-State *DFA::getDFAStartState(const char *startStateName) {
-  return getDFAStartState(nfa->findStartStateId(startStateName));
-}
-
 State *DFA::getDFAStartState(NFA::StartStateId startStateId) {
   if (numStartStates <= startStateId) return NULL;
   if (!startState[startStateId]) {
@@ -184,77 +180,30 @@ State *DFA::computeNextDFAState(State *curDFAState,
 }
 
 /* Run DFA to determine whether it matches s. */
-ParseTrees::Token *DFA::getNextToken(NFA::StartStateId startStateId,
-                                     Utf8Chars *utf8Stream) {
-  VarArray<ParseTrees::Token*> tokens;
-  State *curDFAState, *nextDFAState;
+DFA::State *DFA::getNextDFAState(DFA::State *curState,
+                            utf8Char_t curChar) {
+  State *nextDFAState = NULL;
 
-  curDFAState = getDFAStartState(startStateId);
-  utf8Char_t curChar = utf8Stream->nextUtf8Char();
-  while (curChar.u) {
-    State *nextDFAState = NULL;
+  // try to find an already computed nextDFAState using the character
+  State **tryGetDFAState =
+    nextStateMapping->tryGetNextStateByCharacter(curDFAState, curChar);
+  if (tryGetDFAState && *tryGetDFAState) {
+    return *tryGetDFAState;
+  }
 
-    State **tryGetDFAState =
-      nextStateMapping->tryGetNextStateByCharacter(curDFAState, curChar);
-    if (tryGetDFAState && *tryGetDFAState) {
-      nextDFAState = *tryGetDFAState;
-    } else {
-      // try the more generic
-      Classifier::classSet_t classificationSet =
-        nfa->getClassifier()->getClassSet(curChar);
-      tryGetDFAState =
-        nextStateMapping->tryGetNextStateByClass(curDFAState,
-                                                 classificationSet);
-      if (tryGetDFAState && *tryGetDFAState) {
-        nextDFAState = *tryGetDFAState;
-      } else {
-        nextDFAState = computeNextDFAState(curDFAState,
-                                           curChar,
-                                           classificationSet);
-        if (!nextDFAState) {
-          utf8Stream->backup();
-          NFA::State *tokenState =
-            allocator->stateMatchesToken(curDFAState, tokensState);
-          if (tokenState) {
-            return parseTree->allocateNewToken(((tokenState->matchData.t)>>1),
-                                               NULL, 0, tokens);
-          }
-          return NULL;
-        }
-        // try all restart/pushDown paths first...
-        // we need to remove them so we need to make a copy of
-        // nextDFAState. We remove them so that if none of the restart
-        // states work but there are still non-restart states we can
-        // have the DFA follow the non-restart states as normal.
-        NFAStateIterator nfaStateIter = allocator->newIteratorOn(nextDFAState);
-        while(NFA::State *nfaState = nfaStateIter.nextState()) {
-          if (nfaState->matchType == NFA::ReStart) {
-            // we need to try this path
-            // prepare to clean up if this path fails.
-            ParseTrees::Token *newToken =
-              getNextToken(nfaState->matchData.r, utf8Stream);
-            if (newToken) {
-              tokens.pushItem(newToken);
-              // we now need to try to follow the current NFA starting
-              // at the *internal* start state *just* after this
-              // NFA::State.
-            } else {
-              // failed this path... clean up and try the next
-            }
-          }
-        }
-      }
-    }
-    curDFAState = nextDFAState;
-    curChar = utf8Stream->nextUtf8Char();
+  // try to find an already computed nextDFAState using the more general
+  // character classification.
+  Classifier::classSet_t classificationSet =
+    nfa->getClassifier()->getClassSet(curChar);
+  tryGetDFAState =
+    nextStateMapping->tryGetNextStateByClass(curDFAState,
+                                             classificationSet);
+  if (tryGetDFAState && *tryGetDFAState) {
+      return *tryGetDFAState;
   }
-  NFA::State *tokenNFAState =
-    allocator->stateMatchesToken(curDFAState, tokensState);
-  if (tokenNFAState) {
-    return parseTree->allocateNewToken(((tokenNFAState->matchData.t)>>1),
-                                       NULL, 0, tokens);
-  }
-  return NULL;
+
+  // now explicitly compute a new nextDFAState
+  return computeNextDFAState(curDFAState, curChar, classificationSet);
 }
 
 /*

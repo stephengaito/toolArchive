@@ -115,6 +115,11 @@ class NFA {
     /// \brief Get the Classifier associated with this NFA.
     Classifier *getClassifier(void) { return utf8Classifier; }
 
+    /// \brief Find the class set associated with the given className.
+    Classifier::classSet_t findClassSet(const char *className) {
+      return utf8Classifier->findClassSet(className);
+    }
+
     /// \brief (pre)Register the name of a StartState that might be
     /// used in one or more regular expressions.
     void registerStartState(const char *startStateName) {
@@ -132,13 +137,21 @@ class NFA {
       }
     }
 
-    /// \brief Append the (sub)NFA to the current start state.
-    void appendNFAToStartState(const char *startStateName,
-                               State *subNFAStartState);
-
-    /// \brief Find the class set associated with the given className.
-    Classifier::classSet_t findClassSet(const char *className) {
-      return utf8Classifier->findClassSet(className);
+    /// \brief (pre)Register the name of a StartState that might be
+    /// used in one or more regular expressions.
+    void registerStartState(State *startStatePtr) {
+      StartStateId *startStateId = hattrie_get(startStateIds,
+                                               (char*)startStatePtr,
+                                               sizeof(State*));
+      ASSERT(startStateId); // corrupted startStateIds Hat-Trie
+      if (!*startStateId) {
+        // we need to allocate a new startStateId
+        // to be able to interact with the above check for a newly
+        // allocated startStateName Hat-Trie, the *startStateId
+        // MUST be one-relative rather than the usual zero-relative.
+        *startStateId = startState.getNumItems() + 1;
+        startState.pushItem(NULL);
+      }
     }
 
     /// \brief Find the StartState Id associated with the given StartStateName.
@@ -146,6 +159,17 @@ class NFA {
       StartStateId *startStateId = hattrie_tryget(startStateIds,
                                                   startStateName,
                                                   strlen(startStateName));
+      if (!startStateId) return -1L;
+      // internally *startStateId is 1-relative
+      // so we convert it to 0-relative externally.
+      return *startStateId - 1; 
+    }
+
+    /// \brief Find the StartState Id associated with the given StartStateName.
+    StartStateId findStartStateId(State *startStatePtr) {
+      StartStateId *startStateId = hattrie_tryget(startStateIds,
+                                                  (char*)startStatePtr,
+                                                  sizeof(State*));
       if (!startStateId) return -1L;
       // internally *startStateId is 1-relative
       // so we convert it to 0-relative externally.
@@ -161,6 +185,10 @@ class NFA {
     State *getStartState(StartStateId startStateId) {
       return startState.getItem(startStateId, NULL);
     }
+
+    /// \brief Append the (sub)NFA to the current start state.
+    void appendNFAToStartState(const char *startStateName,
+                               State *subNFAStartState);
 
     /// \brief Add a new NFA state.
     State *addState(MatchType aMatchType, MatchData someMatchData,
