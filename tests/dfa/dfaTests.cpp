@@ -9,7 +9,7 @@ using namespace bandit;
 #endif
 
 #include "nfaBuilder.h"
-#include <dfa/dfa.h>
+#include <dfa/pushDownMachine.h>
 
 namespace DeterministicFiniteAutomaton {
 
@@ -304,14 +304,16 @@ go_bandit([](){
       ParseTrees *parseTrees = new ParseTrees();
       DFA *dfa = new DFA(nfa, parseTrees);
       AssertThat(dfa, Is().Not().EqualTo((void*)0));
+      PushDownMachine *pdm = new PushDownMachine(dfa);
+      AssertThat(pdm, Is().Not().EqualTo((void*)0));
       Utf8Chars *stream0 = new Utf8Chars("simple");
-      ParseTrees::Token *aToken = dfa->getNextToken((NFA::StartStateId)0, stream0);
+      ParseTrees::Token *aToken = pdm->runFromUsing("start", stream0);
       AssertThat(aToken->id, Is().EqualTo(1));
 //      AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
 //      AssertThat(aToken->textLength, Is().Not().EqualTo(0));
       AssertThat(aToken->numTokens, Equals(0));
       Utf8Chars *stream1 = new Utf8Chars("notSoSimple");
-      aToken = dfa->getNextToken((NFA::StartStateId)0, stream1);
+      aToken = pdm->runFromUsing("start", stream1);
       AssertThat(aToken, Equals((void*)0));
       delete dfa;
       delete parseTrees;
@@ -338,14 +340,16 @@ go_bandit([](){
       ParseTrees *parseTrees = new ParseTrees();
       DFA *dfa = new DFA(nfa, parseTrees);
       AssertThat(dfa, Is().Not().EqualTo((void*)0));
+      PushDownMachine *pdm = new PushDownMachine(dfa);
+      AssertThat(pdm, Is().Not().EqualTo((void*)0));
       Utf8Chars *stream0 = new Utf8Chars("simple");
-      ParseTrees::Token *aToken = dfa->getNextToken((NFA::StartStateId)0, stream0);
+      ParseTrees::Token *aToken = pdm->runFromUsing("start", stream0);
 //      AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
 //      AssertThat(aToken->textLength, Is().Not().EqualTo(0));
       AssertThat(aToken->numTokens, Equals(0));
       AssertThat(aToken->id, Is().EqualTo(1));
       Utf8Chars *stream1 = new Utf8Chars("notSoSimple");
-      aToken = dfa->getNextToken((NFA::StartStateId)0, stream1);
+      aToken = pdm->runFromUsing("start", stream1);
 //      AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
 //      AssertThat(aToken->textLength, Is().Not().EqualTo(0));
       AssertThat(aToken->numTokens, Equals(0));
@@ -369,8 +373,10 @@ go_bandit([](){
       ParseTrees *parseTrees = new ParseTrees();
       DFA *dfa = new DFA(nfa, parseTrees);
       AssertThat(dfa, Is().Not().EqualTo((void*)0));
+      PushDownMachine *pdm = new PushDownMachine(dfa);
+      AssertThat(pdm, Is().Not().EqualTo((void*)0));
       Utf8Chars *stream0 = new Utf8Chars("sillysomeNonWhiteSpace");
-      ParseTrees::Token *aToken = dfa->getNextToken((NFA::StartStateId)0, stream0);
+      ParseTrees::Token *aToken = pdm->runFromUsing("start", stream0);
 //      AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
 //      AssertThat(aToken->textLength, Is().Not().EqualTo(0));
       AssertThat(aToken->numTokens, Equals(0));
@@ -399,14 +405,16 @@ go_bandit([](){
       NFA::State *nfaState =
         allocator->stateMatchesToken(dfa->startState[0], dfa->tokensState);
       AssertThat(nfaState, Is().EqualTo((void*)0));
+      PushDownMachine *pdm = new PushDownMachine(dfa);
+      AssertThat(pdm, Is().Not().EqualTo((void*)0));
       Utf8Chars *stream0 = new Utf8Chars("sillysomeNonWhiteSpace   ");
-      ParseTrees::Token *aToken = dfa->getNextToken((NFA::StartStateId)0, stream0);
+      ParseTrees::Token *aToken = pdm->runFromUsing("start", stream0);
 //      AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
 //      AssertThat(aToken->textLength, Is().Not().EqualTo(0));
       AssertThat(aToken->numTokens, Equals(0));
       AssertThat(aToken->id, Is().EqualTo(2));
       Utf8Chars *stream1 = new Utf8Chars("   sillysomeNonWhiteSpace");
-      aToken = dfa->getNextToken((NFA::StartStateId)0, stream1);
+      aToken = pdm->runFromUsing("start", stream1);
 //      AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
 //      AssertThat(aToken->textLength, Is().Not().EqualTo(0));
       AssertThat(aToken->numTokens, Equals(0));

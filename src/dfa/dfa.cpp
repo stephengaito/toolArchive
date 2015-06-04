@@ -180,7 +180,7 @@ State *DFA::computeNextDFAState(State *curDFAState,
 }
 
 /* Run DFA to determine whether it matches s. */
-DFA::State *DFA::getNextDFAState(DFA::State *curState,
+State *DFA::getNextDFAState(State *curDFAState,
                             utf8Char_t curChar) {
   State *nextDFAState = NULL;
 

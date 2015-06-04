@@ -31,6 +31,9 @@ namespace DeterministicFiniteAutomaton {
         allocatedUnusedStack.pushItem(aState);
       }
 
+      /// \brief Return a copy of the given state.
+      State *clone(State *oldState);
+
       /// \brief Ensure that all bits in the DFA::State bit set are
       /// turned *off*.
       void emptyState(State *state);
@@ -89,6 +92,12 @@ namespace DeterministicFiniteAutomaton {
       /// \brief Return an NFAStateIterator for the given state.
       NFAStateIterator newIteratorOn(State *state) {
         return NFAStateIterator(nfaStateMapping, stateSize, state);
+      }
+
+      /// \brief Return an pointer to an NFAStateIterator for the given 
+      /// state.
+      NFAStateIterator *getNewIteratorOn(State *state) {
+        return new NFAStateIterator(nfaStateMapping, stateSize, state);
       }
 
     private:

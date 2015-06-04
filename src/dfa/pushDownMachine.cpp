@@ -3,25 +3,25 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "dfa/dfa.h"
+#include "dfa/pushDownMachine.h"
 
 using namespace DeterministicFiniteAutomaton;
 
-ParseTrees::Token *PushDownMachine::runFrom(NFA::StartStateId startStateId,
-                                            Utf8Chars *charStream) {
+ParseTrees::Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
+                                                 Utf8Chars *charStream) {
 
-  curState.stream   = charStream.clone();
-  curState.dState   = dfa->getStartState(startStateId);
-  curState.iterator = dfa->getIteratorOn(curState.dState);
+  curState.stream   = charStream->clone();
+  curState.dState   = dfa->getDFAStartState(startStateId);
+  curState.iterator = allocator->getNewIteratorOn(curState.dState);
 
   restart:
   while(true) {
     // scan current dfa state for ReStart NFA states
     if (curState.iterator) {
-      while(NFA::State *nfaState = curState.iterator.nextState()) {
+      while(NFA::State *nfaState = curState.iterator->nextState()) {
         if (nfaState->matchType == NFA::ReStart) {
           // we need to try this path
-          dfa->clearNFAStateFromDFAState(nfaState, curState.dState);
+          allocator->clearNFAState(curState.dState, nfaState);
           // push current autoamta state to clean up if this path fails.
           push();
           // now set up the continuation state and push it
@@ -29,8 +29,8 @@ ParseTrees::Token *PushDownMachine::runFrom(NFA::StartStateId startStateId,
           curState.dState = dfa->getDFAStateFromNFAState(nfaState);
           push();
           // now set up the subDFA state
-          curState.dState = dfa->getStartState(nfaState->matchDate.r);
-          curState.iterator = dfa->getIteratorOn(curState.dState);
+          curState.dState = dfa->getDFAStartState(nfaState->matchData.r);
+          curState.iterator = allocator->getNewIteratorOn(curState.dState);
           goto restart;
         }
       }
@@ -50,8 +50,8 @@ ParseTrees::Token *PushDownMachine::runFrom(NFA::StartStateId startStateId,
         if (stack.getNumItems()) {
           // we have successfully recoginized a sub state
           // now pop the stack keeping the current stream and restart
-          stack.popKeepStream();
-          curState.tokens->pushItem(token);
+          popKeepStream();
+//          curState.tokens->pushItem(token);
           goto restart;
         }
         // we have a match BUT the stack is empty
@@ -59,7 +59,8 @@ ParseTrees::Token *PushDownMachine::runFrom(NFA::StartStateId startStateId,
           // we have a match, the stack is empty and ...
           // we are at the end of the stream...
           // so return this token and we are done!
-          return token;
+//          return token;
+          return NULL;
         }
         // we have a match, the stack is empty BUT
         // we have not finished scanning the string...
@@ -78,11 +79,11 @@ ParseTrees::Token *PushDownMachine::runFrom(NFA::StartStateId startStateId,
       // ... so we give up by returning the NULL token.
       return NULL;
     }
-    stack.pop();
+    pop();
     // we need to pop twice if state we first poped has no iterator...
     // since any state with no iterator is a continuation state
     // NOT a backtrack state.
-    if (!curState.iterator) stack.pop();
+    if (!curState.iterator) pop();
     // goto restart;
   }
   // if we have reached this point we have failed!

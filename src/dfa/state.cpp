@@ -31,6 +31,18 @@ using namespace DeterministicFiniteAutomaton;
 #define NUM_DFA_STATES_PER_BLOCK 20
 #endif
 
+State *StateAllocator::clone(State *oldState) {
+  State *newState = allocateANewState();
+  if (!oldState) return newState;
+  char *curByte = newState;
+  char *oldByte = oldState;
+  char *stateEnd = curByte + stateSize;
+  for (; curByte < stateEnd; curByte++, oldByte++) {
+    *curByte = *oldByte;
+  }
+  return newState;
+}
+
 void StateAllocator::emptyState(State *state) {
   if (!state) return;
   char *curByte = state;

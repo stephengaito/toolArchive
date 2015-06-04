@@ -1,6 +1,8 @@
 #ifndef PUSH_DOWN_MACHINE_H
 #define PUSH_DOWN_MACHINE_H
 
+#include "dfa/dfa.h"
+
 namespace DeterministicFiniteAutomaton {
 
   /// \brief A PushDownMachine object is used to run a DFA.
@@ -15,12 +17,19 @@ namespace DeterministicFiniteAutomaton {
       PushDownMachine(DFA *aDFA) {
         dfa       = aDFA;
         nfa       = dfa->getNFA();
-        allocator = dfa->getAllocator();
+        allocator = dfa->getStateAllocator();
       }
 
       /// \brief Run the PushDownAutomata from any the given start
       /// state using the Utf8Chars stream provided.
-      ParseTrees::Token *runFromUsing(NFA::StateStateId startStateId,
+      ParseTrees::Token *runFromUsing(const char *startStateName,
+                                      Utf8Chars *charStream) {
+        return runFromUsing(nfa->findStartStateId(startStateName), charStream);
+      }
+
+      /// \brief Run the PushDownAutomata from any the given start
+      /// state using the Utf8Chars stream provided.
+      ParseTrees::Token *runFromUsing(NFA::StartStateId startStateId,
                                       Utf8Chars *charStream);
 
     private:
@@ -36,7 +45,7 @@ namespace DeterministicFiniteAutomaton {
 
         /// \brief The stream of UTF8 characters which have not yet
         /// been recognized.
-        Uft8Chars *stream;
+        Utf8Chars *stream;
 
         /// \brief A copy of the current DFA::State.
         ///
@@ -53,7 +62,7 @@ namespace DeterministicFiniteAutomaton {
       void push(void) {
         stack.pushItem(curState);
         curState.iterator = NULL;
-        curState.stream   = curState.stream.clone();
+        curState.stream   = curState.stream->clone();
         curState.dState   = NULL;
       }
 
@@ -100,7 +109,7 @@ namespace DeterministicFiniteAutomaton {
 
       /// \brief The DFA::State allocator associated with this
       /// DFA.
-      StateAllocator *alloctor;
+      StateAllocator *allocator;
 
       /// \brief The current state of this PushDownAutomata.
       AutomataState curState;

@@ -46,11 +46,23 @@ class Utf8Chars {
     /// will be freed as well.
     ~Utf8Chars(void);
 
-    /// Set next character back to the begining of the underlying
-    /// C-string.
+    /// \brief Create a cloned copy of this Utf8Chars starting at
+    /// the current location and *not* owning the underlying C-String.
+    Utf8Chars *clone(void) {
+      return new Utf8Chars(nextByte, DoNotOwn);
+    }
+
+    /// \brief Returns true if the last character was the last one
+    /// in the underlying C-String.
+    bool atEnd(void) {
+      return (nextByte <= utf8Chars+numBytes);
+    }
+
+    /// \brief Set next character back to the begining of the 
+    /// underlying C-string.
     void restart();
 
-    /// Backup ONE UTF8 character
+    /// \brief Backup ONE UTF8 character
     void backup();
 
     /// \brief Return the next UTF8 character.

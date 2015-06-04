@@ -2,7 +2,7 @@
 #define LEXER_H
 
 #include "nfaBuilder.h"
-#include "dfa/dfa.h"
+#include "dfa/pushDownMachine.h"
 
 using namespace DeterministicFiniteAutomaton;
 
@@ -54,10 +54,14 @@ class Lexer {
     ///
     /// If the Lexer has not yet been compiled, the null tokenId (-1)
     //  is returned.
-    ParseTrees::Token *getNextToken(Utf8Chars *someChars) {
+    ParseTrees::Token *parseFromUsing(const char *startStateName,
+                                      Utf8Chars *someChars) {
       if (dfa) {
-        return dfa->getNextToken(nfa->findStartStateId("start"),
-                                 someChars);
+        PushDownMachine *pdm = new PushDownMachine(dfa);
+        ParseTrees::Token *result =
+          pdm->runFromUsing(nfa->findStartStateId(startStateName), someChars);
+        delete pdm;
+        return result;
       }
       return NULL;
     }
