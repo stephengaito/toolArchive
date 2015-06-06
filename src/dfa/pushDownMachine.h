@@ -15,9 +15,10 @@ namespace DeterministicFiniteAutomaton {
 
       /// \brief Create a new PushDownMachine instance.
       PushDownMachine(DFA *aDFA) {
-        dfa       = aDFA;
-        nfa       = dfa->getNFA();
-        allocator = dfa->getStateAllocator();
+        dfa        = aDFA;
+        nfa        = dfa->getNFA();
+        allocator  = dfa->getStateAllocator();
+        parseTrees = dfa->getParseTrees();
       }
 
       /// \brief Run the PushDownAutomata from any the given start
@@ -55,6 +56,9 @@ namespace DeterministicFiniteAutomaton {
         /// succeed we can try to compute the next DFA:State
         /// using the non-reStart NFA::States.
         State *dState;
+
+        /// \brief A copy of the current collection of parsed tokens
+        ParseTrees::TokenArray *tokens;
       } AutomataState;
 
       /// \brief Push the current automata state on to the top
@@ -64,6 +68,7 @@ namespace DeterministicFiniteAutomaton {
         curState.iterator = NULL;
         curState.stream   = curState.stream->clone();
         curState.dState   = NULL;
+        curState.tokens   = new ParseTrees::TokenArray();
       }
 
       /// \brief Pop the current automata state off of the top
@@ -84,6 +89,8 @@ namespace DeterministicFiniteAutomaton {
 
         if (curState.dState)   allocator->unallocateState(curState.dState);
         curState.dState   = NULL;
+
+        if (curState.tokens) delete curState.tokens;
 
         curState = stack.popItem();
 
@@ -110,6 +117,10 @@ namespace DeterministicFiniteAutomaton {
       /// \brief The DFA::State allocator associated with this
       /// DFA.
       StateAllocator *allocator;
+
+      /// \brief The ParseTrees allocator associated with this
+      /// DfA.
+      ParseTrees *parseTrees;
 
       /// \brief The current state of this PushDownAutomata.
       AutomataState curState;

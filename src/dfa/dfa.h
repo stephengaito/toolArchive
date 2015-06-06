@@ -117,13 +117,19 @@ namespace DeterministicFiniteAutomaton {
         return allocator;
       }
 
+      /// \brief Return the ParseTrees allocator associated with this
+      /// DFA.
+      ParseTrees *getParseTrees(void) {
+        return parseTrees;
+      }
+
     private:
       /// \brief The NFA associated to this DFA.
       NFA *nfa;
 
       /// \brief The forest of parse trees from which all tokens
       /// will be allocated.
-      ParseTrees *parseTree;
+      ParseTrees *parseTrees;
 
       /// \brief The DFA::StateAllocator for this DFA interpretor.
       StateAllocator *allocator;

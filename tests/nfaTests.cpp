@@ -144,7 +144,7 @@ go_bandit([](){
       nextState = nextState->out;
       AssertThat(nextState, Is().EqualTo(baseState+7));
       AssertThat(nextState->matchType, Is().EqualTo(NFA::Token));
-      AssertThat(nextState->matchData.t, Is().EqualTo(4)); // token:2 ignore:false
+      AssertThat(nextState->matchData.t, Is().EqualTo(2)); // token:1 ignore:false
       AssertThat(nextState->out,  Is().EqualTo((NFA::State*)0));
       AssertThat(nextState->out1, Is().EqualTo((NFA::State*)0));
       delete nfa;
@@ -191,7 +191,7 @@ go_bandit([](){
       AssertThat(matchState, Equals(cState->out));
       AssertThat(matchState, Equals(baseState+5));
       AssertThat(matchState->matchType, Equals(NFA::Token));
-      AssertThat(matchState->matchData.t, Equals(4)); // token:2 ignore:false
+      AssertThat(matchState->matchData.t, Equals(2)); // token:1 ignore:false
       AssertThat(matchState->out, Equals((void*)0));
       AssertThat(matchState->out1, Equals((void*)0));
     });
@@ -267,7 +267,7 @@ go_bandit([](){
       nextState = nextState->out;
       AssertThat(nextState, Is().EqualTo(baseState+9));
       AssertThat(nextState->matchType, Is().EqualTo(NFA::Token));
-      AssertThat(nextState->matchData.t, Is().EqualTo(4)); // token: 2 ignore:false
+      AssertThat(nextState->matchData.t, Is().EqualTo(2)); // token:1 ignore:false
       AssertThat(nextState->out,  Is().EqualTo((NFA::State*)0));
       AssertThat(nextState->out1, Is().EqualTo((NFA::State*)0));
       delete nfa;
@@ -338,7 +338,7 @@ go_bandit([](){
         nextState = nextState->out;
         AssertThat(nextState, Is().EqualTo(baseState+2));
         AssertThat(nextState->matchType, Is().EqualTo(NFA::Token));
-        AssertThat(nextState->matchData.t, Is().EqualTo(4)); // token:2 ignore:false
+        AssertThat(nextState->matchData.t, Is().EqualTo(2)); // token:1 ignore:false
         AssertThat(nextState->out,  Is().EqualTo((NFA::State*)0));
         AssertThat(nextState->out1, Is().EqualTo((NFA::State*)0));
       } catch (LexerException& e) {
@@ -388,7 +388,7 @@ go_bandit([](){
       nextState = nextState->out1;
       AssertThat(nextState, Is().EqualTo(baseState+3));
       AssertThat(nextState->matchType, Is().EqualTo(NFA::Token));
-      AssertThat(nextState->matchData.t, Is().EqualTo(4)); // token:2 ignore:false
+      AssertThat(nextState->matchData.t, Is().EqualTo(2)); // token:1 ignore:false
       AssertThat(nextState->out,  Is().EqualTo((NFA::State*)0));
       AssertThat(nextState->out1, Is().EqualTo((NFA::State*)0));
       delete nfa;
@@ -429,7 +429,7 @@ go_bandit([](){
       nextState = nextState->out1;
       AssertThat(nextState, Is().EqualTo(baseState+3));
       AssertThat(nextState->matchType, Is().EqualTo(NFA::Token));
-      AssertThat(nextState->matchData.t, Is().EqualTo(4)); //token:2 ignore:false
+      AssertThat(nextState->matchData.t, Is().EqualTo(2)); //token:1 ignore:false
       AssertThat(nextState->out,  Is().EqualTo((NFA::State*)0));
       AssertThat(nextState->out1, Is().EqualTo((NFA::State*)0));
       delete nfa;
@@ -473,7 +473,7 @@ go_bandit([](){
       nextState = nextState->out1;
       AssertThat(nextState, Is().EqualTo(baseState+3));
       AssertThat(nextState->matchType, Is().EqualTo(NFA::Token));
-      AssertThat(nextState->matchData.c.u, Is().EqualTo(4)); //token:2 ignore:false
+      AssertThat(nextState->matchData.c.u, Is().EqualTo(2)); //token:1 ignore:false
       AssertThat(nextState->out, Is().EqualTo((void*)0));
       AssertThat(nextState->out1, Is().EqualTo((void*)0));
       //
@@ -508,7 +508,7 @@ go_bandit([](){
       nextState = nextState->out1;
       AssertThat(nextState, Is().EqualTo(baseState+3));
       AssertThat(nextState->matchType, Is().EqualTo(NFA::Token));
-      AssertThat(nextState->matchData.c.u, Is().EqualTo(4)); //token:2 ignore:false
+      AssertThat(nextState->matchData.c.u, Is().EqualTo(2)); //token:1 ignore:false
       AssertThat(nextState->out, Is().EqualTo((void*)0));
       AssertThat(nextState->out1, Is().EqualTo((void*)0));
       //
@@ -538,7 +538,7 @@ go_bandit([](){
       nextState = nextState->out1;
       AssertThat(nextState, Is().EqualTo(baseState+7));
       AssertThat(nextState->matchType, Is().EqualTo(NFA::Token));
-      AssertThat(nextState->matchData.c.u, Is().EqualTo(8)); //token:4 ignore:false
+      AssertThat(nextState->matchData.c.u, Is().EqualTo(4)); //token:2 ignore:false
       AssertThat(nextState->out, Is().EqualTo((void*)0));
       AssertThat(nextState->out1, Is().EqualTo((void*)0));
       delete nfa;

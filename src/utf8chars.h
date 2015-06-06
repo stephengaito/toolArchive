@@ -58,7 +58,7 @@ class Utf8Chars {
       return (nextByte <= utf8Chars+numBytes);
     }
 
-    /// \brief Set next character back to the begining of the 
+    /// \brief Set next character back to the begining of the
     /// underlying C-string.
     void restart();
 
@@ -93,40 +93,21 @@ class Utf8Chars {
       return *nextByte++;
     }
 
-    /// \brief Clear the stack of stream markers.
-    void clearMarks(void) {
-      markStack.clearItems();
-      markStack.pushItem(utf8Chars);
-    }
-
-    /// \brief Remember the current location in the stream.
-    void pushMark(void) {
-      markStack.pushItem(nextByte);
-    }
-
-    /// \brief Forget the most recent stream mark and remember the 
-    /// previous one.
-    void popMark(void) {
-      if (markStack.getNumItems()) markStack.popItem();
-    }
-
-    /// \brief Get the stream at the marked location.
-    const char *getMark(void) {
-      return markStack.getTop();
+    /// \brief Returns the stream start.
+    const char *getStart(void) {
+      return utf8Chars;
     }
 
     /// \brief Returns the number of bytes, not neccessarily the number
-    /// of UTF8 characters, in the marked text.
-    size_t getNumberOfBytesInMarkedText(void) {
-      return nextByte - markStack.getTop();
+    /// of UTF8 characters, in the stream from the start to the current
+    /// character.
+    size_t getNumberOfBytesRead(void) {
+      return nextByte - utf8Chars;
     }
 
-    /// \brief Returns a (strndup'ed) copy of the currently marked text.
-    ///
-    /// The currently marked text are the bytes from the currentMark
-    /// until just before the nextByte.
-    char *getCopyOfMarkedText(void) {
-      return strndup(markStack.getTop(), getNumberOfBytesInMarkedText());
+    /// \brief Returns a (strndup'ed) copy of the current stream read.
+    char *getCopyOfTextRead(void) {
+      return strndup(utf8Chars, getNumberOfBytesRead());
     }
 
     /// \brief Returns true if the Utf8Chars contians the given UTF8 char
@@ -165,12 +146,6 @@ class Utf8Chars {
     /// return a null character (which could be interpreted to represent
     /// the end of the Utf8Chars character stream.
     const char* nextByte;
-
-    /// \brief The currently marked character in the stream.
-    ///
-    /// This currentMark can be used to remember a previously marked
-    /// location in the stream.
-    VarArray<const char*> markStack;
 };
 
 #endif

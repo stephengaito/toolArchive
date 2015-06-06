@@ -13,6 +13,7 @@ ParseTrees::Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
   curState.stream   = charStream->clone();
   curState.dState   = dfa->getDFAStartState(startStateId);
   curState.iterator = allocator->getNewIteratorOn(curState.dState);
+  curState.tokens   = new ParseTrees::TokenArray();
 
   restart:
   while(true) {
@@ -45,13 +46,20 @@ ParseTrees::Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
       // does it contain an token NFA::State?
       NFA::State *tokenNFAState =
         allocator->stateMatchesToken(nextDFAState, dfa->getTokensState());
-      if (tokenNFAState) {
+      if (tokenNFAState && (tokenNFAState->matchType == NFA::Token)) {
         // we have a match... wrap up this token
+        ParseTrees::Token *token = NULL;
+        if (!ParseTrees::ignoreToken(tokenNFAState->matchData.t)) {
+          token = parseTrees->allocateNewToken(tokenNFAState->matchData.t,
+            curState.stream->getStart(),
+            curState.stream->getNumberOfBytesRead(),
+            curState.tokens);
+        }
         if (stack.getNumItems()) {
           // we have successfully recoginized a sub state
           // now pop the stack keeping the current stream and restart
           popKeepStream();
-//          curState.tokens->pushItem(token);
+          if (token) curState.tokens->pushItem(token);
           goto restart;
         }
         // we have a match BUT the stack is empty
@@ -59,8 +67,7 @@ ParseTrees::Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
           // we have a match, the stack is empty and ...
           // we are at the end of the stream...
           // so return this token and we are done!
-//          return token;
-          return NULL;
+          return token;
         }
         // we have a match, the stack is empty BUT
         // we have not finished scanning the string...

@@ -31,15 +31,11 @@ go_bandit([](){
       Utf8Chars *someChars = new Utf8Chars("silly");
       AssertThat(someChars,              Is().Not().EqualTo((Utf8Chars*)0));
       AssertThat(someChars->nextByte,    Equals(someChars->utf8Chars));
-      AssertThat(someChars->markStack.getNumItems(), Equals(1));
-      AssertThat(someChars->markStack.getItem(0, NULL), Equals(someChars->utf8Chars));
       AssertThat(someChars->ownsString,  Is().False());
       delete someChars;
       someChars = new Utf8Chars("silly", Utf8Chars::DoNotOwn);
       AssertThat(someChars,              Is().Not().EqualTo((Utf8Chars*)0));
       AssertThat(someChars->nextByte,    Is().EqualTo(someChars->utf8Chars));
-      AssertThat(someChars->markStack.getNumItems(), Equals(1));
-      AssertThat(someChars->markStack.getItem(0, NULL), Equals(someChars->utf8Chars));
       AssertThat(someChars->ownsString,  Is().False());
       delete someChars;
     });
@@ -51,8 +47,6 @@ go_bandit([](){
       Utf8Chars *someChars = new Utf8Chars(cString, Utf8Chars::Duplicate);
       AssertThat(someChars,              Is().Not().EqualTo((Utf8Chars*)0));
       AssertThat(someChars->nextByte,    Is().EqualTo(someChars->utf8Chars));
-      AssertThat(someChars->markStack.getNumItems(), Equals(1));
-      AssertThat(someChars->markStack.getItem(0, NULL), Equals(someChars->utf8Chars));
       AssertThat(someChars->ownsString,  Is().True());
       AssertThat(someChars->utf8Chars,   Equals(cString));
       AssertThat(someChars->utf8Chars,   Is().Not().EqualTo((char*)cString));
@@ -66,46 +60,37 @@ go_bandit([](){
       Utf8Chars *someChars = new Utf8Chars(cString, Utf8Chars::TakeOwnership);
       AssertThat(someChars,              Is().Not().EqualTo((Utf8Chars*)0));
       AssertThat(someChars->nextByte,    Equals(someChars->utf8Chars));
-      AssertThat(someChars->markStack.getNumItems(), Equals(1));
-      AssertThat(someChars->markStack.getItem(0, NULL), Equals(someChars->utf8Chars));
       AssertThat(someChars->ownsString,  Is().True());
       AssertThat(someChars->utf8Chars,   Equals(cString));
       delete someChars;
     });
 
-    it("Show that we can mark text", [&](){
+    it("Show that we can getStart, getNumberBytesRead and copyOfReadText", [&](){
       Utf8Chars *someChars = new Utf8Chars("silly");
       AssertThat(someChars,              Is().Not().EqualTo((Utf8Chars*)0));
       AssertThat(someChars->nextByte,    Is().EqualTo(someChars->utf8Chars));
-      AssertThat(someChars->markStack.getNumItems(), Equals(1));
-      AssertThat(someChars->markStack.getItem(0, NULL), Equals(someChars->utf8Chars));
       utf8Char_t expectedChar;
       expectedChar.u = 0;
       expectedChar.c[0] = 's';
       AssertThat(someChars->nextUtf8Char().u, Is().EqualTo(expectedChar.u));
-      someChars->pushMark();
-      const char *markedChar = someChars->getMark();
-      AssertThat(someChars->markStack.getTop(),
-        Is().Not().EqualTo(someChars->utf8Chars));
-      AssertThat(someChars->markStack.getTop(), Equals(someChars->nextByte));
-      AssertThat(someChars->markStack.getTop(), Equals(markedChar));
       expectedChar.c[0] = 'i';
       AssertThat(someChars->nextUtf8Char().u, Is().EqualTo(expectedChar.u));
       expectedChar.c[0] = 'l';
       AssertThat(someChars->nextUtf8Char().u, Is().EqualTo(expectedChar.u));
       expectedChar.c[0] = 'l';
       AssertThat(someChars->nextUtf8Char().u, Is().EqualTo(expectedChar.u));
-      AssertThat(someChars->markStack.getTop(),
-        Is().Not().EqualTo(someChars->nextByte));
-      AssertThat(someChars->markStack.getTop(), Equals(markedChar));
-      AssertThat(someChars->getNumberOfBytesInMarkedText(), Is().EqualTo(3));
-      char *ill = someChars->getCopyOfMarkedText();
-      AssertThat(someChars->markStack.getTop(),  Is().Not().EqualTo(ill));
-      AssertThat(strlen(ill), Is().EqualTo(3));
-      AssertThat(ill[0], Is().EqualTo('i'));
-      AssertThat(ill[1], Is().EqualTo('l'));
-      AssertThat(ill[2], Is().EqualTo('l'));
-      AssertThat(ill[3], Is().EqualTo(0));
+      const char *someCharsStart = someChars->getStart();
+      AssertThat(someCharsStart,Equals(someChars->utf8Chars));
+      AssertThat(someChars->getNumberOfBytesRead(), Is().EqualTo(4));
+      char *sill = someChars->getCopyOfTextRead();
+      AssertThat(someChars->utf8Chars,  Is().Not().EqualTo(sill));
+      AssertThat(strlen(sill), Is().EqualTo(4));
+      AssertThat(sill[0], Is().EqualTo('s'));
+      AssertThat(sill[1], Is().EqualTo('i'));
+      AssertThat(sill[2], Is().EqualTo('l'));
+      AssertThat(sill[3], Is().EqualTo('l'));
+      AssertThat(sill[4], Is().EqualTo(0));
+      free(sill);
       delete someChars;
     });
 

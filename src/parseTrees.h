@@ -79,13 +79,13 @@ class ParseTrees {
     Token *allocateNewToken(WrappedTokenId aWrappedTokenId,
                             const char *textStart,
                             size_t textLength,
-                            VarArray<Token*> &someTokens);
+                            VarArray<Token*> *someTokens);
 
-    bool ignoreToken(WrappedTokenId wrappedTokenId) {
+    static bool ignoreToken(WrappedTokenId wrappedTokenId) {
       return wrappedTokenId & 0x1;
     }
 
-    TokenId unwrapToken(WrappedTokenId wrappedTokenId) {
+    static TokenId unwrapToken(WrappedTokenId wrappedTokenId) {
       return wrappedTokenId >> 1;
     }
 

@@ -31,9 +31,9 @@ using namespace DeterministicFiniteAutomaton;
 #define NUM_DFA_STATES_PER_BLOCK 20
 #endif
 
-DFA::DFA(NFA *anNFA, ParseTrees *aParseTree) {
+DFA::DFA(NFA *anNFA, ParseTrees *aParseTreesAllocator) {
   nfa = anNFA;
-  parseTree = aParseTree;
+  parseTrees = aParseTreesAllocator;
   allocator = new StateAllocator(nfa);
   nextStateMapping = new NextStateMapping(allocator);
 
@@ -43,8 +43,8 @@ DFA::DFA(NFA *anNFA, ParseTrees *aParseTree) {
 };
 
 DFA::~DFA(void) {
-  nfa       = NULL;  // we do NOT own the NFA.
-  parseTree = NULL; // we do NOT own the ParseTrees.
+  nfa        = NULL;  // we do NOT own the NFA.
+  parseTrees = NULL; // we do NOT own the ParseTrees.
   if (nextStateMapping) delete nextStateMapping;
   nextStateMapping = NULL;
 

@@ -72,7 +72,6 @@ Utf8Chars::~Utf8Chars(void) {
 
 void Utf8Chars::restart(void) {
   nextByte    = utf8Chars;
-  clearMarks();
 }
 
 // We use the Wikipedia

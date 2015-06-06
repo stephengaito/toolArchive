@@ -41,8 +41,8 @@ void NFABuilder::compileRegularExpressionForTokenId(
   // aTokenId for subsequent retrieval
   ParseTrees::TokenId maxTokenId = (~0L)>>1;
   if (maxTokenId < aTokenId) throw LexerException("TokenId too large");
-  aTokenId <<= 1;
-  if (ignoreToken) aTokenId |= 1;
+//  aTokenId <<= 1;
+//  if (ignoreToken) aTokenId |= 1;
 
   nfa->registerStartState(startStateName);
   size_t reLen = strlen(aUtf8RegExp);
@@ -177,7 +177,7 @@ void NFABuilder::compileRegularExpressionForTokenId(
   while (--natom > 0) concatenate();
   for (; nalt > 0; nalt--) alternate();
   if (!stack.getNumItems()) throw LexerException("empty regular expression - nothing to match");
-  baseSplitState->out = match(aTokenId);
+  baseSplitState->out = match(aTokenId, ignoreToken);
   nfa->appendNFAToStartState(startStateName, baseSplitState);
 }
 
