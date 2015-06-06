@@ -23,11 +23,14 @@ class ParseTrees {
     /// \brief The token id for the parser.
     typedef value_t TokenId;
 
+    /// \brief The token id wrapped with the ignore bit.
+    typedef value_t WrappedTokenId;
+
     /// \brief The Token structre used by the parser.
     typedef struct Token {
 
-      /// \brief The Token ID of a given token.
-      TokenId id;
+      /// \brief The Wrapped Token ID of a given token.
+      WrappedTokenId wrappedId;
 
       /// \brief The start of the stream from which this token was parsed.
       const char *textStart;
@@ -73,10 +76,22 @@ class ParseTrees {
     }
 
     /// \brief Allocate a new token with tokenId aTokenId.
-    Token *allocateNewToken(TokenId aTokenId,
+    Token *allocateNewToken(WrappedTokenId aWrappedTokenId,
                             const char *textStart,
                             size_t textLength,
                             VarArray<Token*> &someTokens);
+
+    bool ignoreToken(WrappedTokenId wrappedTokenId) {
+      return wrappedTokenId & 0x1;
+    }
+
+    TokenId unwrapToken(WrappedTokenId wrappedTokenId) {
+      return wrappedTokenId >> 1;
+    }
+
+    WrappedTokenId wrapToken(TokenId tokenId, bool ignoreToken) {
+      return (( tokenId << 1 ) | ( ignoreToken ? 0x1 : 0x0));
+    }
 
   private:
 
