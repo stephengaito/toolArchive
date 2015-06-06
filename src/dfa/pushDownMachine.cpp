@@ -8,15 +8,20 @@
 using namespace DeterministicFiniteAutomaton;
 
 ParseTrees::Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
-                                                 Utf8Chars *charStream) {
+                                                 Utf8Chars *charStream,
+                                                 PushDownMachine::Tracer *pdmTracer) {
+
+  if (pdmTracer) pdmTracer->setPDM(this);
 
   curState.stream   = charStream->clone();
   curState.dState   = dfa->getDFAStartState(startStateId);
   curState.iterator = allocator->getNewIteratorOn(curState.dState);
   curState.tokens   = new ParseTrees::TokenArray();
+  curState.message  = nfa->getStartState(startStateId)->message;
 
   restart:
   while(true) {
+    if (pdmTracer) pdmTracer->reportDFAState();
     // scan current dfa state for ReStart NFA states
     if (curState.iterator) {
       while(NFA::State *nfaState = curState.iterator->nextState()) {
@@ -24,22 +29,25 @@ ParseTrees::Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
           // we need to try this path
           allocator->clearNFAState(curState.dState, nfaState);
           // push current autoamta state to clean up if this path fails.
-          push();
+          push(pdmTracer, "continuation");
           // now set up the continuation state and push it
           curState.iterator = NULL; // we explicitly have no iterator
           curState.dState = dfa->getDFAStateFromNFAState(nfaState);
-          push();
+          push(pdmTracer, "reStart");
           // now set up the subDFA state
           curState.dState = dfa->getDFAStartState(nfaState->matchData.r);
           curState.iterator = allocator->getNewIteratorOn(curState.dState);
+          if (pdmTracer) pdmTracer->restart(nfaState);
           goto restart;
         }
       }
     }
     // we have scanned the dfa state for any ReStart NFA states
     // and none remain.... so we now transition to the next DFA state
+    utf8Char_t nextChar = curState.stream->nextUtf8Char();
+    if (pdmTracer) pdmTracer->reportChar(nextChar);
     State *nextDFAState =
-      dfa->getNextDFAState(curState.dState, curState.stream->nextUtf8Char());
+      dfa->getNextDFAState(curState.dState, nextChar);
 
     if (nextDFAState) {
       // we have a suitable nextDFAState...
@@ -58,7 +66,7 @@ ParseTrees::Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
         if (stack.getNumItems()) {
           // we have successfully recoginized a sub state
           // now pop the stack keeping the current stream and restart
-          popKeepStream();
+          popKeepStream(pdmTracer);
           if (token) curState.tokens->pushItem(token);
           goto restart;
         }
@@ -86,11 +94,11 @@ ParseTrees::Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
       // ... so we give up by returning the NULL token.
       return NULL;
     }
-    pop();
+    pop(pdmTracer);
     // we need to pop twice if state we first poped has no iterator...
     // since any state with no iterator is a continuation state
     // NOT a backtrack state.
-    if (!curState.iterator) pop();
+    if (!curState.iterator) pop(pdmTracer);
     // goto restart;
   }
   // if we have reached this point we have failed!

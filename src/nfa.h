@@ -110,6 +110,8 @@ class NFA {
       /// It is used to enable alternate successor states for, for example,
       /// ZeroOrMore, OneOrMore, or ZeorOrOne decision points.
       State *out1;
+
+      const char *message;
     } State;
 
     /// \brief Get the Classifier associated with this NFA.
@@ -192,7 +194,7 @@ class NFA {
 
     /// \brief Add a new NFA state.
     State *addState(MatchType aMatchType, MatchData someMatchData,
-                    State *out, State *out1);
+                    State *out, State *out1, const char *message);
 
     /// \brief Get the current number of NFA::States.
     size_t getNumberStates(void) {

@@ -62,7 +62,8 @@ void NFABuilder::compileRegularExpressionForTokenId(
   NFA::StartStateId reStartStateId;
   NFA::MatchData noMatchData;
   noMatchData.c.u = 0;
-  NFA::State *baseSplitState = nfa->addState(NFA::Split, noMatchData, NULL, NULL);
+  NFA::State *baseSplitState =
+    nfa->addState(NFA::Split, noMatchData, NULL, NULL, startStateName);
 
   p = paren;
   nalt = 0;
@@ -146,11 +147,9 @@ void NFABuilder::compileRegularExpressionForTokenId(
           if (reStartStateName[i] == '}') { reStartStateName[i] = 0; break; }
           if (reStartStateName[i] == 0) break;
         }
-        fprintf(stdout, "found reStartStateName [%s]\n", reStartStateName);
         // find the reStartId for this reStartStateName
         if (reStartStateName[0] == 0) throw LexerException("mallformed reStart name");
         reStartStateId = nfa->findStartStateId(reStartStateName);
-        fprintf(stdout, "reStartStateId = %lu\n", (long)reStartStateId);
         // now repeat the natom manipulate done for checkCharacter
         if (natom > 1) {
           --natom;

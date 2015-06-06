@@ -12,6 +12,58 @@ namespace DeterministicFiniteAutomaton {
   class PushDownMachine {
 
     public:
+      /// \brief A PushDownMachine::Tracer object is used to trace a
+      /// given PushDownMachine's state transitions.
+      class Tracer {
+
+        public:
+
+          /// \brief Create a new PushDownMachine instance.
+          Tracer(FILE *aTraceFile = NULL) {
+            pdm        = NULL;
+            traceFile  = aTraceFile;
+          }
+
+          /// \brief Destroy the tracer.
+          ~Tracer(void) {
+            pdm = NULL; // we do not own the PDM
+            traceFile = NULL; // we do not own the FILE
+          }
+
+          /// \brief Sets the associated PushDownMachine
+          void setPDM(PushDownMachine *aPDM) {
+            pdm = aPDM;
+          }
+
+
+          void reportNFAState(NFA::State *nfaState, size_t indent = 0);
+
+          void reportDFAState(size_t indent = 0);
+
+          void reportChar(utf8Char_t curChar, size_t indent = 0);
+
+          void reportStreamPrefix();
+
+          void reportStreamPostfix();
+
+          void push(size_t indent = 0);
+
+          void pop(bool keepStream, size_t indent = 0);
+
+          /// \brief Trace the use of a restart state transition.
+          void restart(NFA::State *nfaState, size_t indent = 0);
+
+        private:
+
+          /// \brief The currently associated PushDownMachine.
+          ///
+          /// Used to access the internal state of the PDM.
+          PushDownMachine *pdm;
+
+          /// \brief Whether or not to trace the state transitions.
+          FILE *traceFile;
+
+      }; // class Tracer
 
       /// \brief Create a new PushDownMachine instance.
       PushDownMachine(DFA *aDFA) {
@@ -24,14 +76,17 @@ namespace DeterministicFiniteAutomaton {
       /// \brief Run the PushDownAutomata from any the given start
       /// state using the Utf8Chars stream provided.
       ParseTrees::Token *runFromUsing(const char *startStateName,
-                                      Utf8Chars *charStream) {
-        return runFromUsing(nfa->findStartStateId(startStateName), charStream);
+                                      Utf8Chars *charStream,
+                                      PushDownMachine::Tracer *pdmTracer = NULL) {
+        return runFromUsing(nfa->findStartStateId(startStateName),
+                            charStream, pdmTracer);
       }
 
       /// \brief Run the PushDownAutomata from any the given start
       /// state using the Utf8Chars stream provided.
       ParseTrees::Token *runFromUsing(NFA::StartStateId startStateId,
-                                      Utf8Chars *charStream);
+                                      Utf8Chars *charStream,
+                                      PushDownMachine::Tracer *pdmTracer = NULL);
 
     private:
 
@@ -59,16 +114,20 @@ namespace DeterministicFiniteAutomaton {
 
         /// \brief A copy of the current collection of parsed tokens
         ParseTrees::TokenArray *tokens;
+
+        const char *message;
       } AutomataState;
 
       /// \brief Push the current automata state on to the top
       /// of the push down automata's state stack.
-      void push(void) {
+      void push(Tracer *pdmTracer, const char *message) {
+        if (pdmTracer) pdmTracer->push();
         stack.pushItem(curState);
         curState.iterator = NULL;
         curState.stream   = curState.stream->clone();
         curState.dState   = NULL;
         curState.tokens   = new ParseTrees::TokenArray();
+        curState.message  = message;
       }
 
       /// \brief Pop the current automata state off of the top
@@ -77,7 +136,8 @@ namespace DeterministicFiniteAutomaton {
       /// If keepStream is true, then the popped stream is replaced
       /// by the pre-popped stream (keeping the currently parsed
       /// location).
-      void pop(bool keepStream = false) {
+      void pop(Tracer *pdmTracer, bool keepStream = false) {
+        if (pdmTracer) pdmTracer->pop(keepStream);
         if (curState.iterator) delete curState.iterator;
         curState.iterator = NULL;
 
@@ -92,6 +152,8 @@ namespace DeterministicFiniteAutomaton {
 
         if (curState.tokens) delete curState.tokens;
 
+        curState.message = NULL;
+
         curState = stack.popItem();
 
         if (keepStream) {
@@ -104,8 +166,8 @@ namespace DeterministicFiniteAutomaton {
       /// \brief Pop the current automata state off the top of the
       /// push down automata's state stack, *keeping* the current
       /// stream location.
-      void popKeepStream(void) {
-        pop(true);
+      void popKeepStream(Tracer *pdmTracer) {
+        pop(pdmTracer, true);
       }
 
       /// \brief The DFA integrated by this PushDownAutomata.
@@ -127,6 +189,9 @@ namespace DeterministicFiniteAutomaton {
 
       /// \brief The push down stack for this PushDownAutomata.
       VarArray<AutomataState> stack;
+
+      /// Allow complete access from the associated tracer.
+      friend class PushDownMachineTracer;
 
   }; // class AutomataState
 };  // namespace DeterministicFiniteAutomaton

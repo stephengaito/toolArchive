@@ -73,7 +73,7 @@ go_bandit([](){
         memset(buffer, 0, 100);
         sprintf(buffer, "%zu", i);
         nfa->registerStartState(buffer);
-        states[i] = nfa->addState(NFA::Split, noMatchData, NULL, NULL);
+        states[i] = nfa->addState(NFA::Split, noMatchData, NULL, NULL, "test");
         nfa->appendNFAToStartState(buffer, states[i]);
         AssertThat(nfa->getNumberStartStates(), Equals(i+1));
         AssertThat(nfa->findStartStateId(buffer), Equals(i));

@@ -46,21 +46,24 @@ NFABuilder::Ptrlist* NFABuilder::append(
 void NFABuilder::checkCharacter(utf8Char_t aChar) {
   NFA::MatchData someMatchData;
   someMatchData.c = aChar;
-  NFA::State *s = nfa->addState(NFA::Character, someMatchData, NULL, NULL);
+  NFA::State *s =
+    nfa->addState(NFA::Character, someMatchData, NULL, NULL, "checkCharacter");
   push(frag(s, list1(&s->out)));
 }
 
 void NFABuilder::checkClassification(Classifier::classSet_t aClass) {
   NFA::MatchData someMatchData;
   someMatchData.s = aClass;
-  NFA::State *s = nfa->addState(NFA::ClassSet, someMatchData, NULL, NULL);
+  NFA::State *s =
+    nfa->addState(NFA::ClassSet, someMatchData, NULL, NULL, "checkClass");
   push(frag(s, list1(&s->out)));
 }
 
 void NFABuilder::reStart(NFA::StartStateId pushDownStartStateId) {
   NFA::MatchData someMatchData;
   someMatchData.r = pushDownStartStateId;
-  NFA::State *s = nfa->addState(NFA::ReStart, someMatchData, NULL, NULL);
+  NFA::State *s =
+    nfa->addState(NFA::ReStart, someMatchData, NULL, NULL, "reStart");
   push(frag(s, list1(&s->out)));
 }
 
@@ -74,26 +77,30 @@ void NFABuilder::concatenate(void) {
 void NFABuilder::alternate(void) {
   Frag e2 = pop();
   Frag e1 = pop();
-  NFA::State *s = nfa->addState(NFA::Split, noMatchData, e1.start, e2.start);
+  NFA::State *s =
+    nfa->addState(NFA::Split, noMatchData, e1.start, e2.start, "alternate");
   push(frag(s, append(e1.out, e2.out)));
 };
 
 void NFABuilder::zeroOrOne(void) {
   Frag   e = pop();
-  NFA::State *s = nfa->addState(NFA::Split, noMatchData, e.start, NULL);
+  NFA::State *s =
+    nfa->addState(NFA::Split, noMatchData, e.start, NULL, "zeroOrOne");
   push(frag(s, append(e.out, list1(&s->out1))));
 };
 
 void NFABuilder::zeroOrMore(void) {
   Frag   e = pop();
-  NFA::State *s = nfa->addState(NFA::Split, noMatchData, e.start, NULL);
+  NFA::State *s =
+    nfa->addState(NFA::Split, noMatchData, e.start, NULL, "zeroOrMore");
   patch(e.out, s);
   push(frag(s, list1(&s->out1)));
 };
 
 void NFABuilder::oneOrMore(void) {
   Frag   e = pop();
-  NFA::State *s = nfa->addState(NFA::Split, noMatchData, e.start, NULL);
+  NFA::State *s =
+    nfa->addState(NFA::Split, noMatchData, e.start, NULL, "oneOrMore");
   patch(e.out, s);
   push(frag(e.start, list1(&s->out1)));
 };
@@ -103,7 +110,8 @@ NFA::State *NFABuilder::match(ParseTrees::TokenId aTokenId, bool ignoreToken) {
   NFA::MatchData tokenData;
   tokenData.c.u = 0;
   tokenData.t = ParseTrees::wrapToken(aTokenId, ignoreToken);
-  patch(e.out, nfa->addState(NFA::Token, tokenData, NULL, NULL));
+  patch(e.out,
+    nfa->addState(NFA::Token, tokenData, NULL, NULL, "match"));
   return e.start;
 };
 

@@ -110,6 +110,12 @@ class Utf8Chars {
       return strndup(utf8Chars, getNumberOfBytesRead());
     }
 
+    /// \brief Returns a (strndup'ed) copy of the stream which has not
+    /// yet been read.
+    char *getCopyOfTextToRead(size_t numBytesToCopy = 30) {
+      return strndup(nextByte, numBytesToCopy);
+    }
+
     /// \brief Returns true if the Utf8Chars contians the given UTF8 char
     ///
     /// **NOTE** containsUtf8Char restarts the nextUtf8Char pointer

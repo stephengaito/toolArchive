@@ -6,7 +6,7 @@
 This parser is based upon ideas taken from Russ Cox's [Implementing
 Regular Expressions](https://swtch.com/~rsc/regexp/) to provide the
 lexer and Bob Nystrom's [Pratt Parsers: Expression Parsing Made
-Easy](http://journal.stuffwithstuff.com/2011/03/19/pratt-parsers-expression-parsing-made-easy/) 
+Easy](http://journal.stuffwithstuff.com/2011/03/19/pratt-parsers-expression-pa$
 for the parser.
 
 Being data driven, both the lexer and the parser are based upon Daniel
@@ -26,4 +26,95 @@ framework](https://github.com/joakimkarlsson/bandit).
 
 */
 
+#include "nfaBuilder.h"
+#include "dfa/pushDownMachine.h"
+
+using namespace DeterministicFiniteAutomaton;
+
+/// \brief The Parser class brings together the Classifier/NFA/DFA classes
+/// into the standard arrangement required for a simple Parser.
+class Parser {
+  public:
+
+    /// \brief A TokenId is a user assigned NFA::TokenId (Hat-Trie::value_t).
+    typedef ParseTrees::TokenId TokenId;
+
+    /// \brief Create a Parser.
+    Parser(void) {
+      classifier = new Classifier();
+      nfa        = new NFA(classifier);
+      nfaBuilder = new NFABuilder(nfa);
+      dfa        = NULL;
+    }
+
+    /// \brief Setup the Classifier to classify white space using the
+    /// classSet_t 1.
+    ///
+    /// No classification is made if the Parser has already been compiled.
+    void classifyWhiteSpace(void) {
+      if(!dfa) classifier->classifyWhiteSpace(1);
+     };
+
+    /// \brief Add a Regular-Expression/TokenId to the Parser.
+    ///
+    /// No addition is made if the Parser has already been compiled.
+    void addToken(const char *startStateName,
+                  const char *regExp, TokenId aTokenId) {
+      if (!dfa) {
+        nfaBuilder->compileRegularExpressionForTokenId(startStateName,
+                                                       regExp, aTokenId);
+      }
+    }
+
+    /// \brief Compile the Regular-Expression/TokenId information.
+    ///
+    /// After a Parser has been compiled no further classifications can
+    /// be made, or Regular-Expression/TokenIds can be added.
+    void compile(void) {
+      if (!dfa) {
+        parseTree = new ParseTrees();
+        dfa = new DFA(nfa, parseTree);
+      }
+    }
+
+    /// \brief Get the next token while scanning the Utr8Chars provided.
+    ///
+    /// If the Parser has not yet been compiled, the null tokenId (-1)
+    //  is returned.
+    ParseTrees::Token *parseFromUsing(const char *startStateName,
+                                      Utf8Chars *someChars,
+                                      PushDownMachine::Tracer *pdmTracer = NULL) {
+      if (dfa) {
+        PushDownMachine *pdm = new PushDownMachine(dfa);
+        ParseTrees::Token *result =
+          pdm->runFromUsing(nfa->findStartStateId(startStateName),
+                            someChars, pdmTracer);
+        delete pdm;
+        return result;
+      }
+      return NULL;
+    }
+
+  private:
+
+    /// \brief The Classifier used to classify UTF8 characters.
+    Classifier *classifier;
+
+    /// \brief The NFA used to scan Utf8Chars streams.
+    NFA *nfa;
+
+    /// \brief The NFABuilder used to build the NFA from regular expressions.
+    NFABuilder *nfaBuilder;
+
+    /// \brief The forest of parse trees from which all tokens will be
+    /// allocated.
+    ParseTrees *parseTree;
+
+    /// \brief The DFA used to scan Utf8Chars streams.
+    ///
+    /// The DFA is compiled from the NFA by the compile method.
+    DFA *dfa;
+};
+
 #endif
+

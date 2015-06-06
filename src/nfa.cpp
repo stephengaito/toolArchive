@@ -48,7 +48,8 @@ NFA::~NFA(void) {
 NFA::State *NFA::addState(NFA::MatchType aMatchType,
                           NFA::MatchData someMatchData,
                           NFA::State *out,
-                          NFA::State *out1) {
+                          NFA::State *out1,
+                          const char *aMessage) {
   State *newState =
     (State*)stateAllocator->allocateNewStructure(sizeof(State));
   numKnownStates++;
@@ -56,6 +57,7 @@ NFA::State *NFA::addState(NFA::MatchType aMatchType,
   newState->matchData = someMatchData;
   newState->out       = out;
   newState->out1      = out1;
+  newState->message   = aMessage;
   return newState;
 }
 
@@ -82,6 +84,7 @@ void NFA::printStateOnWithMessage(FILE *filePtr,
   fprintf(filePtr, "  MatchData: %lu\n", state->matchData.c.u);
   fprintf(filePtr, "  Out: %p\n", state->out);
   fprintf(filePtr, "  Out1: %p\n", state->out1);
+  fprintf(filePtr, "  message: %s\n", state->message);
 }
 
 /*
