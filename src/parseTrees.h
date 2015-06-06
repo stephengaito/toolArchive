@@ -89,7 +89,7 @@ class ParseTrees {
       return wrappedTokenId >> 1;
     }
 
-    WrappedTokenId wrapToken(TokenId tokenId, bool ignoreToken) {
+    static WrappedTokenId wrapToken(TokenId tokenId, bool ignoreToken) {
       return (( tokenId << 1 ) | ( ignoreToken ? 0x1 : 0x0));
     }
 

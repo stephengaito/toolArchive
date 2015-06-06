@@ -98,11 +98,11 @@ void NFABuilder::oneOrMore(void) {
   push(frag(e.start, list1(&s->out1)));
 };
 
-NFA::State *NFABuilder::match(ParseTrees::TokenId aTokenId) {
+NFA::State *NFABuilder::match(ParseTrees::TokenId aTokenId, bool ignoreToken) {
   Frag e = pop();
   NFA::MatchData tokenData;
   tokenData.c.u = 0;
-  tokenData.t = aTokenId;
+  tokenData.t = ParseTrees::wrapToken(aTokenId, ignoreToken);
   patch(e.out, nfa->addState(NFA::Token, tokenData, NULL, NULL));
   return e.start;
 };
