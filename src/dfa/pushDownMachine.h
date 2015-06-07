@@ -37,44 +37,7 @@ namespace DeterministicFiniteAutomaton {
 
     private:
 
-      /// \brief Push the current automata state on to the top
-      /// of the push down automata's state stack.
-      void push(PDMTracer *pdmTracer, State *aDState, const char *message) {
-        if (pdmTracer) pdmTracer->push();
-        stack.pushItem(curState);
-        curState.update(aDState, message);
-      }
-
-      /// \brief Swap the top two elements of the AutomataState stack.
-      ///
-      /// Do nothing if there are only one item or less on the stack.
-      void swap(PDMTracer *pdmTracer) {
-        if (stack.getNumItems() < 2) return;
-        if (pdmTracer) pdmTracer->swap();
-        AutomataState topState  = stack.popItem();
-        AutomataState nextState = stack.popItem();
-        stack.pushItem(topState);
-        stack.pushItem(nextState);
-      }
-
-      /// \brief Pop the current automata state off of the top
-      /// of the push down automata's state stack.
-      ///
-      /// If keepStream is true, then the popped stream is replaced
-      /// by the pre-popped stream (keeping the currently parsed
-      /// location).
-      void pop(PDMTracer *pdmTracer, bool keepStream = false) {
-        AutomataState tmpState = stack.popItem();
-        curState.copyFrom(tmpState, keepStream);
-        if (pdmTracer) pdmTracer->pop(keepStream);
-      }
-
-      /// \brief Pop the current automata state off the top of the
-      /// push down automata's state stack, *keeping* the current
-      /// stream location.
-      void popKeepStream(PDMTracer *pdmTracer) {
-        pop(pdmTracer, true);
-      }
+#include "pushDownMachineInline.h"
 
       /// \brief The DFA integrated by this PushDownAutomata.
       DFA *dfa;
