@@ -20,15 +20,36 @@ void PushDownMachine::Tracer::reportNFAState(NFA::State *nfaState,
   fprintf(traceFile, "%s%s\n",indents[indent], nfaState->message);
 }
 
-
 void PushDownMachine::Tracer::reportDFAState(size_t indent) {
   NFAStateIterator iterator =
     pdm->allocator->newIteratorOn(pdm->curState.dState);
-  fprintf(traceFile, "-------------------------------------\n%sNFA states:\n",
+  fprintf(traceFile, "%sCurrent state: %s\n",
+    indents[indent], pdm->curState.message);
+  fprintf(traceFile, "%sNFA states:\n",
           indents[indent]);
   while (NFA::State *nfaState = iterator.nextState()) {
     reportNFAState(nfaState, indent+1);
   }
+}
+
+void PushDownMachine::Tracer::reportAutomataStack(size_t indent) {
+  fprintf(traceFile, "-------------------------------------\n");
+  fprintf(traceFile, "%sAutomataStack:\n", indents[indent]);
+  for (size_t i = 0; i < pdm->stack.getNumItems(); i++) {
+    fprintf(traceFile, "%s%s\n",
+      indents[indent+1],
+      pdm->stack.getItem(i, AutomataState()).message);
+  }
+  fprintf(traceFile, "-------------------------------------\n");
+}
+
+void PushDownMachine::Tracer::reportState(size_t indent) {
+  reportAutomataStack(indent);
+  fprintf(traceFile, "%s", indents[indent]);
+  reportStreamPrefix();
+  reportStreamPostfix();
+  fprintf(traceFile, "\n");
+  reportDFAState(indent);
 }
 
 void PushDownMachine::Tracer::reportStreamPrefix(void) {
@@ -59,6 +80,14 @@ void PushDownMachine::Tracer::pop(bool keepStream, size_t indent) {
   fprintf(traceFile, "%spop::%s (%s stream)\n", indents[indent],
           pdm->curState.message,
           (keepStream ? "keep" : "pop"));
+}
+
+void PushDownMachine::Tracer::swap(size_t indent) {
+    fprintf(traceFile, "swap\n");
+}
+
+void PushDownMachine::Tracer::checkForRestart(size_t indent) {
+    fprintf(traceFile, "checkForRestart\n");
 }
 
 /// \brief Trace the use of a restart state transition.

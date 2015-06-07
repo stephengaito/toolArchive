@@ -71,7 +71,8 @@ namespace DeterministicFiniteAutomaton {
       /// NFA::State provided.
       State *getDFAStateFromNFAState(NFA::State *nfaState) {
         State *dfaState = allocator->allocateANewState();
-        allocator->setNFAState(dfaState, nfaState);
+        addNFAStateToDFAState(dfaState, nfaState->out);
+        addNFAStateToDFAState(dfaState, nfaState->out1);
         return dfaState;
       }
 

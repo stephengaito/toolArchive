@@ -97,6 +97,8 @@ State *DFA::getDFAStartState(NFA::StartStateId startStateId) {
 State *DFA::computeNextDFAState(State *curDFAState,
                                 utf8Char_t c,
                                 Classifier::classSet_t classificationSet) {
+  allocator->printStateOnWithMessage(stdout, "computeNextDFASate", curDFAState);
+  fprintf(stdout, "[%s](%lu)<%lu>\n", c.c, c.u, (long)classificationSet);
   NFA::State *nfaState;
 
   State *nextGenericDFAState;
@@ -185,22 +187,22 @@ State *DFA::getNextDFAState(State *curDFAState,
   State *nextDFAState = NULL;
 
   // try to find an already computed nextDFAState using the character
-  State **tryGetDFAState =
-    nextStateMapping->tryGetNextStateByCharacter(curDFAState, curChar);
-  if (tryGetDFAState && *tryGetDFAState) {
-    return *tryGetDFAState;
-  }
+//  State **tryGetDFAState =
+//    nextStateMapping->tryGetNextStateByCharacter(curDFAState, curChar);
+//  if (tryGetDFAState && *tryGetDFAState) {
+//    return *tryGetDFAState;
+//  }
 
   // try to find an already computed nextDFAState using the more general
   // character classification.
   Classifier::classSet_t classificationSet =
     nfa->getClassifier()->getClassSet(curChar);
-  tryGetDFAState =
-    nextStateMapping->tryGetNextStateByClass(curDFAState,
-                                             classificationSet);
-  if (tryGetDFAState && *tryGetDFAState) {
-      return *tryGetDFAState;
-  }
+//  tryGetDFAState =
+//    nextStateMapping->tryGetNextStateByClass(curDFAState,
+//                                             classificationSet);
+//  if (tryGetDFAState && *tryGetDFAState) {
+//      return *tryGetDFAState;
+//  }
 
   // now explicitly compute a new nextDFAState
   return computeNextDFAState(curDFAState, curChar, classificationSet);
