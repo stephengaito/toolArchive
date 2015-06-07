@@ -42,8 +42,8 @@ go_bandit([](){
       parser->compile();
       AssertThat(parser->dfa, Is().Not().EqualTo((void*)0));
       Utf8Chars *someChars = new Utf8Chars("  if A then B else C ");
-      PushDownMachine::Tracer *pdmTracer =
-        new PushDownMachine::Tracer("Parse and tokenize 'if then else'", stdout);
+      PDMTracer *pdmTracer =
+        new PDMTracer("Parse and tokenize 'if then else'", stdout);
       ParseTrees::Token *aToken =
         parser->parseFromUsing("start", someChars, pdmTracer);
       AssertThat(aToken, Is().Not().EqualTo((void*)0));

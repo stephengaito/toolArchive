@@ -1,7 +1,7 @@
 #ifndef PUSH_DOWN_MACHINE_H
 #define PUSH_DOWN_MACHINE_H
 
-#include "dfa/dfa.h"
+#include "dfa/pdmTracer.h"
 
 namespace DeterministicFiniteAutomaton {
 
@@ -12,86 +12,6 @@ namespace DeterministicFiniteAutomaton {
   class PushDownMachine {
 
     public:
-      /// \brief A PushDownMachine::Tracer object is used to trace a
-      /// given PushDownMachine's state transitions.
-      class Tracer {
-
-        public:
-
-          /// \brief Create a new PushDownMachine instance.
-          Tracer(const char *aMessage, FILE *aTraceFile = NULL) {
-            pdm       = NULL;
-            message   = aMessage;
-            traceFile = aTraceFile;
-          }
-
-          /// \brief Destroy the tracer.
-          ~Tracer(void) {
-            pdm       = NULL; // we do not own the PDM
-            message   = NULL; // we do not own the message
-            traceFile = NULL; // we do not own the FILE
-          }
-
-          /// \brief Sets the associated PushDownMachine
-          void setPDM(PushDownMachine *aPDM) {
-            pdm = aPDM;
-            fprintf(traceFile, "PDMTracer: %s\n", message);
-          }
-
-          void reportState(size_t indent = 0);
-
-          void reportAutomataStack(size_t indent = 0);
-
-          void reportNFAState(NFA::State *nfaState, size_t indent = 0);
-
-          void reportDFAState(size_t indent = 0);
-
-          void reportChar(utf8Char_t curChar, size_t indent = 0);
-
-          void reportStreamPrefix();
-
-          void reportStreamPostfix();
-
-          void swap(size_t indent = 0);
-
-          void push(size_t indent = 0);
-
-          void pop(bool keepStream, size_t indent = 0);
-
-          void checkForRestart(size_t indent = 0);
-
-          /// \brief Trace the use of a restart state transition.
-          void restart(NFA::State *nfaState, size_t indent = 0);
-
-          void match(NFA::State *nfaState, size_t indent = 0);
-
-          void done(size_t indent = 0);
-
-          void failedWithStream(size_t indent = 0);
-
-          void nextDFAState(size_t indent = 0);
-
-          void failedBacktrack(size_t indent = 0);
-
-          void backtrack(size_t indent = 0);
-
-          void error(size_t indent = 0);
-
-        private:
-
-          /// \brief The currently associated PushDownMachine.
-          ///
-          /// Used to access the internal state of the PDM.
-          PushDownMachine *pdm;
-
-          /// \brief A message associated with this Tracer.
-          const char *message;
-
-          /// \brief Whether or not to trace the state transitions.
-          FILE *traceFile;
-
-      }; // class Tracer
-
       /// \brief Create a new PushDownMachine instance.
       PushDownMachine(DFA *aDFA) {
         dfa        = aDFA;
@@ -104,7 +24,7 @@ namespace DeterministicFiniteAutomaton {
       /// state using the Utf8Chars stream provided.
       ParseTrees::Token *runFromUsing(const char *startStateName,
                                       Utf8Chars *charStream,
-                                      PushDownMachine::Tracer *pdmTracer = NULL) {
+                                      PDMTracer *pdmTracer = NULL) {
         return runFromUsing(nfa->findStartStateId(startStateName),
                             charStream, pdmTracer);
       }
@@ -113,7 +33,7 @@ namespace DeterministicFiniteAutomaton {
       /// state using the Utf8Chars stream provided.
       ParseTrees::Token *runFromUsing(NFA::StartStateId startStateId,
                                       Utf8Chars *charStream,
-                                      PushDownMachine::Tracer *pdmTracer = NULL);
+                                      PDMTracer *pdmTracer = NULL);
 
     private:
 
@@ -243,12 +163,12 @@ namespace DeterministicFiniteAutomaton {
           /// \brief A useful message used by the Tracer
           const char *message;
 
-          friend class Tracer;
+          friend class PDMTracer;
       };
 
       /// \brief Push the current automata state on to the top
       /// of the push down automata's state stack.
-      void push(Tracer *pdmTracer, State *aDState, const char *message) {
+      void push(PDMTracer *pdmTracer, State *aDState, const char *message) {
         if (pdmTracer) pdmTracer->push();
         stack.pushItem(curState);
         curState.update(aDState, message);
@@ -257,7 +177,7 @@ namespace DeterministicFiniteAutomaton {
       /// \brief Swap the top two elements of the AutomataState stack.
       ///
       /// Do nothing if there are only one item or less on the stack.
-      void swap(Tracer *pdmTracer) {
+      void swap(PDMTracer *pdmTracer) {
         if (stack.getNumItems() < 2) return;
         if (pdmTracer) pdmTracer->swap();
         AutomataState topState  = stack.popItem();
@@ -272,7 +192,7 @@ namespace DeterministicFiniteAutomaton {
       /// If keepStream is true, then the popped stream is replaced
       /// by the pre-popped stream (keeping the currently parsed
       /// location).
-      void pop(Tracer *pdmTracer, bool keepStream = false) {
+      void pop(PDMTracer *pdmTracer, bool keepStream = false) {
         AutomataState tmpState = stack.popItem();
         curState.copyFrom(tmpState, keepStream);
         if (pdmTracer) pdmTracer->pop(keepStream);
@@ -281,7 +201,7 @@ namespace DeterministicFiniteAutomaton {
       /// \brief Pop the current automata state off the top of the
       /// push down automata's state stack, *keeping* the current
       /// stream location.
-      void popKeepStream(Tracer *pdmTracer) {
+      void popKeepStream(PDMTracer *pdmTracer) {
         pop(pdmTracer, true);
       }
 
@@ -306,7 +226,7 @@ namespace DeterministicFiniteAutomaton {
       VarArray<AutomataState> stack;
 
       /// Allow complete access from the associated tracer.
-      friend class PushDownMachineTracer;
+      friend class PDMTracer;
 
   }; // class AutomataState
 };  // namespace DeterministicFiniteAutomaton

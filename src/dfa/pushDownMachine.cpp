@@ -9,7 +9,7 @@ using namespace DeterministicFiniteAutomaton;
 
 ParseTrees::Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
                                                  Utf8Chars *charStream,
-                                                 PushDownMachine::Tracer *pdmTracer) {
+                                                 PDMTracer *pdmTracer) {
 
   if (pdmTracer) pdmTracer->setPDM(this);
 

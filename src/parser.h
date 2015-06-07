@@ -83,7 +83,7 @@ class Parser {
     //  is returned.
     ParseTrees::Token *parseFromUsing(const char *startStateName,
                                       Utf8Chars *someChars,
-                                      PushDownMachine::Tracer *pdmTracer = NULL) {
+                                      PDMTracer *pdmTracer = NULL) {
       if (dfa) {
         PushDownMachine *pdm = new PushDownMachine(dfa);
         ParseTrees::Token *result =
