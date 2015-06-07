@@ -55,6 +55,7 @@ ParseTrees::Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
       NFA::State *tokenNFAState =
         allocator->stateMatchesToken(nextDFAState, dfa->getTokensState());
       if (tokenNFAState && (tokenNFAState->matchType == NFA::Token)) {
+        if (pdmTracer) pdmTracer->match(tokenNFAState);
         // we have a match... wrap up this token
         ParseTrees::Token *token = NULL;
         if (!ParseTrees::ignoreToken(tokenNFAState->matchData.t)) {
@@ -72,16 +73,19 @@ ParseTrees::Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
         }
         // we have a match BUT the stack is empty
         if (curState.stream->atEnd()) {
+          if (pdmTracer) pdmTracer->done();
           // we have a match, the stack is empty and ...
           // we are at the end of the stream...
           // so return this token and we are done!
           return token;
         }
+        if (pdmTracer) pdmTracer->failedWithStream();
         // we have a match, the stack is empty BUT
         // we have not finished scanning the string...
         // so return the NULL token we have FAILED.
         return NULL;
       }
+      if (pdmTracer) pdmTracer->nextDFAState();
       // we have a nextDFAState but no match...
       // so just restart with the new nextDFAState
       curState.dState = allocator->clone(nextDFAState);
@@ -90,10 +94,12 @@ ParseTrees::Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
     // there is no suitable nextDFAState given the current character
     // so we need to backtrack and try the next possible path
     if (!stack.getNumItems()) {
+      if (pdmTracer) pdmTracer->failedBacktrack();
       // there are no alternate paths...
       // ... so we give up by returning the NULL token.
       return NULL;
     }
+    if (pdmTracer) pdmTracer->backtrack();
     pop(pdmTracer);
     // we need to pop twice if state we first poped has no iterator...
     // since any state with no iterator is a continuation state
@@ -102,5 +108,6 @@ ParseTrees::Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
     // goto restart;
   }
   // if we have reached this point we have failed!
+  if (pdmTracer) pdmTracer->error();
   return NULL;
 }

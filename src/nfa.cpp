@@ -57,7 +57,7 @@ NFA::State *NFA::addState(NFA::MatchType aMatchType,
   newState->matchData = someMatchData;
   newState->out       = out;
   newState->out1      = out1;
-  newState->message   = aMessage;
+  newState->message   = strdup(aMessage);
   return newState;
 }
 
@@ -69,10 +69,23 @@ void NFA::appendNFAToStartState(const char *startStateName,
   nulMatchData.c.u = 0;
   if (!startState.getItem(startStateId, NULL)) {
     startState.setItem(startStateId, baseSplitState);
+    char message[strlen(baseSplitState->message)+10];
+    strcpy(message, startStateName);
+    strcat(message, "[0]");
+    if (baseSplitState->message) free((void*)baseSplitState->message);
+    baseSplitState->message = strdup(message);
   } else {
     State *nextState = startState.getItem(startStateId, NULL);
-    while (nextState->out1) nextState = nextState->out1;
+    size_t numStartStates = 0;
+    while (nextState->out1) {
+      nextState = nextState->out1;
+      numStartStates++;
+    }
     nextState->out1 = baseSplitState;
+    char message[strlen(baseSplitState->message)+50];
+    sprintf(message, "%s[%zu]", baseSplitState->message, numStartStates);
+    if (baseSplitState->message) free((void*)baseSplitState->message);
+    baseSplitState->message = strdup(message);
   }
 }
 

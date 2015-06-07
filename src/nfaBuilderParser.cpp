@@ -135,7 +135,7 @@ void NFABuilder::compileRegularExpressionForTokenId(
           --natom;
           concatenate();
         }
-        checkClassification(classSet);
+        checkClassification(classSet, className);
         natom++;
         break;
       case '{':
@@ -155,7 +155,7 @@ void NFABuilder::compileRegularExpressionForTokenId(
           --natom;
           concatenate();
         }
-        reStart(reStartStateId);
+        reStart(reStartStateId, reStartStateName);
         natom++;
         break;
       case '\\': // escape character.... ignore and use next character instead
@@ -176,7 +176,7 @@ void NFABuilder::compileRegularExpressionForTokenId(
   while (--natom > 0) concatenate();
   for (; nalt > 0; nalt--) alternate();
   if (!stack.getNumItems()) throw LexerException("empty regular expression - nothing to match");
-  baseSplitState->out = match(aTokenId, ignoreToken);
+  baseSplitState->out = match(aTokenId, startStateName, ignoreToken);
   nfa->appendNFAToStartState(startStateName, baseSplitState);
 }
 

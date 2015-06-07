@@ -53,6 +53,20 @@ namespace DeterministicFiniteAutomaton {
           /// \brief Trace the use of a restart state transition.
           void restart(NFA::State *nfaState, size_t indent = 0);
 
+          void match(NFA::State *nfaState, size_t indent = 0);
+
+          void done(size_t indent = 0);
+
+          void failedWithStream(size_t indent = 0);
+
+          void nextDFAState(size_t indent = 0);
+
+          void failedBacktrack(size_t indent = 0);
+
+          void backtrack(size_t indent = 0);
+
+          void error(size_t indent = 0);
+
         private:
 
           /// \brief The currently associated PushDownMachine.

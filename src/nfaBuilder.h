@@ -28,13 +28,15 @@ class NFABuilder {
     /// \brief Push an NFABuilder::Frag structure containing an
     /// NFA::State suitable to check that the current UTF8 character
     /// is a member of a given Classifier::classSet_t.
-    void checkClassification(Classifier::classSet_t aClass);
+    void checkClassification(Classifier::classSet_t aClass,
+                             const char *className);
 
     /// \brief Push an NFABuilder::Frag structure containing an
     /// NFA::State suitable to recursively (re)start the NFA
     /// at a new start state, returning to the originally pushed down
     /// state when the NFA has recognized the recursive start state.
-    void reStart(NFA::StartStateId aStartStateId);
+    void reStart(NFA::StartStateId aStartStateId,
+                 const char *reStartStateName);
 
     /// \brief Push an NFABuilder::Frag structure containing an
     /// NFA::State suitable to check one successor NFA::State.
@@ -62,7 +64,9 @@ class NFABuilder {
     /// \brief Push an NFABuilder::Frag structure containing an
     /// NFA::State which represents a terminal state which recognizes a
     /// token with id, aTokenId.
-    NFA::State *match(ParseTrees::TokenId aTokenId, bool ignoreToken = false);
+    NFA::State *match(ParseTrees::TokenId aTokenId,
+                      const char *startStateName,
+                      bool ignoreToken = false);
 
     /// \brief Compile the Regular Expression into a (sub)NFA used to
     /// recognize a Token with Token ID aTokenId with the given

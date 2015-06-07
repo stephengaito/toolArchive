@@ -44,26 +44,40 @@ NFABuilder::Ptrlist* NFABuilder::append(
 }
 
 void NFABuilder::checkCharacter(utf8Char_t aChar) {
+  char message[strlen("checkCharacter[]")+20];
+  strcpy(message, "checkCharacter[");
+  strcat(message, aChar.c);
+  strcat(message, "]");
   NFA::MatchData someMatchData;
   someMatchData.c = aChar;
   NFA::State *s =
-    nfa->addState(NFA::Character, someMatchData, NULL, NULL, "checkCharacter");
+    nfa->addState(NFA::Character, someMatchData, NULL, NULL, message);
   push(frag(s, list1(&s->out)));
 }
 
-void NFABuilder::checkClassification(Classifier::classSet_t aClass) {
+void NFABuilder::checkClassification(Classifier::classSet_t aClass,
+                                     const char *className) {
+  char message[strlen(className) + strlen("checkClass[]")+10];
+  strcpy(message, "checkClass[");
+  strcat(message, className);
+  strcat(message, "]");
   NFA::MatchData someMatchData;
   someMatchData.s = aClass;
   NFA::State *s =
-    nfa->addState(NFA::ClassSet, someMatchData, NULL, NULL, "checkClass");
+    nfa->addState(NFA::ClassSet, someMatchData, NULL, NULL, message);
   push(frag(s, list1(&s->out)));
 }
 
-void NFABuilder::reStart(NFA::StartStateId pushDownStartStateId) {
+void NFABuilder::reStart(NFA::StartStateId pushDownStartStateId,
+                         const char *reStartStateName) {
+  char message[strlen(reStartStateName)+strlen("reStart{}")+10];
+  strcpy(message,"reStart{");
+  strcat(message,reStartStateName);
+  strcat(message,"}");
   NFA::MatchData someMatchData;
   someMatchData.r = pushDownStartStateId;
   NFA::State *s =
-    nfa->addState(NFA::ReStart, someMatchData, NULL, NULL, "reStart");
+    nfa->addState(NFA::ReStart, someMatchData, NULL, NULL, message);
   push(frag(s, list1(&s->out)));
 }
 
@@ -105,13 +119,19 @@ void NFABuilder::oneOrMore(void) {
   push(frag(e.start, list1(&s->out1)));
 };
 
-NFA::State *NFABuilder::match(ParseTrees::TokenId aTokenId, bool ignoreToken) {
+NFA::State *NFABuilder::match(ParseTrees::TokenId aTokenId,
+                              const char *startStateName,
+                              bool ignoreToken) {
+  char message[strlen(startStateName)+strlen("match[]")+10];
+  strcpy(message, "match[");
+  strcat(message, startStateName);
+  strcat(message, "]");
   Frag e = pop();
   NFA::MatchData tokenData;
   tokenData.c.u = 0;
   tokenData.t = ParseTrees::wrapToken(aTokenId, ignoreToken);
   patch(e.out,
-    nfa->addState(NFA::Token, tokenData, NULL, NULL, "match"));
+    nfa->addState(NFA::Token, tokenData, NULL, NULL, message));
   return e.start;
 };
 
