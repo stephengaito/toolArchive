@@ -38,7 +38,7 @@ void PDMTracer::reportAutomataStack(size_t indent) {
   for (size_t i = 0; i < pdm->stack.getNumItems(); i++) {
     fprintf(traceFile, "%s%s\n",
       indents[indent+1],
-      pdm->stack.getItem(i, PushDownMachine::AutomataState()).message);
+      pdm->stack.getItem(i, AutomataState()).message);
   }
   fprintf(traceFile, "-------------------------------------\n");
 }
