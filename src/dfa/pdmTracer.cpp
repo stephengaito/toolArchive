@@ -17,10 +17,12 @@ static const char *indents[] = {
 
 void PDMTracer::reportNFAState(NFA::State *nfaState,
                                              size_t indent) {
+  if (!traceFile) return;
   fprintf(traceFile, "%s%s\n",indents[indent], nfaState->message);
 }
 
 void PDMTracer::reportDFAState(size_t indent) {
+  if (!traceFile) return;
   NFAStateIterator iterator =
     pdm->allocator->newIteratorOn(pdm->curState.dState);
   fprintf(traceFile, "%sCurrent state: %s\n",
@@ -33,6 +35,7 @@ void PDMTracer::reportDFAState(size_t indent) {
 }
 
 void PDMTracer::reportAutomataStack(size_t indent) {
+  if (!traceFile) return;
   fprintf(traceFile, "-------------------------------------\n");
   fprintf(traceFile, "%sAutomataStack:\n", indents[indent]);
   for (size_t i = 0; i < pdm->stack.getNumItems(); i++) {
@@ -44,6 +47,7 @@ void PDMTracer::reportAutomataStack(size_t indent) {
 }
 
 void PDMTracer::reportState(size_t indent) {
+  if (!traceFile) return;
   reportAutomataStack(indent);
   fprintf(traceFile, "%s", indents[indent]);
   reportStreamPrefix();
@@ -53,18 +57,21 @@ void PDMTracer::reportState(size_t indent) {
 }
 
 void PDMTracer::reportStreamPrefix(void) {
+  if (!traceFile) return;
   char *prefix = pdm->curState.stream->getCopyOfTextRead();
   fprintf(traceFile, "[%s]", prefix);
   free(prefix);
 }
 
 void PDMTracer::reportStreamPostfix(void) {
+  if (!traceFile) return;
   char *postfix = pdm->curState.stream->getCopyOfTextToRead(30);
   fprintf(traceFile, "[%s]", postfix);
   free(postfix);
 }
 
 void PDMTracer::reportChar(utf8Char_t curChar, size_t indent) {
+  if (!traceFile) return;
   fprintf(traceFile, "%s%s:", indents[indent], pdm->curState.message);
   reportStreamPrefix();
   fprintf(traceFile, "%s(%lu)", curChar.c, curChar.u);
@@ -73,25 +80,30 @@ void PDMTracer::reportChar(utf8Char_t curChar, size_t indent) {
 }
 
 void PDMTracer::push(size_t indent) {
+  if (!traceFile) return;
   fprintf(traceFile, "%spush::%s \n", indents[indent], pdm->curState.message);
 }
 
 void PDMTracer::pop(bool keepStream, size_t indent) {
+  if (!traceFile) return;
   fprintf(traceFile, "%spop::%s (%s stream)\n", indents[indent],
           pdm->curState.message,
           (keepStream ? "keep" : "pop"));
 }
 
 void PDMTracer::swap(size_t indent) {
+  if (!traceFile) return;
     fprintf(traceFile, "swap\n");
 }
 
 void PDMTracer::checkForRestart(size_t indent) {
+  if (!traceFile) return;
     fprintf(traceFile, "checkForRestart\n");
 }
 
 /// \brief Trace the use of a restart state transition.
 void PDMTracer::restart(NFA::State *nfaState, size_t indent) {
+  if (!traceFile) return;
   fprintf(traceFile, "%sreStart", indents[indent]);
   if (nfaState->matchType == NFA::ReStart) {
     NFA::State *reStartState = pdm->nfa->getStartState(nfaState->matchData.r);
@@ -103,6 +115,7 @@ void PDMTracer::restart(NFA::State *nfaState, size_t indent) {
 }
 
 void PDMTracer::match(NFA::State *nfaState, size_t indent) {
+  if (!traceFile) return;
   size_t textSize = pdm->curState.stream->getNumberOfBytesRead()+10;
   char text[textSize];
   memset(text, 0, textSize);
@@ -114,26 +127,32 @@ void PDMTracer::match(NFA::State *nfaState, size_t indent) {
 
 
 void PDMTracer::done(size_t indent) {
+  if (!traceFile) return;
   fprintf(traceFile, "done\n");
 }
 
 void PDMTracer::failedWithStream(size_t indent) {
+  if (!traceFile) return;
   fprintf(traceFile, "failed with stream\n");
 }
 
 void PDMTracer::nextDFAState(size_t indent) {
+  if (!traceFile) return;
   fprintf(traceFile, "nextDFAState\n");
 }
 
 void PDMTracer::failedBacktrack(size_t indent) {
+  if (!traceFile) return;
   fprintf(traceFile, "failedBackTrack\n");
 }
 
 void PDMTracer::backtrack(size_t indent) {
+  if (!traceFile) return;
   fprintf(traceFile, "backtrack\n");
 }
 
 void PDMTracer::error(size_t indent) {
+  if (!traceFile) return;
   fprintf(traceFile, "error!\n");
 }
 

@@ -9,7 +9,8 @@ using namespace DeterministicFiniteAutomaton;
 
 ParseTrees::Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
                                                  Utf8Chars *charStream,
-                                                 PDMTracer *pdmTracer) {
+                                                 PDMTracer *pdmTracer,
+                                                 bool       partialOK) {
 
   if (pdmTracer) pdmTracer->setPDM(this);
 
@@ -48,7 +49,7 @@ ParseTrees::Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
     NFA::State *tokenNFAState =
         curState.stateMatchesToken(dfa->getTokensState());
     if (tokenNFAState && (tokenNFAState->matchType == NFA::Token)) {
-      curState.getStream()->backup();
+      if (!curState.getStream()->atEnd()) curState.getStream()->backup();
       if (pdmTracer) pdmTracer->match(tokenNFAState);
       // we have a match... wrap up this token
       ParseTrees::Token *token = wrapUpToken(tokenNFAState);
@@ -65,10 +66,11 @@ ParseTrees::Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
       }
 
       // we have a match BUT the stack is empty
-      if (curState.getStream()->atEnd()) {
+      if (partialOK || curState.getStream()->atEnd()) {
         if (pdmTracer) pdmTracer->done();
         // we have a match, the stack is empty and ...
-        // we are at the end of the stream...
+        // we are at the end of the stream
+        // (or we are happy with a partial match)...
         // so return this token and we are done!
         curState.clear();
         return token;

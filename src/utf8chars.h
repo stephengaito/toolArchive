@@ -55,7 +55,7 @@ class Utf8Chars {
     /// \brief Returns true if the last character was the last one
     /// in the underlying C-String.
     bool atEnd(void) {
-      return (nextByte <= utf8Chars+numBytes);
+      return (utf8Chars+numBytes <= nextByte);
     }
 
     /// \brief Set next character back to the begining of the
@@ -102,6 +102,7 @@ class Utf8Chars {
     /// of UTF8 characters, in the stream from the start to the current
     /// character.
     size_t getNumberOfBytesRead(void) {
+      if (utf8Chars+numBytes <= nextByte) nextByte = utf8Chars+numBytes;
       return nextByte - utf8Chars;
     }
 
@@ -113,6 +114,7 @@ class Utf8Chars {
     /// \brief Returns a (strndup'ed) copy of the stream which has not
     /// yet been read.
     char *getCopyOfTextToRead(size_t numBytesToCopy = 30) {
+      if (utf8Chars+numBytes <= nextByte) nextByte = utf8Chars+numBytes;
       return strndup(nextByte, numBytesToCopy);
     }
 

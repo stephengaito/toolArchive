@@ -31,7 +31,7 @@ namespace DeterministicFiniteAutomaton {
       /// \brief Sets the associated PushDownMachine
       void setPDM(PushDownMachine *aPDM) {
         pdm = aPDM;
-        fprintf(traceFile, "PDMTracer: %s\n", message);
+        if (traceFile) fprintf(traceFile, "PDMTracer: %s\n", message);
       }
 
       void reportState(size_t indent = 0);

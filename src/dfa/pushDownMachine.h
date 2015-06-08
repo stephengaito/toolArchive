@@ -24,16 +24,18 @@ namespace DeterministicFiniteAutomaton {
       /// state using the Utf8Chars stream provided.
       ParseTrees::Token *runFromUsing(const char *startStateName,
                                       Utf8Chars *charStream,
-                                      PDMTracer *pdmTracer = NULL) {
+                                      PDMTracer *pdmTracer = NULL,
+                                      bool       partialOk = false) {
         return runFromUsing(nfa->findStartStateId(startStateName),
-                            charStream, pdmTracer);
+                            charStream, pdmTracer, partialOk);
       }
 
       /// \brief Run the PushDownAutomata from any the given start
       /// state using the Utf8Chars stream provided.
       ParseTrees::Token *runFromUsing(NFA::StartStateId startStateId,
                                       Utf8Chars *charStream,
-                                      PDMTracer *pdmTracer = NULL);
+                                      PDMTracer *pdmTracer = NULL,
+                                      bool       partialOk = false);
 
     private:
 

@@ -307,7 +307,10 @@ go_bandit([](){
       PushDownMachine *pdm = new PushDownMachine(dfa);
       AssertThat(pdm, Is().Not().EqualTo((void*)0));
       Utf8Chars *stream0 = new Utf8Chars("simple");
-      ParseTrees::Token *aToken = pdm->runFromUsing("start", stream0);
+      PDMTracer *pdmTracer =
+//        new PDMTracer("Parse and tokenize 'simple'", stdout);
+        new PDMTracer("Parse and tokenize 'simple'", NULL);
+      ParseTrees::Token *aToken = pdm->runFromUsing("start", stream0, pdmTracer);
       AssertThat(aToken, Is().Not().EqualTo((void*)0));
       AssertThat(aToken->wrappedId, Is().EqualTo(2)); // token:1 ignore:false
       AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
@@ -315,9 +318,12 @@ go_bandit([](){
       AssertThat(aToken->textLength, Is().Not().EqualTo(0));
       AssertThat(aToken->textLength, Equals(6));
       AssertThat(aToken->numTokens, Equals(0));
-//      Utf8Chars *stream1 = new Utf8Chars("notSoSimple");
-//      aToken = pdm->runFromUsing("start", stream1);
-//      AssertThat(aToken, Equals((void*)0));
+      Utf8Chars *stream1 = new Utf8Chars("notSoSimple");
+      pdmTracer =
+//        new PDMTracer("Parse and tokenize 'notSoSimple'", stdout);
+        new PDMTracer("Parse and tokenize 'notSoSimple'", NULL);
+      aToken = pdm->runFromUsing("start", stream1, pdmTracer);
+      AssertThat(aToken, Equals((void*)0));
       delete pdm;
       delete dfa;
       delete parseTrees;
@@ -347,17 +353,27 @@ go_bandit([](){
       PushDownMachine *pdm = new PushDownMachine(dfa);
       AssertThat(pdm, Is().Not().EqualTo((void*)0));
       Utf8Chars *stream0 = new Utf8Chars("simple");
-      ParseTrees::Token *aToken = pdm->runFromUsing("start", stream0);
+      PDMTracer *pdmTracer =
+//        new PDMTracer("Parse and tokenize 'simple'", stdout);
+        new PDMTracer("Parse and tokenize 'simple'", NULL);
+      ParseTrees::Token *aToken = pdm->runFromUsing("start", stream0, pdmTracer);
       AssertThat(aToken, Is().Not().EqualTo((void*)0));
-//      AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
-//      AssertThat(aToken->textLength, Is().Not().EqualTo(0));
+      AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
+      AssertThat(aToken->textStart, Equals(stream0->getStart()));
+      AssertThat(aToken->textLength, Is().Not().EqualTo(0));
+      AssertThat(aToken->textLength, Equals(6));
       AssertThat(aToken->numTokens, Equals(0));
       AssertThat(aToken->wrappedId, Is().EqualTo(2)); // token:1 ignore:false
       Utf8Chars *stream1 = new Utf8Chars("notSoSimple");
-      aToken = pdm->runFromUsing("start", stream1);
+      pdmTracer =
+//        new PDMTracer("Parse and tokenize 'notSoSimple'", stdout);
+        new PDMTracer("Parse and tokenize 'notSoSimple'", NULL);
+      aToken = pdm->runFromUsing("start", stream1, pdmTracer);
       AssertThat(aToken, Is().Not().EqualTo((void*)0));
-//      AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
-//      AssertThat(aToken->textLength, Is().Not().EqualTo(0));
+      AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
+      AssertThat(aToken->textStart, Equals(stream1->getStart()));
+      AssertThat(aToken->textLength, Is().Not().EqualTo(0));
+      AssertThat(aToken->textLength, Equals(11));
       AssertThat(aToken->numTokens, Equals(0));
       AssertThat(aToken->wrappedId, Is().EqualTo(2)); // token:1 ignore:false
       delete dfa;
@@ -382,10 +398,15 @@ go_bandit([](){
       PushDownMachine *pdm = new PushDownMachine(dfa);
       AssertThat(pdm, Is().Not().EqualTo((void*)0));
       Utf8Chars *stream0 = new Utf8Chars("sillysomeNonWhiteSpace");
-      ParseTrees::Token *aToken = pdm->runFromUsing("start", stream0);
+      PDMTracer *pdmTracer =
+//        new PDMTracer("Parse and tokenize 'sillysomeNonWhiteSpace'", stdout);
+        new PDMTracer("Parse and tokenize 'sillysomeNonWhiteSpace'", NULL);
+      ParseTrees::Token *aToken = pdm->runFromUsing("start", stream0, pdmTracer);
       AssertThat(aToken, Is().Not().EqualTo((void*)0));
-//      AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
-//      AssertThat(aToken->textLength, Is().Not().EqualTo(0));
+      AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
+      AssertThat(aToken->textStart, Equals(stream0->getStart()));
+      AssertThat(aToken->textLength, Is().Not().EqualTo(0));
+      AssertThat(aToken->textLength, Equals(22));
       AssertThat(aToken->numTokens, Equals(0));
       AssertThat(aToken->wrappedId, Is().EqualTo(2)); //token:1 ignore:false
       delete dfa;
@@ -415,17 +436,27 @@ go_bandit([](){
       PushDownMachine *pdm = new PushDownMachine(dfa);
       AssertThat(pdm, Is().Not().EqualTo((void*)0));
       Utf8Chars *stream0 = new Utf8Chars("sillysomeNonWhiteSpace   ");
-      ParseTrees::Token *aToken = pdm->runFromUsing("start", stream0);
+      PDMTracer *pdmTracer =
+//        new PDMTracer("Parse and tokenize 'sillysomeNonWhiteSpace   '", stdout);
+        new PDMTracer("Parse and tokenize 'sillysomeNonWhiteSpace   '", NULL);
+      ParseTrees::Token *aToken = pdm->runFromUsing("start", stream0, pdmTracer, true);
       AssertThat(aToken, Is().Not().EqualTo((void*)0));
-//      AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
-//      AssertThat(aToken->textLength, Is().Not().EqualTo(0));
+      AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
+      AssertThat(aToken->textStart, Equals(stream0->getStart()));
+      AssertThat(aToken->textLength, Is().Not().EqualTo(0));
+      AssertThat(aToken->textLength, Equals(22));
       AssertThat(aToken->numTokens, Equals(0));
       AssertThat(aToken->wrappedId, Is().EqualTo(4)); //token:2 ignore:false
       Utf8Chars *stream1 = new Utf8Chars("   sillysomeNonWhiteSpace");
-      aToken = pdm->runFromUsing("start", stream1);
+      pdmTracer =
+//        new PDMTracer("Parse and tokenize '   sillysomeNonWhiteSpace'", stdout);
+        new PDMTracer("Parse and tokenize '   sillysomeNonWhiteSpace'", NULL);
+      aToken = pdm->runFromUsing("start", stream1, pdmTracer, true);
       AssertThat(aToken, Is().Not().EqualTo((void*)0));
-//      AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
-//      AssertThat(aToken->textLength, Is().Not().EqualTo(0));
+      AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
+      AssertThat(aToken->textStart, Equals(stream1->getStart()));
+      AssertThat(aToken->textLength, Is().Not().EqualTo(0));
+      AssertThat(aToken->textLength, Equals(3));
       AssertThat(aToken->numTokens, Equals(0));
       AssertThat(aToken->wrappedId, Is().EqualTo(2)); //token:1 ignore:false
       delete dfa;
