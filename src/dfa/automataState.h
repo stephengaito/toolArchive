@@ -31,47 +31,48 @@ namespace DeterministicFiniteAutomaton {
       }
 
       void update(State *aDState,
-                  const char *aMessage) {
+                  const char *aMessage,
+                  bool clearOldState = false) {
         ASSERT(allocator);
         ASSERT(aDState);
-        // TODO: CHECK MEMORY LEAK
-        if (dState)  allocator->unallocateState(dState);
+        if (clearOldState && dState)  allocator->unallocateState(dState);
         dState   = allocator->clone(aDState);
 
-        if (iterator) delete iterator;
+        if (clearOldState && iterator) delete iterator;
         if (dState) iterator = allocator->getNewIteratorOn(dState);
 
         Utf8Chars *oldStream = stream;
         if (stream) stream   = stream->clone();
-        if (oldStream) delete oldStream;
+        if (clearOldState && oldStream) delete oldStream;
 
-        if (tokens) delete tokens;
+        if (clearOldState && tokens) delete tokens;
         tokens   = new ParseTrees::TokenArray();
 
-        if (message) free((void*)message);
+        if (clearOldState && message) free((void*)message);
         message  = strdup(aMessage);
       }
 
-      void copyFrom(AutomataState &other, bool keepStream = false) {
-        // TODO: CHECK MEMORY LEAK
+      void copyFrom(const AutomataState &other,
+                    bool keepStream = false,
+                    bool clearOldState = true) {
         ASSERT(allocator || other.allocator);
         if (!allocator) allocator = other.allocator;
 
         if (!keepStream) {
-          if (stream) delete stream;
+          if (clearOldState && stream) delete stream;
           stream   = other.stream;
         }
 
-        if (iterator) delete iterator;
+        if (clearOldState && iterator) delete iterator;
         iterator = other.iterator;
 
-        if (dState) allocator->unallocateState(dState);
+        if (clearOldState && dState) allocator->unallocateState(dState);
         dState   = other.dState;
 
-        if (tokens) delete tokens;
+        if (clearOldState && tokens) delete tokens;
         tokens = other.tokens;
 
-        if (message) free((void*)message);
+        if (clearOldState && message) free((void*)message);
         message = other.message;
       }
 
@@ -116,7 +117,7 @@ namespace DeterministicFiniteAutomaton {
 
     private:
 
-      void operator=(AutomataState &other) {
+      void operator=(const AutomataState &other) {
         allocator = other.allocator;
         iterator  = other.iterator;
         stream    = other.stream;

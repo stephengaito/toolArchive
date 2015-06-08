@@ -6,7 +6,7 @@
       void push(PDMTracer *pdmTracer, State *aDState, const char *message) {
         if (pdmTracer) pdmTracer->push();
         stack.pushItem(curState);
-        curState.update(aDState, message);
+        curState.update(aDState, message, false); // DO NOT CLEAR OLD STATE
       }
 
       /// \brief Swap the top two elements of the AutomataState stack.
@@ -24,8 +24,7 @@
       /// by the pre-popped stream (keeping the currently parsed
       /// location).
       void pop(PDMTracer *pdmTracer, bool keepStream = false) {
-        AutomataState tmpState = stack.popItem();
-        curState.copyFrom(tmpState, keepStream);
+        curState.copyFrom(stack.popItem(), keepStream, true);// CLEAR OLD STATE
         if (pdmTracer) pdmTracer->pop(keepStream);
       }
 

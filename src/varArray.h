@@ -96,9 +96,9 @@ class VarArray {
 
     void swapTopTwoItems(void) {
       if (numItems < 2) return;
-      ItemT tempItem        = itemArray[numItems];
-      itemArray[numItems]   = itemArray[numItems-1];
-      itemArray[numItems-1] = tempItem;
+      ItemT tempItem        = itemArray[numItems-1];
+      itemArray[numItems-1] = itemArray[numItems-2];
+      itemArray[numItems-2] = tempItem;
     }
 
     /// \brief Remove all items from this array.

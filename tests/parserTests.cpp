@@ -29,7 +29,7 @@ go_bandit([](){
 
 #ifdef NOT_DEFINED
 
-    it("Create a Parser and tokenize if then else", [&](){
+    it("Create a Parser and tokenize 'if A then B else C'", [&](){
       Parser *parser = new Parser();
       AssertThat(parser, Is().Not().EqualTo((void*)0));
       AssertThat(parser->dfa, Is().EqualTo((void*)0));
@@ -73,6 +73,7 @@ go_bandit([](){
       AssertThat(someChars->getNextByte(), Is().EqualTo('t'));
       someChars->backup();
     });
+
 #endif
 
   }); // describe parser

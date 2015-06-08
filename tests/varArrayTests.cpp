@@ -81,7 +81,37 @@ go_bandit([](){
       AssertThat(aVarArray.itemArray, Equals((void*)0));
     });
 
-    it("should be able to push and pop lots of items when instantiated with const char*", [](){
+    it("should be able to push/pop and swap lots of items when instantiated with const char*", [](){
+      VarArray<int> aVarArray;
+      AssertThat(aVarArray.numItems,  Equals(0));
+      AssertThat(aVarArray.arraySize, Equals(0));
+      AssertThat(aVarArray.itemArray, Equals((void*)0));
+      for (size_t i = 0; i < 100; i++) {
+        aVarArray.pushItem(i);
+        AssertThat(aVarArray.getNumItems(), Equals(i+1));
+        AssertThat(aVarArray.arraySize, Is().Not().EqualTo(0));
+        AssertThat(aVarArray.itemArray[i], Equals(i));
+      }
+      AssertThat(aVarArray.numItems,      Equals(100));
+      AssertThat(aVarArray.itemArray[99], Equals(99));
+      AssertThat(aVarArray.itemArray[98], Equals(98));
+      aVarArray.swapTopTwoItems();
+      AssertThat(aVarArray.itemArray[99], Equals(98));
+      AssertThat(aVarArray.itemArray[98], Equals(99));
+      aVarArray.swapTopTwoItems();
+      AssertThat(aVarArray.itemArray[99], Equals(99));
+      AssertThat(aVarArray.itemArray[98], Equals(98));
+      size_t arraySize = aVarArray.arraySize;
+      for(size_t i = 100; 0 < i; i--) {
+        AssertThat(aVarArray.popItem(), Equals(i-1));
+        AssertThat(aVarArray.getNumItems(), Equals(i-1));
+        AssertThat(aVarArray.arraySize, Equals(arraySize));
+      }
+      AssertThat(aVarArray.getNumItems(), Equals(0));
+      AssertThat(aVarArray.arraySize, Equals(arraySize));
+    });
+
+    it("should be able to push/pop and swap lots of items when instantiated with const char*", [](){
       VarArray<const char*> aVarArray;
       AssertThat(aVarArray.numItems,  Equals(0));
       AssertThat(aVarArray.arraySize, Equals(0));
@@ -92,6 +122,15 @@ go_bandit([](){
         AssertThat(aVarArray.arraySize, Is().Not().EqualTo(0));
         AssertThat(aVarArray.itemArray[i], Equals((char*)i));
       }
+      AssertThat(aVarArray.numItems,      Equals(100));
+      AssertThat(aVarArray.itemArray[99], Equals((char*)99));
+      AssertThat(aVarArray.itemArray[98], Equals((char*)98));
+      aVarArray.swapTopTwoItems();
+      AssertThat(aVarArray.itemArray[99], Equals((char*)98));
+      AssertThat(aVarArray.itemArray[98], Equals((char*)99));
+      aVarArray.swapTopTwoItems();
+      AssertThat(aVarArray.itemArray[99], Equals((char*)99));
+      AssertThat(aVarArray.itemArray[98], Equals((char*)98));
       size_t arraySize = aVarArray.arraySize;
       for(size_t i = 100; 0 < i; i--) {
         AssertThat(aVarArray.popItem(), Equals((char*)i-1));
