@@ -97,8 +97,8 @@ State *DFA::getDFAStartState(NFA::StartStateId startStateId) {
 State *DFA::computeNextDFAState(State *curDFAState,
                                 utf8Char_t c,
                                 Classifier::classSet_t classificationSet) {
-  allocator->printStateOnWithMessage(stdout, "computeNextDFASate", curDFAState);
-  fprintf(stdout, "[%s](%lu)<%lu>\n", c.c, c.u, (long)classificationSet);
+//  allocator->printStateOnWithMessage(stdout, "computeNextDFASate", curDFAState);
+//  fprintf(stdout, "[%s](%lu)<%lu>\n", c.c, c.u, (long)classificationSet);
   NFA::State *nfaState;
 
   State *nextGenericDFAState;

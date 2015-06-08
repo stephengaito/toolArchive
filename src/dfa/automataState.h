@@ -18,10 +18,10 @@ namespace DeterministicFiniteAutomaton {
         message   = NULL;
       }
 
-      AutomataState(StateAllocator         *anAllocator,
-                    Utf8Chars              *aStream,
-                    State                  *aDState,
-                    const char             *aMessage) {
+      void initialize(StateAllocator *anAllocator,
+                      Utf8Chars      *aStream,
+                      State          *aDState,
+                      const char     *aMessage) {
         allocator = anAllocator;
         dState   = allocator->clone(aDState);
         iterator = allocator->getNewIteratorOn(dState);
@@ -30,42 +30,40 @@ namespace DeterministicFiniteAutomaton {
         message  = strdup(aMessage);
       }
 
-      void operator=(const AutomataState &other) {
-        allocator = other.allocator;
-        iterator  = other.iterator;
-        stream    = other.stream;
-        dState    = other.dState;
-        tokens    = other.tokens;
-        message   = other.message;
-      }
-
       void update(State *aDState,
-                  const char *aMessage,
-                  bool clearOldState = false) {
+                  const char *aMessage) {
+        ASSERT(allocator);
+        ASSERT(aDState);
         // TODO: CHECK MEMORY LEAK
-        if (clearOldState && dState) allocator->unallocateState(dState);
+        if (dState)  allocator->unallocateState(dState);
         dState   = allocator->clone(aDState);
 
-        if (clearOldState && iterator) delete iterator;
-        iterator = allocator->getNewIteratorOn(dState);
+        if (iterator) delete iterator;
+        if (dState) iterator = allocator->getNewIteratorOn(dState);
 
         Utf8Chars *oldStream = stream;
-        stream   = stream->clone();
-        if (clearOldState && stream) delete oldStream;
+        if (stream) stream   = stream->clone();
+        if (oldStream) delete oldStream;
 
-        if (clearOldState && tokens) delete tokens;
+        if (tokens) delete tokens;
         tokens   = new ParseTrees::TokenArray();
 
-        if (clearOldState && message) free((void*)message);
+        if (message) free((void*)message);
         message  = strdup(aMessage);
       }
 
       void copyFrom(AutomataState &other, bool keepStream = false) {
         // TODO: CHECK MEMORY LEAK
+        ASSERT(allocator || other.allocator);
+        if (!allocator) allocator = other.allocator;
+
         if (!keepStream) {
           if (stream) delete stream;
           stream   = other.stream;
         }
+
+        if (iterator) delete iterator;
+        iterator = other.iterator;
 
         if (dState) allocator->unallocateState(dState);
         dState   = other.dState;
@@ -75,6 +73,20 @@ namespace DeterministicFiniteAutomaton {
 
         if (message) free((void*)message);
         message = other.message;
+      }
+
+      void clear(void) {
+        if (iterator) delete iterator;
+        iterator  = NULL;
+        if (stream)   delete stream;
+        stream    = NULL;
+        if (dState && allocator) allocator->unallocateState(dState);
+        dState    = NULL;
+        if (tokens)   delete tokens;
+        tokens    = NULL;
+        if (message)  free((void*)message);
+        message   = NULL;
+        allocator = NULL; // we do not own the allocator
       }
 
       NFAStateIterator *getIterator(void) { return iterator; }
@@ -103,6 +115,15 @@ namespace DeterministicFiniteAutomaton {
       }
 
     private:
+
+      void operator=(AutomataState &other) {
+        allocator = other.allocator;
+        iterator  = other.iterator;
+        stream    = other.stream;
+        dState    = other.dState;
+        tokens    = other.tokens;
+        message   = other.message;
+      }
 
       /// \brief The allocator associated with this AutomataState.
       StateAllocator *allocator;
@@ -133,6 +154,7 @@ namespace DeterministicFiniteAutomaton {
       const char *message;
 
       friend class PDMTracer;
+      friend class VarArray<AutomataState>;
   }; // class AutomataState
 };  // namespace DeterministicFiniteAutomaton
 

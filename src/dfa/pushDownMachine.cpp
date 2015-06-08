@@ -13,9 +13,9 @@ ParseTrees::Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
 
   if (pdmTracer) pdmTracer->setPDM(this);
 
-  curState = AutomataState(allocator, charStream,
-                           dfa->getDFAStartState(startStateId),
-                           nfa->getStartState(startStateId)->message);
+  curState.initialize(allocator, charStream,
+                      dfa->getDFAStartState(startStateId),
+                      nfa->getStartState(startStateId)->message);
 
   restart:
   while(true) {
@@ -70,6 +70,7 @@ ParseTrees::Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
         // we have a match, the stack is empty and ...
         // we are at the end of the stream...
         // so return this token and we are done!
+        curState.clear();
         return token;
       }
 
@@ -77,6 +78,7 @@ ParseTrees::Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
       // we have a match, the stack is empty BUT
       // we have not finished scanning the string...
       // so return the NULL token we have FAILED.
+      curState.clear();
       return NULL;
     }
 
@@ -87,6 +89,7 @@ ParseTrees::Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
       if (pdmTracer) pdmTracer->failedBacktrack();
       // there are no alternate paths...
       // ... so we give up by returning the NULL token.
+      curState.clear();
       return NULL;
     }
 
@@ -97,5 +100,6 @@ ParseTrees::Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
   }
   // if we have reached this point we have failed!
   if (pdmTracer) pdmTracer->error();
+  curState.clear();
   return NULL;
 }

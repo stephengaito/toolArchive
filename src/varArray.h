@@ -94,6 +94,13 @@ class VarArray {
       memcpy(buffer, itemArray, bufferSize);
     }
 
+    void swapTopTwoItems(void) {
+      if (numItems < 2) return;
+      ItemT tempItem        = itemArray[numItems];
+      itemArray[numItems]   = itemArray[numItems-1];
+      itemArray[numItems-1] = tempItem;
+    }
+
     /// \brief Remove all items from this array.
     void clearItems(void) {
       numItems = 0;

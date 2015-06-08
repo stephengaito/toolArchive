@@ -13,12 +13,8 @@
       ///
       /// Do nothing if there are only one item or less on the stack.
       void swap(PDMTracer *pdmTracer) {
-        if (stack.getNumItems() < 2) return;
-        if (pdmTracer) pdmTracer->swap();
-        AutomataState topState  = stack.popItem();
-        AutomataState nextState = stack.popItem();
-        stack.pushItem(topState);
-        stack.pushItem(nextState);
+        if (pdmTracer && (1 < stack.getNumItems())) pdmTracer->swap();
+        stack.swapTopTwoItems();
       }
 
       /// \brief Pop the current automata state off of the top
