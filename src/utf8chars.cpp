@@ -58,7 +58,7 @@ Utf8Chars::Utf8Chars(const char* someUtf8Chars,
       utf8Chars = strdup(someUtf8Chars);
       break;
   }
-  numBytes  = strlen(utf8Chars);
+  lastByte  = utf8Chars+strlen(utf8Chars);
   restart();
 }
 
@@ -66,7 +66,7 @@ Utf8Chars::~Utf8Chars(void) {
   if (utf8Chars && ownsString) free((void*)utf8Chars);
   utf8Chars   = NULL;
   ownsString  = false;
-  numBytes    = 0;
+  lastByte    = NULL;
   nextByte    = NULL;
 }
 
@@ -79,7 +79,7 @@ void Utf8Chars::restart(void) {
 //
 void Utf8Chars::backup(void) {
   // ensure we have not walked off the end of the string
-  if (utf8Chars + numBytes < nextByte) nextByte = utf8Chars + numBytes;
+  if (lastByte < nextByte) nextByte = lastByte;
   while(true) {
     // backup one byte
     nextByte--;
@@ -105,7 +105,7 @@ utf8Char_t Utf8Chars::nextUtf8Char(void) {
 
   // check to see if we are in the string
   // if not return the null character
-  if (utf8Chars+numBytes < nextByte) return nullChar;
+  if (lastByte < nextByte) return nullChar;
 
   utf8Char_t result;
   result.u = 0;
@@ -143,7 +143,7 @@ utf8Char_t Utf8Chars::nextUtf8Char(void) {
   for(int i = 1; i <= additionalBytes; i++) {
     // check to see if we are still in the string
     // if not return the null character
-    if (utf8Chars+numBytes < nextByte) return nullChar;
+    if (lastByte < nextByte) return nullChar;
     // if these additional characters are not of the form 10xxxxxx
     // then this is a malformed utf8 character
     // so return the null character
@@ -158,7 +158,7 @@ utf8Char_t Utf8Chars::nextUtf8Char(void) {
 
 bool Utf8Chars::containsUtf8Char(utf8Char_t expectedUtf8Char) {
   restart();
-  while( nextByte < utf8Chars+numBytes) {
+  while( nextByte < lastByte) {
     utf8Char_t actualUtf8Char = nextUtf8Char();
     if (actualUtf8Char.u == 0) return false;
     if (actualUtf8Char.u == expectedUtf8Char.u) return true;

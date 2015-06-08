@@ -55,7 +55,7 @@ class Utf8Chars {
     /// \brief Returns true if the last character was the last one
     /// in the underlying C-String.
     bool atEnd(void) {
-      return (utf8Chars+numBytes <= nextByte);
+      return (lastByte <= nextByte);
     }
 
     /// \brief Set next character back to the begining of the
@@ -89,7 +89,7 @@ class Utf8Chars {
     /// return a null character (which could be interpreted to represent
     /// the end of the Utf8Chars character stream.
     char getNextByte(void) {
-      if (utf8Chars+numBytes < nextByte) return 0;
+      if (lastByte < nextByte) return 0;
       return *nextByte++;
     }
 
@@ -102,7 +102,7 @@ class Utf8Chars {
     /// of UTF8 characters, in the stream from the start to the current
     /// character.
     size_t getNumberOfBytesRead(void) {
-      if (utf8Chars+numBytes <= nextByte) nextByte = utf8Chars+numBytes;
+      if (lastByte <= nextByte) nextByte = lastByte;
       return nextByte - utf8Chars;
     }
 
@@ -114,7 +114,7 @@ class Utf8Chars {
     /// \brief Returns a (strndup'ed) copy of the stream which has not
     /// yet been read.
     char *getCopyOfTextToRead(size_t numBytesToCopy = 30) {
-      if (utf8Chars+numBytes <= nextByte) nextByte = utf8Chars+numBytes;
+      if (lastByte <= nextByte) nextByte = lastByte;
       return strndup(nextByte, numBytesToCopy);
     }
 
@@ -136,14 +136,9 @@ class Utf8Chars {
     /// \brief The C-string of UTF8 characters.
     const char* utf8Chars;
 
-    /// \brief The total number of bytes contained in this string of
+    /// \brief The last byte in the C-string representing this string of
     /// UTF8 characters.
-    ///
-    /// The number of bytes will generally be larger than the number of
-    /// [UTF8 characters](http://en.wikipedia.org/wiki/UTF-8) if there
-    /// are any non-[ASCII](http://en.wikipedia.org/wiki/ASCII)
-    /// characters in the string.
-    size_t      numBytes;
+    const char* lastByte;
 
     /// \brief The nextByte to be returned by either of the
     /// Utf8Chars::nextUtf8Char or Utf8Chars::getNextByte methods.
