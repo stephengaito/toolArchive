@@ -93,6 +93,8 @@ class ParseTrees {
       return (( tokenId << 1 ) | ( ignoreToken ? 0x1 : 0x0));
     }
 
+    static void printTokenOn(Token *token, FILE *outFile, size_t indent = 0);
+
   private:
 
     /// \brief The BlockAllocator which is used to allocate new tokens.

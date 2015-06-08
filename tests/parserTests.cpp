@@ -12,9 +12,9 @@ using namespace bandit;
 #include <parser.h>
 
 enum ParserTestTokens {
-  WhiteSpace,
-  NonWhiteSpace,
-  Text
+  WhiteSpace=1,
+  NonWhiteSpace=2,
+  Text=4
 };
 
 go_bandit([](){
@@ -41,36 +41,20 @@ go_bandit([](){
       AssertThat(parser->dfa, Is().EqualTo((void*)0));
       parser->compile();
       AssertThat(parser->dfa, Is().Not().EqualTo((void*)0));
-      Utf8Chars *someChars = new Utf8Chars("  if A then B else C ");
+      const char *cString ="  if A then B else C ";
+      Utf8Chars *someChars = new Utf8Chars(cString);
       PDMTracer *pdmTracer =
         new PDMTracer("Parse and tokenize 'if then else'", stdout);
       pdmTracer->setCondition(PDMTracer::Progress);
       ParseTrees::Token *aToken =
         parser->parseFromUsing("start", someChars, pdmTracer);
       AssertThat(aToken, Is().Not().EqualTo((void*)0));
-      AssertThat(aToken->wrappedId, Is().EqualTo(0));
-      AssertThat(someChars->getNextByte(), Is().EqualTo('i'));
-      someChars->backup();
-      aToken = parser->parseFromUsing("start", someChars);
-      AssertThat(aToken, Is().Not().EqualTo((void*)0));
-      AssertThat(aToken->wrappedId, Is().EqualTo(1));
-      AssertThat(someChars->getNextByte(), Is().EqualTo(' '));
-      someChars->backup();
-      aToken = parser->parseFromUsing("start", someChars);
-      AssertThat(aToken, Is().Not().EqualTo((void*)0));
-      AssertThat(aToken->wrappedId, Is().EqualTo(0));
-      AssertThat(someChars->getNextByte(), Is().EqualTo('A'));
-      someChars->backup();
-      aToken = parser->parseFromUsing("start", someChars);
-      AssertThat(aToken, Is().Not().EqualTo((void*)0));
-      AssertThat(aToken->wrappedId, Is().EqualTo(1));
-      AssertThat(someChars->getNextByte(), Is().EqualTo(' '));
-      someChars->backup();
-      aToken = parser->parseFromUsing("start", someChars);
-      AssertThat(aToken, Is().Not().EqualTo((void*)0));
-      AssertThat(aToken->wrappedId, Is().EqualTo(0));
-      AssertThat(someChars->getNextByte(), Is().EqualTo('t'));
-      someChars->backup();
+      ParseTrees::printTokenOn(aToken, stdout);
+      AssertThat(aToken->wrappedId, Equals(8)); // tokenId:Text ignored:false
+      AssertThat(aToken->numTokens, Equals(9));
+      AssertThat(aToken->textStart, Equals(cString));
+      AssertThat(aToken->textLength,
+        Equals(someChars->getNumberOfBytesRead()));
     });
 
   }); // describe parser
