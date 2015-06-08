@@ -45,7 +45,10 @@ go_bandit([](){
       Utf8Chars *someChars = new Utf8Chars(cString);
       PDMTracer *pdmTracer =
         new PDMTracer("Parse and tokenize 'if then else'", stdout);
-      pdmTracer->setCondition(PDMTracer::Progress | PDMTracer::PDMTokens | PDMTracer::PDMState);
+      pdmTracer->setCondition(PDMTracer::Progress |
+                              PDMTracer::PDMStack |
+                              PDMTracer::PDMTokens |
+                              PDMTracer::PDMState);
       ParseTrees::Token *aToken =
         parser->parseFromUsing("start", someChars, pdmTracer);
       AssertThat(aToken, Is().Not().EqualTo((void*)0));

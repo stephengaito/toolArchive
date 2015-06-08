@@ -45,8 +45,9 @@ namespace DeterministicFiniteAutomaton {
         if (stream) stream   = stream->clone();
         if (clearOldState && oldStream) delete oldStream;
 
-        if (clearOldState && tokens) delete tokens;
-        tokens   = new ParseTrees::TokenArray();
+        ParseTrees::TokenArray *oldTokens = tokens;
+        if (tokens) tokens = tokens->clone();
+        if (clearOldState && oldTokens) delete oldTokens;
 
         if (clearOldState && message) free((void*)message);
         message  = strdup(aMessage);

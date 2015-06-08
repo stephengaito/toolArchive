@@ -37,6 +37,17 @@ class VarArray {
       arraySize = 0;
     }
 
+    VarArray *clone(void) {
+      VarArray *result  = new VarArray();
+      result->numItems  = numItems;
+      result->arraySize = arraySize;
+      result->itemArray = (ItemT*)calloc(result->arraySize, sizeof(ItemT));
+      if (itemArray && result->itemArray) {
+        memcpy(result->itemArray, itemArray, arraySize*sizeof(ItemT));
+      }
+      return result;
+    }
+
     /// \brief Return the current number of items in the array.
     size_t getNumItems(void) {
       return numItems;

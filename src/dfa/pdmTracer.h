@@ -42,7 +42,8 @@ namespace DeterministicFiniteAutomaton {
         PDMErrorReturn=131072,
         RestartMessages=262144,
         PDMTokens=524288,
-        Progress=(PDMMatch|CurStreamPosition|RestartMessages)
+        Progress=(PDMMatch|CurStreamPosition|RestartMessages),
+        PDMStack=(StackPushes|StackPops|StackSwaps)
       };
 
       /// \brief Create a new PushDownMachine instance.
@@ -88,7 +89,7 @@ namespace DeterministicFiniteAutomaton {
       void reportStreamPostfix();
       void swap(size_t indent = 0);
       void push(size_t indent = 0);
-      void pop(bool keepStream, size_t indent = 0);
+      void pop(bool keepStreamTokens, size_t indent = 0);
       void checkForRestart(size_t indent = 0);
       /// \brief Trace the use of a restart state transition.
       void restart(NFA::State *nfaState, size_t indent = 0);

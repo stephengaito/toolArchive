@@ -20,9 +20,9 @@
       /// \brief Pop the current automata state off of the top
       /// of the push down automata's state stack.
       ///
-      /// If keepStream is true, then the popped stream is replaced
-      /// by the pre-popped stream (keeping the currently parsed
-      /// location).
+      /// If keepStreamTokens is true, then the popped stream/tokesn
+      /// are replaced by the pre-popped stream/tokens (keeping the
+      /// currently parsed location and collection of tokens).
       void pop(PDMTracer *pdmTracer, bool keepStreamTokens = false) {
         curState.copyFrom(stack.popItem(), keepStreamTokens, true);// CLEAR OLD STATE
         if (pdmTracer) pdmTracer->pop(keepStreamTokens);
