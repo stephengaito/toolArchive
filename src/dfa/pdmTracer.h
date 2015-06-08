@@ -3,6 +3,12 @@
 
 #include "dfa/dfa.h"
 
+#define PDMTraceMessages(pdmTracer) \
+  ((pdmTracer) && ((pdmTracer)->trace(PDMTracer::Messages)))
+
+#define PDMTraceRestartMessages(pdmTracer) \
+  ((pdmTracer) && ((pdmTracer)->trace(PDMTracer::RestartMessages)))
+
 namespace DeterministicFiniteAutomaton {
 
   // forward declaration of the PushDownMachine class
@@ -14,11 +20,36 @@ namespace DeterministicFiniteAutomaton {
 
     public:
 
+      enum TraceConditions {
+        All=~0L,
+        Messages=1,
+        NFAState=2,
+        DFAState=4,
+        AutomataStack=8,
+        PDMState=16,
+        CurStreamPosition=32,
+        StackPushes=64,
+        StackPops=128,
+        StackSwaps=256,
+        CheckForRestarts=512,
+        PDMRestarts=1024,
+        PDMMatch=2048,
+        PDMDone=4096,
+        PDMFailedWithStream=8192,
+        PDMNextDFAState=16384,
+        PDMFailedBackTrack=32768,
+        PDMBackTrack=65536,
+        PDMErrorReturn=131072,
+        RestartMessages=262144,
+        Progress=(PDMMatch|CurStreamPosition|RestartMessages)
+      };
+
       /// \brief Create a new PushDownMachine instance.
       PDMTracer(const char *aMessage, FILE *aTraceFile = NULL) {
-        pdm       = NULL;
-        message   = aMessage;
-        traceFile = aTraceFile;
+        pdm        = NULL;
+        message    = aMessage;
+        traceFile  = aTraceFile;
+        conditions = 0; // trace nothing unless told to do so
       }
 
       /// \brief Destroy the tracer.
@@ -28,10 +59,22 @@ namespace DeterministicFiniteAutomaton {
         traceFile = NULL; // we do not own the FILE
       }
 
+      void setCondition(uint64_t someConditions) {
+        conditions |= someConditions;
+      }
+
+      void clearCondition(uint64_t someConditions) {
+        conditions &= ~someConditions;
+      }
+
+      bool trace(uint64_t someConditions) {
+        return (conditions & someConditions);
+      }
+
       /// \brief Sets the associated PushDownMachine
       void setPDM(PushDownMachine *aPDM) {
         pdm = aPDM;
-        if (traceFile) fprintf(traceFile, "PDMTracer: %s\n", message);
+        if (traceFile && conditions) fprintf(traceFile, "PDMTracer: %s\n", message);
       }
 
       void reportState(size_t indent = 0);
@@ -53,7 +96,7 @@ namespace DeterministicFiniteAutomaton {
       void nextDFAState(size_t indent = 0);
       void failedBacktrack(size_t indent = 0);
       void backtrack(size_t indent = 0);
-      void error(size_t indent = 0);
+      void errorReturn(size_t indent = 0);
 
     private:
 
@@ -67,6 +110,9 @@ namespace DeterministicFiniteAutomaton {
 
       /// \brief Whether or not to trace the state transitions.
       FILE *traceFile;
+
+      /// \brief The BitSet of trace conditions
+      uint64_t conditions;
 
   }; // class Tracer
 

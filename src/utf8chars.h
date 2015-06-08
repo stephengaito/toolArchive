@@ -8,6 +8,22 @@
 #include <assert.h>
 #define ASSERT assert
 
+#define merge3(bufferName, str0, str1, str2)			\
+  char bufferName[strlen(str0)+strlen(str1)+strlen(str2)+10];	\
+  strcpy(bufferName, (str0));					\
+  strcat(bufferName, (str1));					\
+  strcat(bufferName, (str2));
+
+#define condMerge3(bufferName, cond, str0, str1, str2, str3)		   \
+  char bufferName[strlen(str0)+strlen(str1)+strlen(str2)+strlen(str3)+10]; \
+  if (cond) {								   \
+    strcpy(bufferName, (str0));						   \
+    strcat(bufferName, (str1));						   \
+    strcat(bufferName, (str2));						   \
+  } else {								   \
+    strcpy(bufferName, (str3));						   \
+  }
+
 #include "varArray.h"
 
 /// \brief The utf8Char_struct (utf8Char_t) is a simple union to allow

@@ -27,8 +27,6 @@ go_bandit([](){
   /// \brief We test the Parser class.
   describe("Parser", [](){
 
-#ifdef NOT_DEFINED
-
     it("Create a Parser and tokenize 'if A then B else C'", [&](){
       Parser *parser = new Parser();
       AssertThat(parser, Is().Not().EqualTo((void*)0));
@@ -46,6 +44,7 @@ go_bandit([](){
       Utf8Chars *someChars = new Utf8Chars("  if A then B else C ");
       PDMTracer *pdmTracer =
         new PDMTracer("Parse and tokenize 'if then else'", stdout);
+      pdmTracer->setCondition(PDMTracer::Progress);
       ParseTrees::Token *aToken =
         parser->parseFromUsing("start", someChars, pdmTracer);
       AssertThat(aToken, Is().Not().EqualTo((void*)0));
@@ -73,8 +72,6 @@ go_bandit([](){
       AssertThat(someChars->getNextByte(), Is().EqualTo('t'));
       someChars->backup();
     });
-
-#endif
 
   }); // describe parser
 

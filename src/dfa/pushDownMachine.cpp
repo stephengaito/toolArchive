@@ -101,7 +101,7 @@ ParseTrees::Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
     // goto restart;
   }
   // if we have reached this point we have failed!
-  if (pdmTracer) pdmTracer->error();
+  if (pdmTracer) pdmTracer->errorReturn();
   curState.clear();
   return NULL;
 }

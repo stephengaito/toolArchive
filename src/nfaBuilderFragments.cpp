@@ -44,10 +44,7 @@ NFABuilder::Ptrlist* NFABuilder::append(
 }
 
 void NFABuilder::checkCharacter(utf8Char_t aChar) {
-  char message[strlen("checkCharacter[]")+20];
-  strcpy(message, "checkCharacter[");
-  strcat(message, aChar.c);
-  strcat(message, "]");
+  merge3(message, "checkCharacter[", aChar.c, "]");
   NFA::MatchData someMatchData;
   someMatchData.c = aChar;
   NFA::State *s =
@@ -57,10 +54,7 @@ void NFABuilder::checkCharacter(utf8Char_t aChar) {
 
 void NFABuilder::checkClassification(Classifier::classSet_t aClass,
                                      const char *className) {
-  char message[strlen(className) + strlen("checkClass[]")+10];
-  strcpy(message, "checkClass[");
-  strcat(message, className);
-  strcat(message, "]");
+  merge3(message, "checkClass[", className, "]");
   NFA::MatchData someMatchData;
   someMatchData.s = aClass;
   NFA::State *s =
@@ -70,10 +64,7 @@ void NFABuilder::checkClassification(Classifier::classSet_t aClass,
 
 void NFABuilder::reStart(NFA::StartStateId pushDownStartStateId,
                          const char *reStartStateName) {
-  char message[strlen(reStartStateName)+strlen("reStart{}")+10];
-  strcpy(message,"reStart{");
-  strcat(message,reStartStateName);
-  strcat(message,"}");
+  merge3(message, "reStart{", reStartStateName, "}");
   NFA::MatchData someMatchData;
   someMatchData.r = pushDownStartStateId;
   NFA::State *s =
@@ -122,10 +113,7 @@ void NFABuilder::oneOrMore(void) {
 NFA::State *NFABuilder::match(ParseTrees::TokenId aTokenId,
                               const char *startStateName,
                               bool ignoreToken) {
-  char message[strlen(startStateName)+strlen("match[]")+10];
-  strcpy(message, "match[");
-  strcat(message, startStateName);
-  strcat(message, "]");
+  merge3(message, "match[", startStateName, "]");
   Frag e = pop();
   NFA::MatchData tokenData;
   tokenData.c.u = 0;

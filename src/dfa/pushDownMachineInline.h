@@ -39,32 +39,25 @@
         // we need to try this path
         //
         // prepare messages for each possible AutomataState
-        size_t messageSize = strlen(curState.getMessage())+50;
-        char backTrackMessage[messageSize];
-        strcpy(backTrackMessage, "backtrack<");
-        strcat(backTrackMessage, curState.getMessage());
-        strcat(backTrackMessage, ">");
-        char continueMessage[messageSize];
-        strcpy(continueMessage, "continue<");
-        strcat(continueMessage, curState.getMessage());
-        strcat(continueMessage, ">");
-        NFA::State *reStartNFAState =
-          nfa->getStartState(nfaState->matchData.r);
-        char restartMessage[strlen(reStartNFAState->message)+50];
-        strcpy(restartMessage, "restart{");
-        strcat(restartMessage, reStartNFAState->message);
-        strcat(restartMessage, "}");
         //
         // mark the curState as the backTrack state
+        condMerge3(backTrackMessage, PDMTraceMessages(pdmTracer),
+          "backtrack<", curState.getMessage(), ">", "backtrack");
         curState.setMessage(backTrackMessage);
         //
         // clear this NFA::State out of the backTrack DFA state
         curState.clearNFAState(nfaState);
         // push current autoamta state to clean up if this path fails.
+        condMerge3(continueMessage, PDMTraceMessages(pdmTracer),
+          "continue<", curState.getMessage(), ">", "continue");
         push(pdmTracer,
              dfa->getDFAStateFromNFAState(nfaState),
              continueMessage);
         // now set up the subDFA state
+        NFA::State *reStartNFAState =
+          nfa->getStartState(nfaState->matchData.r);
+        condMerge3(restartMessage, PDMTraceRestartMessages(pdmTracer),
+          "restart{", reStartNFAState->message, "}", "restart");
         push(pdmTracer,
              dfa->getDFAStartState(nfaState->matchData.r),
              restartMessage);
