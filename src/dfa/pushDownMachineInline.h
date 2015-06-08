@@ -23,15 +23,15 @@
       /// If keepStream is true, then the popped stream is replaced
       /// by the pre-popped stream (keeping the currently parsed
       /// location).
-      void pop(PDMTracer *pdmTracer, bool keepStream = false) {
-        curState.copyFrom(stack.popItem(), keepStream, true);// CLEAR OLD STATE
-        if (pdmTracer) pdmTracer->pop(keepStream);
+      void pop(PDMTracer *pdmTracer, bool keepStreamTokens = false) {
+        curState.copyFrom(stack.popItem(), keepStreamTokens, true);// CLEAR OLD STATE
+        if (pdmTracer) pdmTracer->pop(keepStreamTokens);
       }
 
       /// \brief Pop the current automata state off the top of the
       /// push down automata's state stack, *keeping* the current
       /// stream location.
-      void popKeepStream(PDMTracer *pdmTracer) {
+      void popKeepStreamTokens(PDMTracer *pdmTracer) {
         pop(pdmTracer, true);
       }
 

@@ -124,7 +124,7 @@ go_bandit([](){
       AssertThat(newAutomataState.allocator, Equals((void*)0));
       newAutomataState.copyFrom(automataState, true);
       AssertThat(newAutomataState.message, Equals((char*)automataState.message));
-      AssertThat(newAutomataState.tokens, Equals(automataState.tokens));
+      AssertThat(newAutomataState.tokens, Equals((void*)0));
       AssertThat(newAutomataState.stream, Equals((void*)0));
       AssertThat(newAutomataState.iterator, Equals(automataState.iterator));
       AssertThat(newAutomataState.dState, Equals(automataState.dState));

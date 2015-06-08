@@ -53,12 +53,12 @@ namespace DeterministicFiniteAutomaton {
       }
 
       void copyFrom(const AutomataState &other,
-                    bool keepStream = false,
+                    bool keepStreamTokens = false,
                     bool clearOldState = true) {
         ASSERT(allocator || other.allocator);
         if (!allocator) allocator = other.allocator;
 
-        if (!keepStream) {
+        if (!keepStreamTokens) {
           if (clearOldState && stream) delete stream;
           stream   = other.stream;
         }
@@ -69,8 +69,10 @@ namespace DeterministicFiniteAutomaton {
         if (clearOldState && dState) allocator->unallocateState(dState);
         dState   = other.dState;
 
-        if (clearOldState && tokens) delete tokens;
-        tokens = other.tokens;
+        if (!keepStreamTokens) {
+          if (clearOldState && tokens) delete tokens;
+          tokens = other.tokens;
+        }
 
         if (clearOldState && message) free((void*)message);
         message = other.message;

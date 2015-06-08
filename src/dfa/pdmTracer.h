@@ -41,6 +41,7 @@ namespace DeterministicFiniteAutomaton {
         PDMBackTrack=65536,
         PDMErrorReturn=131072,
         RestartMessages=262144,
+        PDMTokens=524288,
         Progress=(PDMMatch|CurStreamPosition|RestartMessages)
       };
 
@@ -82,6 +83,7 @@ namespace DeterministicFiniteAutomaton {
       void reportNFAState(NFA::State *nfaState, size_t indent = 0);
       void reportDFAState(size_t indent = 0);
       void reportChar(utf8Char_t curChar, size_t indent = 0);
+      void reportTokens(size_t indent = 0);
       void reportStreamPrefix();
       void reportStreamPostfix();
       void swap(size_t indent = 0);

@@ -58,8 +58,8 @@ ParseTrees::Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
         // we have successfully recoginized a sub state
         // now pop the stack keeping the current stream and restart
         swap(pdmTracer);
-        popKeepStream(pdmTracer); // ignore this backtrack state
-        popKeepStream(pdmTracer); // use the continue state
+        popKeepStreamTokens(pdmTracer); // ignore this backtrack state
+        popKeepStreamTokens(pdmTracer); // use the continue state
         if (pdmTracer) pdmTracer->reportDFAState();
         if (token) curState.getTokens()->pushItem(token);
         goto restart;

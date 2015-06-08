@@ -53,6 +53,7 @@ void PDMTracer::reportState(size_t indent) {
   reportStreamPrefix();
   reportStreamPostfix();
   fprintf(traceFile, "\n");
+  reportTokens(indent);
   reportDFAState(indent);
 }
 
@@ -79,16 +80,26 @@ void PDMTracer::reportChar(utf8Char_t curChar, size_t indent) {
   fprintf(traceFile, "\n");
 }
 
+void PDMTracer::reportTokens(size_t indent) {
+  if (!traceFile || !trace(PDMTokens)) return;
+  fprintf(traceFile, "----------tokens---------------------\n");
+  for (size_t i = 0; i < pdm->curState.tokens->getNumItems(); i++) {
+    ParseTrees::printTokenOn(pdm->curState.tokens->getItem(i, NULL),
+                             traceFile, indent+1);
+  }
+  fprintf(traceFile, "-------------------------------------\n");
+}
+
 void PDMTracer::push(size_t indent) {
   if (!traceFile || !trace(StackPushes)) return;
   fprintf(traceFile, "%spush::%s \n", indents[indent], pdm->curState.message);
 }
 
-void PDMTracer::pop(bool keepStream, size_t indent) {
+void PDMTracer::pop(bool keepStreamTokens, size_t indent) {
   if (!traceFile || !trace(StackPops)) return;
-  fprintf(traceFile, "%spop::%s (%s stream)\n", indents[indent],
+  fprintf(traceFile, "%spop::%s (%s stream/tokens)\n", indents[indent],
           pdm->curState.message,
-          (keepStream ? "keep" : "pop"));
+          (keepStreamTokens ? "keep" : "pop"));
 }
 
 void PDMTracer::swap(size_t indent) {
