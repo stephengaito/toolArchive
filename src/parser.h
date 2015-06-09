@@ -37,7 +37,7 @@ class Parser {
   public:
 
     /// \brief A TokenId is a user assigned NFA::TokenId (Hat-Trie::value_t).
-    typedef ParseTrees::TokenId TokenId;
+    typedef Token::TokenId TokenId;
 
     /// \brief Create a Parser.
     Parser(void) {
@@ -72,8 +72,7 @@ class Parser {
     /// be made, or Regular-Expression/TokenIds can be added.
     void compile(void) {
       if (!dfa) {
-        parseTree = new ParseTrees();
-        dfa = new DFA(nfa, parseTree);
+        dfa = new DFA(nfa);
       }
     }
 
@@ -81,12 +80,12 @@ class Parser {
     ///
     /// If the Parser has not yet been compiled, the null tokenId (-1)
     //  is returned.
-    ParseTrees::Token *parseFromUsing(const char *startStateName,
-                                      Utf8Chars *someChars,
-                                      PDMTracer *pdmTracer = NULL) {
+    Token *parseFromUsing(const char *startStateName,
+                          Utf8Chars *someChars,
+                          PDMTracer *pdmTracer = NULL) {
       if (dfa) {
         PushDownMachine *pdm = new PushDownMachine(dfa);
-        ParseTrees::Token *result =
+        Token *result =
           pdm->runFromUsing(nfa->findStartStateId(startStateName),
                             someChars, pdmTracer);
         delete pdm;
@@ -105,10 +104,6 @@ class Parser {
 
     /// \brief The NFABuilder used to build the NFA from regular expressions.
     NFABuilder *nfaBuilder;
-
-    /// \brief The forest of parse trees from which all tokens will be
-    /// allocated.
-    ParseTrees *parseTree;
 
     /// \brief The DFA used to scan Utf8Chars streams.
     ///

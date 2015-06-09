@@ -14,7 +14,7 @@ namespace DeterministicFiniteAutomaton {
         iterator  = NULL;
         stream    = NULL;
         dState    = NULL;
-        tokens    = NULL;
+        token     = NULL;
         message   = NULL;
       }
 
@@ -26,7 +26,7 @@ namespace DeterministicFiniteAutomaton {
         dState   = allocator->clone(aDState);
         iterator = allocator->getNewIteratorOn(dState);
         stream   = aStream->clone();
-        tokens   = new ParseTrees::TokenArray();
+        token    = new Token();
         message  = strdup(aMessage);
       }
 
@@ -45,21 +45,21 @@ namespace DeterministicFiniteAutomaton {
         if (stream) stream   = stream->clone();
         if (clearOldState && oldStream) delete oldStream;
 
-        ParseTrees::TokenArray *oldTokens = tokens;
-        if (tokens) tokens = tokens->clone();
-        if (clearOldState && oldTokens) delete oldTokens;
+        Token *oldToken = token;
+        if (token) token = token->clone();
+        if (clearOldState && oldToken) delete oldToken;
 
         if (clearOldState && message) free((void*)message);
         message  = strdup(aMessage);
       }
 
       void copyFrom(const AutomataState &other,
-                    bool keepStreamTokens = false,
+                    bool keepStreamToken = false,
                     bool clearOldState = true) {
         ASSERT(allocator || other.allocator);
         if (!allocator) allocator = other.allocator;
 
-        if (!keepStreamTokens) {
+        if (!keepStreamToken) {
           if (clearOldState && stream) delete stream;
           stream   = other.stream;
         }
@@ -70,9 +70,9 @@ namespace DeterministicFiniteAutomaton {
         if (clearOldState && dState) allocator->unallocateState(dState);
         dState   = other.dState;
 
-        if (!keepStreamTokens) {
-          if (clearOldState && tokens) delete tokens;
-          tokens = other.tokens;
+        if (!keepStreamToken) {
+          if (clearOldState && token) delete token;
+          token = other.token;
         }
 
         if (clearOldState && message) free((void*)message);
@@ -86,8 +86,8 @@ namespace DeterministicFiniteAutomaton {
         stream    = NULL;
         if (dState && allocator) allocator->unallocateState(dState);
         dState    = NULL;
-        if (tokens)   delete tokens;
-        tokens    = NULL;
+        if (token)   delete token;
+        token     = NULL;
         if (message)  free((void*)message);
         message   = NULL;
         allocator = NULL; // we do not own the allocator
@@ -114,8 +114,18 @@ namespace DeterministicFiniteAutomaton {
         return allocator->stateMatchesToken(dState, tokenStates);
       }
 
-      ParseTrees::TokenArray *getTokens(void) {
-        return tokens;
+      void setTokenId(Token::TokenId tokenId) {
+        token->setId(tokenId);
+      }
+
+      void setTokenText(void) {
+        token->setText(stream->getStart(), stream->getNumberOfBytesRead());
+      }
+
+      Token *releaseToken(void) {
+        Token *oldToken = token;
+        token = new Token();
+        return oldToken;
       }
 
     private:
@@ -125,7 +135,7 @@ namespace DeterministicFiniteAutomaton {
         iterator  = other.iterator;
         stream    = other.stream;
         dState    = other.dState;
-        tokens    = other.tokens;
+        token     = other.token;
         message   = other.message;
       }
 
@@ -151,8 +161,8 @@ namespace DeterministicFiniteAutomaton {
       /// using the non-reStart NFA::States.
       State *dState;
 
-      /// \brief A copy of the current collection of parsed tokens
-      ParseTrees::TokenArray *tokens;
+      /// \brief A copy of the currently partially constructed token
+      Token *token;
 
       /// \brief A useful message used by the Tracer
       const char *message;

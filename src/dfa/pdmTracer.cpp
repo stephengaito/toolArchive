@@ -83,10 +83,7 @@ void PDMTracer::reportChar(utf8Char_t curChar, size_t indent) {
 void PDMTracer::reportTokens(size_t indent) {
   if (!traceFile || !trace(PDMTokens)) return;
   fprintf(traceFile, "----------tokens---------------------\n");
-  for (size_t i = 0; i < pdm->curState.tokens->getNumItems(); i++) {
-    ParseTrees::printTokenOn(pdm->curState.tokens->getItem(i, NULL),
-                             traceFile, indent+1);
-  }
+    pdm->curState.token->printOn(traceFile, indent+1);
   fprintf(traceFile, "-------------------------------------\n");
 }
 

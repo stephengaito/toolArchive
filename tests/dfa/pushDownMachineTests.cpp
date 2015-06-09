@@ -31,16 +31,14 @@ go_bandit([](){
       NFA *nfa = new NFA(classifier);
       NFABuilder *nfaBuilder = new NFABuilder(nfa);
       nfaBuilder->compileRegularExpressionForTokenId("start", "(abab|abbb)", 1);
-      ParseTrees *parseTrees = new ParseTrees();
-      DFA *dfa = new DFA(nfa, parseTrees);
+      DFA *dfa = new DFA(nfa);
       PushDownMachine *pdm = new PushDownMachine(dfa);
       AssertThat(pdm, Is().Not().EqualTo((void*)0));
       AssertThat(pdm->dfa, Equals(dfa));
       AssertThat(pdm->nfa, Equals(nfa));
       AssertThat(pdm->allocator, Equals(dfa->allocator));
-      AssertThat(pdm->parseTrees, Equals(parseTrees));
       AssertThat(pdm->curState.message, Equals((void*)0));
-      AssertThat(pdm->curState.tokens, Equals((void*)0));
+      AssertThat(pdm->curState.token, Equals((void*)0));
       AssertThat(pdm->curState.stream, Equals((void*)0));
       AssertThat(pdm->curState.iterator, Equals((void*)0));
       AssertThat(pdm->curState.dState, Equals((void*)0));
@@ -55,16 +53,14 @@ go_bandit([](){
       nfaBuilder->compileRegularExpressionForTokenId("start", "(abab|abbb)", 1);
       nfaBuilder->compileRegularExpressionForTokenId("other", "otherSimple", 1);
       nfaBuilder->compileRegularExpressionForTokenId("another", "anotherSimple", 1);
-      ParseTrees *parseTrees = new ParseTrees();
-      DFA *dfa = new DFA(nfa, parseTrees);
+      DFA *dfa = new DFA(nfa);
       PushDownMachine *pdm = new PushDownMachine(dfa);
       AssertThat(pdm, Is().Not().EqualTo((void*)0));
       AssertThat(pdm->dfa, Equals(dfa));
       AssertThat(pdm->nfa, Equals(nfa));
       AssertThat(pdm->allocator, Equals(dfa->allocator));
-      AssertThat(pdm->parseTrees, Equals(parseTrees));
       AssertThat(pdm->curState.message, Equals((void*)0));
-      AssertThat(pdm->curState.tokens, Equals((void*)0));
+      AssertThat(pdm->curState.token, Equals((void*)0));
       AssertThat(pdm->curState.stream, Equals((void*)0));
       AssertThat(pdm->curState.iterator, Equals((void*)0));
       AssertThat(pdm->curState.dState, Equals((void*)0));
@@ -77,7 +73,7 @@ go_bandit([](){
       pdm->curState.initialize(allocator, someChars, dState, testMessage);
       AssertThat(pdm->curState.message, Is().Not().EqualTo((char*)testMessage));
       AssertThat(pdm->curState.message, Equals(testMessage));
-      AssertThat(pdm->curState.tokens, Is().Not().EqualTo((void*)0));
+      AssertThat(pdm->curState.token, Is().Not().EqualTo((void*)0));
       AssertThat(pdm->curState.stream, Is().Not().EqualTo((void*)0));
       AssertThat(pdm->curState.iterator, Is().Not().EqualTo((void*)0));
       AssertThat(pdm->curState.dState, Is().Not().EqualTo(dState));
@@ -89,7 +85,7 @@ go_bandit([](){
       AssertThat(oldCurState0.iterator,  Equals(pdm->curState.iterator));
       AssertThat(oldCurState0.dState,    Equals(pdm->curState.dState));
       AssertThat(oldCurState0.stream,    Equals(pdm->curState.stream));
-      AssertThat(oldCurState0.tokens,    Equals(pdm->curState.tokens));
+      AssertThat(oldCurState0.token,     Equals(pdm->curState.token));
       AssertThat(oldCurState0.message,   Equals((char*)pdm->curState.message));
       pdm->push(NULL, otherDState, otherMessage);
       AssertThat(pdm->stack.getNumItems(), Equals(1));
@@ -102,14 +98,14 @@ go_bandit([](){
         Equals(oldCurState0.dState));
       AssertThat(pdm->stack.itemArray[pdm->stack.numItems-1].stream,
         Equals(oldCurState0.stream));
-      AssertThat(pdm->stack.itemArray[pdm->stack.numItems-1].tokens,
-        Equals(oldCurState0.tokens));
+      AssertThat(pdm->stack.itemArray[pdm->stack.numItems-1].token,
+        Equals(oldCurState0.token));
       AssertThat(pdm->stack.itemArray[pdm->stack.numItems-1].message,
         Equals(oldCurState0.message));
       AssertThat(pdm->curState.message, Is().Not().EqualTo((char*)testMessage));
       AssertThat(pdm->curState.message, Is().Not().EqualTo((char*)otherMessage));
       AssertThat(pdm->curState.message, Equals(otherMessage));
-      AssertThat(pdm->curState.tokens, Is().Not().EqualTo((void*)0));
+      AssertThat(pdm->curState.token, Is().Not().EqualTo((void*)0));
       AssertThat(pdm->curState.stream, Is().Not().EqualTo((void*)0));
       AssertThat(pdm->curState.iterator, Is().Not().EqualTo((void*)0));
       AssertThat(pdm->curState.dState, Is().Not().EqualTo(dState));
@@ -122,7 +118,7 @@ go_bandit([](){
       AssertThat(oldCurState1.iterator,  Equals(pdm->curState.iterator));
       AssertThat(oldCurState1.dState,    Equals(pdm->curState.dState));
       AssertThat(oldCurState1.stream,    Equals(pdm->curState.stream));
-      AssertThat(oldCurState1.tokens,    Equals(pdm->curState.tokens));
+      AssertThat(oldCurState1.token,     Equals(pdm->curState.token));
       AssertThat(oldCurState1.message,   Equals((char*)pdm->curState.message));
       pdm->push(NULL, anotherDState, anotherMessage);
       AssertThat(pdm->stack.getNumItems(), Equals(2));
@@ -135,15 +131,15 @@ go_bandit([](){
         Equals(oldCurState1.dState));
       AssertThat(pdm->stack.itemArray[pdm->stack.numItems-1].stream,
         Equals(oldCurState1.stream));
-      AssertThat(pdm->stack.itemArray[pdm->stack.numItems-1].tokens,
-        Equals(oldCurState1.tokens));
+      AssertThat(pdm->stack.itemArray[pdm->stack.numItems-1].token,
+        Equals(oldCurState1.token));
       AssertThat(pdm->stack.itemArray[pdm->stack.numItems-1].message,
         Equals(oldCurState1.message));
       AssertThat(pdm->curState.message, Is().Not().EqualTo((char*)testMessage));
       AssertThat(pdm->curState.message, Is().Not().EqualTo((char*)otherMessage));
       AssertThat(pdm->curState.message, Is().Not().EqualTo((char*)anotherMessage));
       AssertThat(pdm->curState.message, Equals(anotherMessage));
-      AssertThat(pdm->curState.tokens, Is().Not().EqualTo((void*)0));
+      AssertThat(pdm->curState.token,  Is().Not().EqualTo((void*)0));
       AssertThat(pdm->curState.stream, Is().Not().EqualTo((void*)0));
       AssertThat(pdm->curState.iterator, Is().Not().EqualTo((void*)0));
       AssertThat(pdm->curState.dState, Is().Not().EqualTo(dState));
@@ -161,8 +157,8 @@ go_bandit([](){
         Equals(oldCurState0.dState));
       AssertThat(pdm->stack.itemArray[pdm->stack.numItems-1].stream,
         Equals(oldCurState0.stream));
-      AssertThat(pdm->stack.itemArray[pdm->stack.numItems-1].tokens,
-        Equals(oldCurState0.tokens));
+      AssertThat(pdm->stack.itemArray[pdm->stack.numItems-1].token,
+        Equals(oldCurState0.token));
       AssertThat(pdm->stack.itemArray[pdm->stack.numItems-1].message,
         Equals(oldCurState0.message));
       AssertThat(pdm->stack.itemArray[pdm->stack.numItems-2].allocator,
@@ -173,8 +169,8 @@ go_bandit([](){
         Equals(oldCurState1.dState));
       AssertThat(pdm->stack.itemArray[pdm->stack.numItems-2].stream,
         Equals(oldCurState1.stream));
-      AssertThat(pdm->stack.itemArray[pdm->stack.numItems-2].tokens,
-        Equals(oldCurState1.tokens));
+      AssertThat(pdm->stack.itemArray[pdm->stack.numItems-2].token,
+        Equals(oldCurState1.token));
       AssertThat(pdm->stack.itemArray[pdm->stack.numItems-2].message,
         Equals(oldCurState1.message));
       pdm->swap(NULL);
@@ -184,13 +180,13 @@ go_bandit([](){
       AssertThat(oldCurState1.iterator,  Equals(pdm->curState.iterator));
       AssertThat(oldCurState1.dState,    Equals(pdm->curState.dState));
       AssertThat(oldCurState1.stream,    Equals(pdm->curState.stream));
-      AssertThat(oldCurState1.tokens,    Equals(pdm->curState.tokens));
+      AssertThat(oldCurState1.token,     Equals(pdm->curState.token));
       AssertThat(oldCurState1.message,   Equals((char*)pdm->curState.message));
       AssertThat(pdm->curState.message, Is().Not().EqualTo((char*)testMessage));
       AssertThat(pdm->curState.message, Is().Not().EqualTo((char*)otherMessage));
       AssertThat(pdm->curState.message, Is().Not().EqualTo((char*)anotherMessage));
       AssertThat(pdm->curState.message, Equals(otherMessage));
-      AssertThat(pdm->curState.tokens, Is().Not().EqualTo((void*)0));
+      AssertThat(pdm->curState.token,  Is().Not().EqualTo((void*)0));
       AssertThat(pdm->curState.stream, Is().Not().EqualTo((void*)0));
       AssertThat(pdm->curState.iterator, Is().Not().EqualTo((void*)0));
       AssertThat(pdm->curState.dState, Is().Not().EqualTo(dState));
@@ -203,12 +199,12 @@ go_bandit([](){
       AssertThat(oldCurState0.iterator,  Equals(pdm->curState.iterator));
       AssertThat(oldCurState0.dState,    Equals(pdm->curState.dState));
       AssertThat(oldCurState0.stream,    Equals(pdm->curState.stream));
-      AssertThat(oldCurState0.tokens,    Equals(pdm->curState.tokens));
+      AssertThat(oldCurState0.token,     Equals(pdm->curState.token));
       AssertThat(oldCurState0.message,   Equals((char*)pdm->curState.message));
       AssertThat(pdm->curState.message, Is().Not().EqualTo((char*)testMessage));
       AssertThat(pdm->curState.message, Is().Not().EqualTo((char*)otherMessage));
       AssertThat(pdm->curState.message, Equals(testMessage));
-      AssertThat(pdm->curState.tokens, Is().Not().EqualTo((void*)0));
+      AssertThat(pdm->curState.token,  Is().Not().EqualTo((void*)0));
       AssertThat(pdm->curState.stream, Is().Not().EqualTo((void*)0));
       AssertThat(pdm->curState.iterator, Is().Not().EqualTo((void*)0));
       AssertThat(pdm->curState.dState, Is().Not().EqualTo(dState));

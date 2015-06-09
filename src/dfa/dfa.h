@@ -30,7 +30,7 @@ namespace DeterministicFiniteAutomaton {
     public:
 
       /// \brief Create a DFA object corresponding to a given NFA.
-      DFA(NFA *anNFA, ParseTrees *aParseTree);
+      DFA(NFA *anNFA);
 
       /// \brief Destroy the DFA object.
       ~DFA(void);
@@ -118,19 +118,9 @@ namespace DeterministicFiniteAutomaton {
         return allocator;
       }
 
-      /// \brief Return the ParseTrees allocator associated with this
-      /// DFA.
-      ParseTrees *getParseTrees(void) {
-        return parseTrees;
-      }
-
     private:
       /// \brief The NFA associated to this DFA.
       NFA *nfa;
-
-      /// \brief The forest of parse trees from which all tokens
-      /// will be allocated.
-      ParseTrees *parseTrees;
 
       /// \brief The DFA::StateAllocator for this DFA interpretor.
       StateAllocator *allocator;

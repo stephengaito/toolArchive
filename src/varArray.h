@@ -37,14 +37,19 @@ class VarArray {
       arraySize = 0;
     }
 
+    void copyFrom(VarArray &other) {
+      numItems  = other.numItems;
+      arraySize = other.arraySize;
+      if (itemArray) free(itemArray);
+      itemArray = (ItemT*)calloc(arraySize, sizeof(ItemT));
+      if (itemArray && other.itemArray) {
+        memcpy(itemArray, other.itemArray, arraySize*sizeof(ItemT));
+      }
+    }
+
     VarArray *clone(void) {
       VarArray *result  = new VarArray();
-      result->numItems  = numItems;
-      result->arraySize = arraySize;
-      result->itemArray = (ItemT*)calloc(result->arraySize, sizeof(ItemT));
-      if (itemArray && result->itemArray) {
-        memcpy(result->itemArray, itemArray, arraySize*sizeof(ItemT));
-      }
+      result->copyFrom(this);
       return result;
     }
 

@@ -23,15 +23,15 @@
       /// If keepStreamTokens is true, then the popped stream/tokesn
       /// are replaced by the pre-popped stream/tokens (keeping the
       /// currently parsed location and collection of tokens).
-      void pop(PDMTracer *pdmTracer, bool keepStreamTokens = false) {
-        curState.copyFrom(stack.popItem(), keepStreamTokens, true);// CLEAR OLD STATE
-        if (pdmTracer) pdmTracer->pop(keepStreamTokens);
+      void pop(PDMTracer *pdmTracer, bool keepStreamToken = false) {
+        curState.copyFrom(stack.popItem(), keepStreamToken, true);// CLEAR OLD STATE
+        if (pdmTracer) pdmTracer->pop(keepStreamToken);
       }
 
       /// \brief Pop the current automata state off the top of the
       /// push down automata's state stack, *keeping* the current
       /// stream location.
-      void popKeepStreamTokens(PDMTracer *pdmTracer) {
+      void popKeepStreamToken(PDMTracer *pdmTracer) {
         pop(pdmTracer, true);
       }
 
@@ -62,17 +62,6 @@
              dfa->getDFAStartState(nfaState->matchData.r),
              restartMessage);
         if (pdmTracer) pdmTracer->restart(nfaState);
-      }
-
-      ParseTrees::Token *wrapUpToken(NFA::State *tokenNFAState) {
-        ParseTrees::Token *token = NULL;
-        if (!ParseTrees::ignoreToken(tokenNFAState->matchData.t)) {
-          token = parseTrees->allocateNewToken(tokenNFAState->matchData.t,
-            curState.getStream()->getStart(),
-            curState.getStream()->getNumberOfBytesRead(),
-            curState.getTokens());
-        }
-        return token;
       }
 
 #endif

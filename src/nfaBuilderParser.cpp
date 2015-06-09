@@ -33,13 +33,13 @@
 void NFABuilder::compileRegularExpressionForTokenId(
   const char *startStateName,
   const char *aUtf8RegExp,
-  ParseTrees::TokenId aTokenId,
+  Token::TokenId aTokenId,
   bool ignoreToken)
   throw (LexerException) {
 
   // wrap the ignoreToken boolean into the lowest order bit of
   // aTokenId for subsequent retrieval
-  ParseTrees::TokenId maxTokenId = (~0L)>>1;
+  Token::TokenId maxTokenId = (~0L)>>1;
   if (maxTokenId < aTokenId) throw LexerException("TokenId too large");
 //  aTokenId <<= 1;
 //  if (ignoreToken) aTokenId |= 1;

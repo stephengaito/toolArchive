@@ -49,12 +49,11 @@ go_bandit([](){
                               PDMTracer::PDMStack |
                               PDMTracer::PDMTokens |
                               PDMTracer::PDMState);
-      ParseTrees::Token *aToken =
-        parser->parseFromUsing("start", someChars, pdmTracer);
+      Token *aToken = parser->parseFromUsing("start", someChars, pdmTracer);
       AssertThat(aToken, Is().Not().EqualTo((void*)0));
-      ParseTrees::printTokenOn(aToken, stdout);
+      aToken->printOn(stdout);
       AssertThat(aToken->wrappedId, Equals(8)); // tokenId:Text ignored:false
-      AssertThat(aToken->numTokens, Equals(9));
+      AssertThat(aToken->tokens.getNumItems(), Equals(9));
       AssertThat(aToken->textStart, Equals(cString));
       AssertThat(aToken->textLength,
         Equals(someChars->getNumberOfBytesRead()));

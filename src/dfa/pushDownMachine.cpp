@@ -7,10 +7,10 @@
 
 using namespace DeterministicFiniteAutomaton;
 
-ParseTrees::Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
-                                                 Utf8Chars *charStream,
-                                                 PDMTracer *pdmTracer,
-                                                 bool       partialOK) {
+Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
+                                     Utf8Chars *charStream,
+                                     PDMTracer *pdmTracer,
+                                     bool       partialOK) {
 
   if (pdmTracer) pdmTracer->setPDM(this);
 
@@ -52,16 +52,17 @@ ParseTrees::Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
       if (!curState.getStream()->atEnd()) curState.getStream()->backup();
       if (pdmTracer) pdmTracer->match(tokenNFAState);
       // we have a match... wrap up this token
-      ParseTrees::Token *token = wrapUpToken(tokenNFAState);
+      curState.setTokenId(tokenNFAState->matchData.t);
+      curState.setTokenText();
 
       if (stack.getNumItems()) {
         // we have successfully recoginized a sub state
         // now pop the stack keeping the current stream and restart
         swap(pdmTracer);
-        popKeepStreamTokens(pdmTracer); // ignore this backtrack state
-        popKeepStreamTokens(pdmTracer); // use the continue state
+        popKeepStreamToken(pdmTracer); // ignore this backtrack state
+        popKeepStreamToken(pdmTracer); // use the continue state
         if (pdmTracer) pdmTracer->reportDFAState();
-        if (token) curState.getTokens()->pushItem(token);
+        //curState.getTokens()->pushItem(token);
         goto restart;
       }
 
@@ -72,6 +73,7 @@ ParseTrees::Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
         // we are at the end of the stream
         // (or we are happy with a partial match)...
         // so return this token and we are done!
+        Token *token = curState.releaseToken();
         curState.clear();
         return token;
       }

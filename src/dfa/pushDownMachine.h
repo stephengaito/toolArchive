@@ -17,25 +17,24 @@ namespace DeterministicFiniteAutomaton {
         dfa        = aDFA;
         nfa        = dfa->getNFA();
         allocator  = dfa->getStateAllocator();
-        parseTrees = dfa->getParseTrees();
       }
 
       /// \brief Run the PushDownAutomata from any the given start
       /// state using the Utf8Chars stream provided.
-      ParseTrees::Token *runFromUsing(const char *startStateName,
-                                      Utf8Chars *charStream,
-                                      PDMTracer *pdmTracer = NULL,
-                                      bool       partialOk = false) {
+      Token *runFromUsing(const char *startStateName,
+                          Utf8Chars *charStream,
+                          PDMTracer *pdmTracer = NULL,
+                          bool       partialOk = false) {
         return runFromUsing(nfa->findStartStateId(startStateName),
                             charStream, pdmTracer, partialOk);
       }
 
       /// \brief Run the PushDownAutomata from any the given start
       /// state using the Utf8Chars stream provided.
-      ParseTrees::Token *runFromUsing(NFA::StartStateId startStateId,
-                                      Utf8Chars *charStream,
-                                      PDMTracer *pdmTracer = NULL,
-                                      bool       partialOk = false);
+      Token *runFromUsing(NFA::StartStateId startStateId,
+                          Utf8Chars *charStream,
+                          PDMTracer *pdmTracer = NULL,
+                          bool       partialOk = false);
 
     private:
 
@@ -50,10 +49,6 @@ namespace DeterministicFiniteAutomaton {
       /// \brief The DFA::State allocator associated with this
       /// DFA.
       StateAllocator *allocator;
-
-      /// \brief The ParseTrees allocator associated with this
-      /// DfA.
-      ParseTrees *parseTrees;
 
       /// \brief The current state of this PushDownAutomata.
       AutomataState curState;

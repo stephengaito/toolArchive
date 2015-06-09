@@ -4,7 +4,7 @@
 #include <exception>
 #include "blockAllocator.h"
 #include "classifier.h"
-#include "parseTrees.h"
+#include "tokens.h"
 
 /// \brief LexerExceptions provide simple messages detailing why the
 /// Lexer can not proceed.
@@ -78,7 +78,7 @@ class NFA {
         /// class of UTF8 characters using a given Classifier.
         Classifier::classSet_t s;
         /// \brief The token ID associated to a given matched (sub)NFA.
-        ParseTrees::TokenId  t;
+        Token::TokenId  t;
         /// \brief The StartState ID associated to a given (recursive)
         /// push down state.
         StartStateId r; // (re)startState
