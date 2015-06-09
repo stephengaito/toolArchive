@@ -32,6 +32,7 @@ namespace DeterministicFiniteAutomaton {
 
       void update(State *aDState,
                   const char *aMessage,
+                  bool cloneToken    = false,
                   bool clearOldState = false) {
         ASSERT(allocator);
         ASSERT(aDState);
@@ -46,7 +47,11 @@ namespace DeterministicFiniteAutomaton {
         if (clearOldState && oldStream) delete oldStream;
 
         Token *oldToken = token;
-        if (token) token = token->deepClone();
+        if (cloneToken) {
+          if (token) token = token->deepClone();
+        } else {
+          token = new Token();
+        }
         if (clearOldState && oldToken) delete oldToken;
 
         if (clearOldState && message) free((void*)message);
@@ -54,12 +59,12 @@ namespace DeterministicFiniteAutomaton {
       }
 
       void copyFrom(const AutomataState &other,
-                    bool keepStreamToken = false,
+                    bool keepStream = false,
                     bool clearOldState = true) {
         ASSERT(allocator || other.allocator);
         if (!allocator) allocator = other.allocator;
 
-        if (!keepStreamToken) {
+        if (!keepStream) {
           if (clearOldState && stream) delete stream;
           stream   = other.stream;
         }
@@ -70,10 +75,8 @@ namespace DeterministicFiniteAutomaton {
         if (clearOldState && dState) allocator->unallocateState(dState);
         dState   = other.dState;
 
-        if (!keepStreamToken) {
-          if (clearOldState && token) delete token;
-          token = other.token;
-        }
+        if (clearOldState && token) delete token;
+         token = other.token;
 
         if (clearOldState && message) free((void*)message);
         message = other.message;
@@ -120,6 +123,10 @@ namespace DeterministicFiniteAutomaton {
 
       void setTokenText(void) {
         token->setText(stream->getStart(), stream->getNumberOfBytesRead());
+      }
+
+      void addChildToken(Token *childToken) {
+        token->addChildToken(childToken);
       }
 
       Token *releaseToken(void) {

@@ -119,14 +119,14 @@ go_bandit([](){
       AssertThat(newAutomataState.iterator, Equals((void*)0));
       AssertThat(newAutomataState.dState, Equals((void*)0));
       AssertThat(newAutomataState.allocator, Equals((void*)0));
-      newAutomataState.copyFrom(automataState, true);
+      newAutomataState.copyFrom(automataState, true, true);
       AssertThat(newAutomataState.message, Equals((char*)automataState.message));
-      AssertThat(newAutomataState.token,  Equals((void*)0));
+      AssertThat(newAutomataState.token,  Is().Not().EqualTo((void*)0));
       AssertThat(newAutomataState.stream, Equals((void*)0));
       AssertThat(newAutomataState.iterator, Equals(automataState.iterator));
       AssertThat(newAutomataState.dState, Equals(automataState.dState));
       AssertThat(newAutomataState.allocator, Equals(allocator));
-      newAutomataState.copyFrom(automataState, false);
+      newAutomataState.copyFrom(automataState, false, false);
       AssertThat(newAutomataState.message, Equals((char*)automataState.message));
       AssertThat(newAutomataState.token,  Equals(automataState.token));
       AssertThat(newAutomataState.stream, Equals(automataState.stream));

@@ -53,7 +53,7 @@ go_bandit([](){
       AssertThat(aToken, Is().Not().EqualTo((void*)0));
       aToken->printOn(stdout);
       AssertThat(aToken->tokenId, Equals(4));
-      AssertThat(aToken->tokens.getNumItems(), Equals(9));
+      AssertThat(aToken->tokens.getNumItems(), Equals(12));
       AssertThat(aToken->textStart, Equals(cString));
       AssertThat(aToken->textLength,
         Equals(someChars->getNumberOfBytesRead()));

@@ -58,11 +58,12 @@ Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
       if (stack.getNumItems()) {
         // we have successfully recoginized a sub state
         // now pop the stack keeping the current stream and restart
+        Token *childToken = curState.releaseToken();
         swap(pdmTracer);
-        popKeepStreamToken(pdmTracer); // ignore this backtrack state
-        popKeepStreamToken(pdmTracer); // use the continue state
+        popKeepStream(pdmTracer); // ignore this backtrack state
+        popKeepStream(pdmTracer); // use the continue state
         if (pdmTracer) pdmTracer->reportDFAState();
-        //curState.getTokens()->pushItem(token);
+        curState.addChildToken(childToken);
         goto restart;
       }
 
