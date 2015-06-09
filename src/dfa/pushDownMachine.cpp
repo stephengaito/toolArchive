@@ -52,7 +52,7 @@ Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
       if (!curState.getStream()->atEnd()) curState.getStream()->backup();
       if (pdmTracer) pdmTracer->match(tokenNFAState);
       // we have a match... wrap up this token
-      curState.setTokenId(tokenNFAState->matchData.t);
+      curState.setTokenId(Token::unWrapTokenId(tokenNFAState->matchData.t));
       curState.setTokenText();
 
       if (stack.getNumItems()) {

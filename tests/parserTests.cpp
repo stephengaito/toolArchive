@@ -52,7 +52,7 @@ go_bandit([](){
       Token *aToken = parser->parseFromUsing("start", someChars, pdmTracer);
       AssertThat(aToken, Is().Not().EqualTo((void*)0));
       aToken->printOn(stdout);
-      AssertThat(aToken->wrappedId, Equals(8)); // tokenId:Text ignored:false
+      AssertThat(aToken->tokenId, Equals(4));
       AssertThat(aToken->tokens.getNumItems(), Equals(9));
       AssertThat(aToken->textStart, Equals(cString));
       AssertThat(aToken->textLength,

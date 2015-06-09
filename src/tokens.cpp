@@ -31,7 +31,7 @@ void Token::printOn(FILE *outFile, size_t indent) {
   if (20 < indent) indent = 20;
   const char *text = strndup(textStart, textLength);
   fprintf(outFile, "%s%lu(%lu) [%s]\n",
-          indents[indent], unwrapToken(wrappedId),
+          indents[indent], tokenId,
           tokens.getNumItems(), text);
   free((void*)text);
   Token nullToken;

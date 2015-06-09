@@ -22,25 +22,10 @@ class Token {
     /// \brief The token id wrapped with the ignore bit.
     typedef value_t WrappedTokenId;
 
-    typedef VarArray<Token> TokenArray;
-
-    /// \brief The Wrapped Token ID of a given token.
-    WrappedTokenId wrappedId;
-
-    /// \brief The start of the stream from which this token was parsed.
-    const char *textStart;
-
-    /// \brief The length of text from which this token was parsed.
-    size_t      textLength;
-
-    /// \brief The number of child tokens which make up this token.
-    TokenArray tokens;
-
-    Token(void) {
-      wrappedId  = 0;
+    Token(void) : tokens() {
+      tokenId    = 0;
       textStart  = NULL;
       textLength = 0;
-      // tokens will be implicitly initialized from VarArray()
     }
 
     /// \brief Destroy the forest of ParseTrees.
@@ -51,18 +36,36 @@ class Token {
     /// will potentially be freed as well (depending upon the explicit
     /// ownership registered with each Utf8Chars instance).
     ~Token(void) {
-      wrappedId  = 0;
+      tokenId    = 0;
       textStart  = NULL;
       textLength = 0;
-      // tokens will be implicilty deleted by ~VarArray();
+      tokens.~TokenArray();
      }
 
-    Token *clone(void) {
+//    void shallowCopyFrom(const Token &other) {
+//      tokenId    = other.tokenId;
+//      textStart  = other.textStart;
+//      textLength = other.textLength;
+//      tokens.shallowCopyFrom(other.tokens);
+//    }
+
+//    Token *shallowClone(void) {
+//      Token *token = new Token();
+//      token->shallowCopyFrom(*this);
+//      return token;
+//    }
+
+    void deepCopyFrom(const Token &other) {
+      Token nullToken;
+      tokenId    = other.tokenId;
+      textStart  = other.textStart;
+      textLength = other.textLength;
+      tokens.deepCopyFrom(other.tokens);
+    }
+
+    Token *deepClone(void) {
       Token *token = new Token();
-      token->wrappedId  = wrappedId;
-      token->textStart  = textStart;
-      token->textLength = textLength;
-      token->tokens.copyFrom(tokens);
+      token->deepCopyFrom(*this);
       return token;
     }
 
@@ -72,22 +75,51 @@ class Token {
     }
 
     void setId(TokenId aTokenId) {
-      wrappedId = aTokenId; // TODO WRAP THIS?
+      tokenId = aTokenId;
     }
 
-    static bool ignoreToken(WrappedTokenId wrappedTokenId) {
-      return wrappedTokenId & 0x1;
+    void addChildToken(Token *childToken) {
+      tokens.pushItem(*childToken);
     }
 
-    static TokenId unwrapToken(WrappedTokenId wrappedTokenId) {
-      return wrappedTokenId >> 1;
+    static WrappedTokenId wrapTokenId(TokenId aTokenId, bool ignoreToken) {
+      return (( aTokenId << 1 ) | ( ignoreToken ? 0x1 : 0x0));
     }
 
-    static WrappedTokenId wrapToken(TokenId tokenId, bool ignoreToken) {
-      return (( tokenId << 1 ) | ( ignoreToken ? 0x1 : 0x0));
+    static bool ignoreToken(WrappedTokenId wrappedId) {
+      return wrappedId & 0x1;
+    }
+
+    static TokenId unWrapTokenId(WrappedTokenId wrappedId) {
+      return wrappedId >> 1;
     }
 
     void printOn(FILE *outFile, size_t indent = 0);
+
+  private:
+
+    void operator=(const Token &other) {
+      tokenId    = other.tokenId;
+      textStart  = other.textStart;
+      textLength = other.textLength;
+      tokens     = other.tokens;
+    }
+
+    /// \brief The Wrapped Token ID of a given token.
+    TokenId tokenId;
+
+    /// \brief The start of the stream from which this token was parsed.
+    const char *textStart;
+
+    /// \brief The length of text from which this token was parsed.
+    size_t      textLength;
+
+    typedef VarArray<Token> TokenArray;
+
+    /// \brief The number of child tokens which make up this token.
+    TokenArray tokens;
+
+    friend class VarArray<Token>;
 };
 
 #endif

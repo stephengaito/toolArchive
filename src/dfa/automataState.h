@@ -46,7 +46,7 @@ namespace DeterministicFiniteAutomaton {
         if (clearOldState && oldStream) delete oldStream;
 
         Token *oldToken = token;
-        if (token) token = token->clone();
+        if (token) token = token->deepClone();
         if (clearOldState && oldToken) delete oldToken;
 
         if (clearOldState && message) free((void*)message);

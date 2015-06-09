@@ -117,7 +117,7 @@ NFA::State *NFABuilder::match(Token::TokenId aTokenId,
   Frag e = pop();
   NFA::MatchData tokenData;
   tokenData.c.u = 0;
-  tokenData.t = Token::wrapToken(aTokenId, ignoreToken);
+  tokenData.t = Token::wrapTokenId(aTokenId, ignoreToken);
   patch(e.out,
     nfa->addState(NFA::Token, tokenData, NULL, NULL, message));
   return e.start;

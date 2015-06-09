@@ -301,7 +301,7 @@ go_bandit([](){
         new PDMTracer("Parse and tokenize 'simple'", NULL);
       Token *aToken = pdm->runFromUsing("start", stream0, pdmTracer);
       AssertThat(aToken, Is().Not().EqualTo((void*)0));
-      AssertThat(aToken->wrappedId, Is().EqualTo(2)); // token:1 ignore:false
+      AssertThat(aToken->tokenId,   Is().EqualTo(1));
       AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
       AssertThat(aToken->textStart, Equals(stream0->getStart()));
       AssertThat(aToken->textLength, Is().Not().EqualTo(0));
@@ -350,7 +350,7 @@ go_bandit([](){
       AssertThat(aToken->textLength, Is().Not().EqualTo(0));
       AssertThat(aToken->textLength, Equals(6));
       AssertThat(aToken->tokens.getNumItems(), Equals(0));
-      AssertThat(aToken->wrappedId, Is().EqualTo(2)); // token:1 ignore:false
+      AssertThat(aToken->tokenId, Is().EqualTo(1));
       Utf8Chars *stream1 = new Utf8Chars("notSoSimple");
       pdmTracer =
 //        new PDMTracer("Parse and tokenize 'notSoSimple'", stdout);
@@ -362,7 +362,7 @@ go_bandit([](){
       AssertThat(aToken->textLength, Is().Not().EqualTo(0));
       AssertThat(aToken->textLength, Equals(11));
       AssertThat(aToken->tokens.getNumItems(), Equals(0));
-      AssertThat(aToken->wrappedId, Is().EqualTo(2)); // token:1 ignore:false
+      AssertThat(aToken->tokenId, Is().EqualTo(1));
       delete dfa;
       delete nfa;
       delete classifier;
@@ -393,7 +393,7 @@ go_bandit([](){
       AssertThat(aToken->textLength, Is().Not().EqualTo(0));
       AssertThat(aToken->textLength, Equals(22));
       AssertThat(aToken->tokens.getNumItems(), Equals(0));
-      AssertThat(aToken->wrappedId, Is().EqualTo(2)); //token:1 ignore:false
+      AssertThat(aToken->tokenId, Is().EqualTo(1));
       delete dfa;
       delete nfa;
       delete classifier;
@@ -429,7 +429,7 @@ go_bandit([](){
       AssertThat(aToken->textLength, Is().Not().EqualTo(0));
       AssertThat(aToken->textLength, Equals(22));
       AssertThat(aToken->tokens.getNumItems(), Equals(0));
-      AssertThat(aToken->wrappedId, Is().EqualTo(4)); //token:2 ignore:false
+      AssertThat(aToken->tokenId, Is().EqualTo(2));
       Utf8Chars *stream1 = new Utf8Chars("   sillysomeNonWhiteSpace");
       pdmTracer =
 //        new PDMTracer("Parse and tokenize '   sillysomeNonWhiteSpace'", stdout);
@@ -441,7 +441,7 @@ go_bandit([](){
       AssertThat(aToken->textLength, Is().Not().EqualTo(0));
       AssertThat(aToken->textLength, Equals(3));
       AssertThat(aToken->tokens.getNumItems(), Equals(0));
-      AssertThat(aToken->wrappedId, Is().EqualTo(2)); //token:1 ignore:false
+      AssertThat(aToken->tokenId, Is().EqualTo(1));
       delete dfa;
       delete nfa;
       delete classifier;

@@ -22,7 +22,11 @@ go_bandit([](){
 
   /// \brief We test the correctness of the C-based BlockAllocator structure.
   ///
+  /// NOTE: deepCopy and deepClone are both tested in TokensTests since
+  /// Tokens are the only (current) example which has nested VarArrays
   describe("VarArray", [](){
+
+
 
     it("should be created with correct values when instantiated with int", [](){
       VarArray<int> aVarArray;

@@ -37,7 +37,7 @@ class VarArray {
       arraySize = 0;
     }
 
-    void copyFrom(VarArray &other) {
+    void shallowCopyFrom(const VarArray &other) {
       numItems  = other.numItems;
       arraySize = other.arraySize;
       if (itemArray) free(itemArray);
@@ -47,9 +47,28 @@ class VarArray {
       }
     }
 
-    VarArray *clone(void) {
+    VarArray *shallowClone(void) {
       VarArray *result  = new VarArray();
-      result->copyFrom(this);
+      result->shallowCopyFrom(this);
+      return result;
+    }
+
+    void deepCopyFrom(const VarArray &other) {
+      numItems  = other.numItems;
+      arraySize = other.arraySize;
+      if (itemArray) free(itemArray);
+      itemArray = NULL;
+      if (arraySize) {
+        itemArray = (ItemT*)calloc(arraySize, sizeof(ItemT));
+        for (size_t i = 0; i < numItems; i++) {
+          itemArray[i].deepCopyFrom(other.itemArray[i]);
+        }
+      }
+    }
+
+    VarArray *deepClone(void) {
+      VarArray *result  = new VarArray();
+      result->deepCopyFrom(this);
       return result;
     }
 
