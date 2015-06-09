@@ -78,8 +78,8 @@ void Utf8Chars::restart(void) {
 // [UTF-8::Description](http://en.wikipedia.org/wiki/UTF-8#Description)
 //
 void Utf8Chars::backup(void) {
-  // ensure we have not walked off the end of the string
-  if (lastByte < nextByte) nextByte = lastByte;
+  // In case we are beyond the end... ensure we move back to the end
+  if (lastByte <= nextByte) nextByte = lastByte;
   while(true) {
     // backup one byte
     nextByte--;
@@ -105,7 +105,7 @@ utf8Char_t Utf8Chars::nextUtf8Char(void) {
 
   // check to see if we are in the string
   // if not return the null character
-  if (lastByte < nextByte) return nullChar;
+  if (lastByte <= nextByte) return nullChar;
 
   utf8Char_t result;
   result.u = 0;

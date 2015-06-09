@@ -45,11 +45,13 @@ Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
     }
 
     // there is no suitable nextDFAState given the current character
+    // so push that character back (unless the nextChar is NULL).
+    if (nextChar.c[0]) curState.getStream()->backup();
+
     // does the current DFAState contain a token(match) NFA::State?
     NFA::State *tokenNFAState =
         curState.stateMatchesToken(dfa->getTokensState());
     if (tokenNFAState && (tokenNFAState->matchType == NFA::Token)) {
-      if (!curState.getStream()->atEnd()) curState.getStream()->backup();
       if (pdmTracer) pdmTracer->match(tokenNFAState);
       // we have a match... wrap up this token
       curState.setTokenId(Token::unWrapTokenId(tokenNFAState->matchData.t));

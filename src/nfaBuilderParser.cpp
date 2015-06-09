@@ -129,7 +129,10 @@ void NFABuilder::compileRegularExpressionForTokenId(
         if (className[0] == 0) throw LexerException("mallformed classification specifier");
         classSet = nfa->findClassSet(className);
         // negate the class if needed
-        if (classNegated) classSet = ~classSet;
+        if (classNegated) {
+          classSet = ~classSet;
+          className--; // put the initial ! back for debugging purposes
+        }
         // now repeat the natom manipulate done for checkCharacter
         if (natom > 1) {
           --natom;
