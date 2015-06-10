@@ -65,6 +65,7 @@ Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
         popIgnore(pdmTracer); // ignore this backtrack state
         popKeepStreamPosition(pdmTracer); // use the continue state
         if (pdmTracer) pdmTracer->reportDFAState();
+        if (Token::ignoreToken(tokenNFAState->matchData.t)) goto restart;
         curState.addChildToken(childToken);
         goto restart;
       }

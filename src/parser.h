@@ -58,12 +58,22 @@ class Parser {
     /// \brief Add a Regular-Expression/TokenId to the Parser.
     ///
     /// No addition is made if the Parser has already been compiled.
-    void addToken(const char *startStateName,
-                  const char *regExp, TokenId aTokenId) {
+    void addRule(const char *startStateName,
+                 const char *regExp,
+                 TokenId aTokenId,
+                 bool ignoreToken = false) {
       if (!dfa) {
         nfaBuilder->compileRegularExpressionForTokenId(startStateName,
-                                                       regExp, aTokenId);
+                                                       regExp,
+                                                       aTokenId,
+                                                       ignoreToken);
       }
+    }
+
+    void addRuleIgnoreToken(const char *startStateName,
+                            const char *regExp,
+                            TokenId aTokenId) {
+      addRule(startStateName, regExp, aTokenId, true);
     }
 
     /// \brief Compile the Regular-Expression/TokenId information.
