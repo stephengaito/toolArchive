@@ -49,14 +49,54 @@ go_bandit([](){
                               PDMTracer::PDMStack |
                               PDMTracer::PDMTokens |
                               PDMTracer::PDMState);
-      Token *aToken = parser->parseFromUsing("start", someChars, pdmTracer);
+//      Token *aToken = parser->parseFromUsing("start", someChars, pdmTracer);
+      Token *aToken = parser->parseFromUsing("start", someChars, NULL);
       AssertThat(aToken, Is().Not().EqualTo((void*)0));
-      aToken->printOn(stdout);
+//      aToken->printOn(stdout);
       AssertThat(aToken->tokenId, Equals(4));
-      AssertThat(aToken->tokens.getNumItems(), Equals(12));
+      AssertThat(aToken->tokens.getNumItems(), Equals(13));
       AssertThat(aToken->textStart, Equals(cString));
       AssertThat(aToken->textLength,
-        Equals(someChars->getNumberOfBytesRead()));
+        Equals(someChars->getNumberOfBytesToRead()));
+      AssertThat(aToken->tokens.itemArray[0].tokenId, Equals(1));
+      AssertThat(aToken->tokens.itemArray[0].textStart[0], Equals(' '));
+      AssertThat(aToken->tokens.itemArray[0].tokens.numItems, Equals(0));
+      AssertThat(aToken->tokens.itemArray[1].tokenId, Equals(2));
+      AssertThat(aToken->tokens.itemArray[1].textStart[0], Equals('i'));
+      AssertThat(aToken->tokens.itemArray[1].tokens.numItems, Equals(0));
+      AssertThat(aToken->tokens.itemArray[2].tokenId, Equals(1));
+      AssertThat(aToken->tokens.itemArray[2].textStart[0], Equals(' '));
+      AssertThat(aToken->tokens.itemArray[2].tokens.numItems, Equals(0));
+      AssertThat(aToken->tokens.itemArray[3].tokenId, Equals(2));
+      AssertThat(aToken->tokens.itemArray[3].textStart[0], Equals('A'));
+      AssertThat(aToken->tokens.itemArray[3].tokens.numItems, Equals(0));
+      AssertThat(aToken->tokens.itemArray[4].tokenId, Equals(1));
+      AssertThat(aToken->tokens.itemArray[4].textStart[0], Equals(' '));
+      AssertThat(aToken->tokens.itemArray[4].tokens.numItems, Equals(0));
+      AssertThat(aToken->tokens.itemArray[5].tokenId, Equals(2));
+      AssertThat(aToken->tokens.itemArray[5].textStart[0], Equals('t'));
+      AssertThat(aToken->tokens.itemArray[5].tokens.numItems, Equals(0));
+      AssertThat(aToken->tokens.itemArray[6].tokenId, Equals(1));
+      AssertThat(aToken->tokens.itemArray[6].textStart[0], Equals(' '));
+      AssertThat(aToken->tokens.itemArray[6].tokens.numItems, Equals(0));
+      AssertThat(aToken->tokens.itemArray[7].tokenId, Equals(2));
+      AssertThat(aToken->tokens.itemArray[7].textStart[0], Equals('B'));
+      AssertThat(aToken->tokens.itemArray[7].tokens.numItems, Equals(0));
+      AssertThat(aToken->tokens.itemArray[8].tokenId, Equals(1));
+      AssertThat(aToken->tokens.itemArray[8].textStart[0], Equals(' '));
+      AssertThat(aToken->tokens.itemArray[8].tokens.numItems, Equals(0));
+      AssertThat(aToken->tokens.itemArray[9].tokenId, Equals(2));
+      AssertThat(aToken->tokens.itemArray[9].textStart[0], Equals('e'));
+      AssertThat(aToken->tokens.itemArray[9].tokens.numItems, Equals(0));
+      AssertThat(aToken->tokens.itemArray[10].tokenId, Equals(1));
+      AssertThat(aToken->tokens.itemArray[10].textStart[0], Equals(' '));
+      AssertThat(aToken->tokens.itemArray[10].tokens.numItems, Equals(0));
+      AssertThat(aToken->tokens.itemArray[11].tokenId, Equals(2));
+      AssertThat(aToken->tokens.itemArray[11].textStart[0], Equals('C'));
+      AssertThat(aToken->tokens.itemArray[11].tokens.numItems, Equals(0));
+      AssertThat(aToken->tokens.itemArray[12].tokenId, Equals(1));
+      AssertThat(aToken->tokens.itemArray[12].textStart[0], Equals(' '));
+      AssertThat(aToken->tokens.itemArray[12].tokens.numItems, Equals(0));
     });
 
   }); // describe parser

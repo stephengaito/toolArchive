@@ -122,7 +122,7 @@ go_bandit([](){
       newAutomataState.copyFrom(automataState, true, true);
       AssertThat(newAutomataState.message, Equals((char*)automataState.message));
       AssertThat(newAutomataState.token,  Is().Not().EqualTo((void*)0));
-      AssertThat(newAutomataState.stream, Equals((void*)0));
+      AssertThat(newAutomataState.stream, Equals(automataState.stream));
       AssertThat(newAutomataState.iterator, Equals(automataState.iterator));
       AssertThat(newAutomataState.dState, Equals(automataState.dState));
       AssertThat(newAutomataState.allocator, Equals(allocator));

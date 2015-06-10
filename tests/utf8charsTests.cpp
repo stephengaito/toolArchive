@@ -29,14 +29,16 @@ go_bandit([](){
     /// on a standard C-string.
     it("create a Utf8Chars buffer", [&](){
       Utf8Chars *someChars = new Utf8Chars("silly");
-      AssertThat(someChars,              Is().Not().EqualTo((Utf8Chars*)0));
-      AssertThat(someChars->nextByte,    Equals(someChars->utf8Chars));
-      AssertThat(someChars->ownsString,  Is().False());
+      AssertThat(someChars,                Is().Not().EqualTo((Utf8Chars*)0));
+      AssertThat(someChars->origUtf8Chars, Equals(someChars->utf8Chars));
+      AssertThat(someChars->nextByte,      Equals(someChars->utf8Chars));
+      AssertThat(someChars->ownsString,    Is().False());
       delete someChars;
       someChars = new Utf8Chars("silly", Utf8Chars::DoNotOwn);
-      AssertThat(someChars,              Is().Not().EqualTo((Utf8Chars*)0));
-      AssertThat(someChars->nextByte,    Is().EqualTo(someChars->utf8Chars));
-      AssertThat(someChars->ownsString,  Is().False());
+      AssertThat(someChars,                Is().Not().EqualTo((Utf8Chars*)0));
+      AssertThat(someChars->origUtf8Chars, Is().EqualTo(someChars->utf8Chars));
+      AssertThat(someChars->nextByte,      Is().EqualTo(someChars->utf8Chars));
+      AssertThat(someChars->ownsString,    Is().False());
       delete someChars;
     });
 
@@ -93,7 +95,6 @@ go_bandit([](){
       free(sill);
       delete someChars;
     });
-
 
     /// Confirm that Utf8Chars::codePoint2utf8Char handles provides the
     /// correct mapping from code points to utf8Chat_t types. In particular,
@@ -362,6 +363,38 @@ go_bandit([](){
       expectedChar = Utf8Chars::codePoint2utf8Char(0x20AC);
       AssertThat(someChars->nextUtf8Char().u, Is().EqualTo(expectedChar.u));
       delete someChars;
+    });
+
+    it("Should keep the origUtf8Chars when cloned", [](){
+      const char *cString = "some characters";
+      Utf8Chars *someChars = new Utf8Chars(cString);
+      AssertThat(someChars->origUtf8Chars, Equals((void*)cString));
+      someChars->nextUtf8Char();
+      AssertThat(someChars->origUtf8Chars, Equals((void*)cString));
+      someChars->nextUtf8Char();
+      AssertThat(someChars->origUtf8Chars, Equals((void*)cString));
+      Utf8Chars *clonedChars = someChars->clone(false);
+      AssertThat((void*)(clonedChars->origUtf8Chars),
+        Equals((void*)(someChars->origUtf8Chars)));
+      AssertThat((void*)(clonedChars->utf8Chars), Equals((void*)(cString)));
+      AssertThat(clonedChars->nextByte, Equals(someChars->nextByte));
+      delete clonedChars;
+      clonedChars = someChars->clone(true);
+      AssertThat((void*)(clonedChars->origUtf8Chars),
+        Equals((void*)(someChars->origUtf8Chars)));
+      AssertThat((void*)(clonedChars->utf8Chars), Equals((void*)(cString+2)));
+      AssertThat(clonedChars->utf8Chars, Equals(clonedChars->nextByte));
+      AssertThat(clonedChars->nextByte, Equals(someChars->nextByte));
+      //
+      // update position from the wrong clone should do nothing
+      //
+      clonedChars->updatePositionFrom(someChars);
+      AssertThat(clonedChars->nextByte, Equals(clonedChars->utf8Chars));
+      //
+      // update position the correct way around should change the nextByte
+      //
+      someChars->updatePositionFrom(clonedChars);
+      AssertThat(someChars->nextByte, Equals(clonedChars->nextByte));
     });
 
   }); // Utf8Chars buffer

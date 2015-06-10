@@ -64,8 +64,21 @@ class Utf8Chars {
 
     /// \brief Create a cloned copy of this Utf8Chars starting at
     /// the current location and *not* owning the underlying C-String.
-    Utf8Chars *clone(void) {
-      return new Utf8Chars(nextByte, DoNotOwn);
+    Utf8Chars *clone(bool subStream = false) {
+      Utf8Chars *result = new Utf8Chars(utf8Chars, DoNotOwn);
+      if (subStream) result->utf8Chars = nextByte;
+      result->nextByte = nextByte;
+      result->origUtf8Chars = origUtf8Chars;
+      return result;
+    }
+
+    void updatePositionFrom(Utf8Chars *otherChars) {
+      // return if otherChars is not a clone of this
+      if (!otherChars)                                       return;
+      if (origUtf8Chars        != otherChars->origUtf8Chars) return;
+      if (lastByte             != otherChars->lastByte)      return;
+      if (otherChars->nextByte <  utf8Chars)                 return;
+      nextByte = otherChars->nextByte;
     }
 
     /// \brief Returns true if the last character was the last one
@@ -127,6 +140,11 @@ class Utf8Chars {
       return strndup(utf8Chars, getNumberOfBytesRead());
     }
 
+    size_t getNumberOfBytesToRead(void) {
+      if (lastByte <= nextByte) nextByte = lastByte;
+      return lastByte - nextByte;
+    }
+
     /// \brief Returns a (strndup'ed) copy of the stream which has not
     /// yet been read.
     char *getCopyOfTextToRead(size_t numBytesToCopy = 30) {
@@ -149,7 +167,10 @@ class Utf8Chars {
     /// \brief Whether or not this C-string is owned by this object
     bool ownsString;
 
-    /// \brief The C-string of UTF8 characters.
+    /// \brief The original C-string of UTF8 characters.
+    const char* origUtf8Chars;
+
+    /// \brief The current (sub)C-string of UTF8 characters.
     const char* utf8Chars;
 
     /// \brief The last byte in the C-string representing this string of

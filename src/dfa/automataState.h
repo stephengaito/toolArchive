@@ -43,7 +43,7 @@ namespace DeterministicFiniteAutomaton {
         if (dState) iterator = allocator->getNewIteratorOn(dState);
 
         Utf8Chars *oldStream = stream;
-        if (stream) stream   = stream->clone();
+        if (stream) stream   = stream->clone(!cloneToken);
         if (clearOldState && oldStream) delete oldStream;
 
         Token *oldToken = token;
@@ -59,15 +59,16 @@ namespace DeterministicFiniteAutomaton {
       }
 
       void copyFrom(const AutomataState &other,
-                    bool keepStream = false,
+                    bool keepStreamPosition = false,
                     bool clearOldState = true) {
         ASSERT(allocator || other.allocator);
         if (!allocator) allocator = other.allocator;
 
-        if (!keepStream) {
-          if (clearOldState && stream) delete stream;
-          stream   = other.stream;
+        if (keepStreamPosition && other.stream) {
+          other.stream->updatePositionFrom(stream);
         }
+        if (clearOldState && stream) delete stream;
+        stream   = other.stream;
 
         if (clearOldState && iterator) delete iterator;
         iterator = other.iterator;

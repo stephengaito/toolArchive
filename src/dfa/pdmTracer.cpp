@@ -87,17 +87,17 @@ void PDMTracer::reportTokens(size_t indent) {
   fprintf(traceFile, "-------------------------------------\n");
 }
 
-void PDMTracer::push(const char *message, size_t indent) {
+void PDMTracer::push(const char *message0, const char *message1,
+                     size_t indent) {
   if (!traceFile || !trace(StackPushes)) return;
-  fprintf(traceFile, "%spush::%s(%s) \n",
-          indents[indent], pdm->curState.message, message);
+  fprintf(traceFile, "%spush::%s(%s)<%s> \n",
+          indents[indent], pdm->curState.message, message0, message1);
 }
 
-void PDMTracer::pop(bool keepStream, size_t indent) {
+void PDMTracer::pop(const char *message, size_t indent) {
   if (!traceFile || !trace(StackPops)) return;
-  fprintf(traceFile, "%spop::%s (%s stream)\n", indents[indent],
-          pdm->curState.message,
-          (keepStream ? "keep" : "pop"));
+  fprintf(traceFile, "%spop::%s (%s)\n", indents[indent],
+          pdm->curState.message, message);
 }
 
 void PDMTracer::swap(size_t indent) {

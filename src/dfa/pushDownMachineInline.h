@@ -7,7 +7,8 @@
                 State *aDState,
                 const char *message,
                 bool cloneToken = false) {
-        if (pdmTracer) pdmTracer->push(message);
+        if (pdmTracer) pdmTracer->push(message,
+          (cloneToken ? "clone Token / full stream" : "new Token / sub stream"));
         stack.pushItem(curState);
         curState.update(aDState, message, cloneToken, false); // DO NOT CLEAR OLD STATE
       }
@@ -36,21 +37,29 @@
         stack.swapTopTwoItems();
       }
 
+      void popIgnore(PDMTracer *pdmTracer) {
+        stack.popItem();
+        if (pdmTracer) pdmTracer->pop("IGNORE");
+      }
+
       /// \brief Pop the current automata state off of the top
       /// of the push down automata's state stack.
       ///
       /// If keepStream is true, then the popped stream
       /// are replaced by the pre-popped stream (keeping the
       /// currently parsed location).
-      void pop(PDMTracer *pdmTracer, bool keepStream = false) {
-        curState.copyFrom(stack.popItem(), keepStream, true);// CLEAR OLD STATE
-        if (pdmTracer) pdmTracer->pop(keepStream);
+      void pop(PDMTracer *pdmTracer, bool keepStreamPosition = false) {
+        curState.copyFrom(stack.popItem(), keepStreamPosition, true);// CLEAR OLD STATE
+        if (pdmTracer) {
+          if (keepStreamPosition) pdmTracer->pop("keep stream position");
+          else                    pdmTracer->pop("pop stream position");
+        }
       }
 
       /// \brief Pop the current automata state off the top of the
       /// push down automata's state stack, *keeping* the current
       /// stream location.
-      void popKeepStream(PDMTracer *pdmTracer) {
+      void popKeepStreamPosition(PDMTracer *pdmTracer) {
         pop(pdmTracer, true);
       }
 

@@ -47,27 +47,29 @@ Utf8Chars::Utf8Chars(const char* someUtf8Chars,
   switch(ownership) {
     case DoNotOwn:
       ownsString = false;
-      utf8Chars = someUtf8Chars;
+      origUtf8Chars = someUtf8Chars;
       break;
     case TakeOwnership:
       ownsString = true;
-      utf8Chars = someUtf8Chars;
+      origUtf8Chars = someUtf8Chars;
       break;
     default:
       ownsString = true;
-      utf8Chars = strdup(someUtf8Chars);
+      origUtf8Chars = strdup(someUtf8Chars);
       break;
   }
+  utf8Chars = origUtf8Chars;
   lastByte  = utf8Chars+strlen(utf8Chars);
   restart();
 }
 
 Utf8Chars::~Utf8Chars(void) {
   if (utf8Chars && ownsString) free((void*)utf8Chars);
-  utf8Chars   = NULL;
-  ownsString  = false;
-  lastByte    = NULL;
-  nextByte    = NULL;
+  origUtf8Chars = NULL;
+  utf8Chars     = NULL;
+  ownsString    = false;
+  lastByte      = NULL;
+  nextByte      = NULL;
 }
 
 void Utf8Chars::restart(void) {
