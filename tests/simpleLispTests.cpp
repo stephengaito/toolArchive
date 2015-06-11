@@ -82,6 +82,8 @@ go_bandit([](){
       PDMTracer *pdmTracer =
         new PDMTracer("Parse and tokenize a complex multi-level expression", stdout);
       pdmTracer->setCondition(PDMTracer::Progress |
+                              PDMTracer::DFAState |
+                              PDMTracer::NFAState |
                               PDMTracer::PDMStack |
                               PDMTracer::PDMTokens |
                               PDMTracer::PDMState);

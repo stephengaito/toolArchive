@@ -82,6 +82,38 @@ go_bandit([](){
       delete classifier;
     });
 
+    it("should be able to register lots of start states to the same start state", [](){
+      Classifier *classifier = new Classifier();
+      NFA *nfa = new NFA(classifier);
+      AssertThat(nfa->startStateIds,  Is().Not().EqualTo((void*)0));
+      AssertThat(nfa->startState.getNumItems(), Equals(0));
+      char buffer[100];
+      char *startStateName = buffer;
+      NFA::State *states[100];
+      NFA::MatchData noMatchData;
+      noMatchData.c.u = 0;
+      for (size_t i = 0; i < 100; i++) {
+        nfa->registerStartState("testStartState");
+        states[i] = nfa->addState(NFA::Split, noMatchData, NULL, NULL, "test");
+        nfa->appendNFAToStartState("testStartState", states[i]);
+      }
+      AssertThat(nfa->getNumberStartStates(), Equals(1));
+      NFA::State *nextState = nfa->getStartState("testStartState");
+      for (size_t i = 0; i < 100; i++) {
+        AssertThat(nextState, Is().Not().EqualTo((void*)0));
+        AssertThat(nextState, Equals(states[i]));
+        memset(buffer, 0, 100);
+        sprintf(buffer, "testStartState[%zu]", i);
+        startStateName = buffer;
+        if (strcmp(nextState->message, startStateName) != 0) {
+          AssertThat(nextState->message, Equals(startStateName));
+        }
+        nextState = nextState->out1;
+      }
+      delete nfa;
+      delete classifier;
+    });
+
     /// We build the NFA associated with the very simple regular
     /// expression: /simple/. This yeilds a deep linear linked
     /// list of character comparisions started by a single

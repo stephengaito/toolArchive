@@ -76,14 +76,14 @@ void NFA::appendNFAToStartState(const char *startStateName,
     baseSplitState->message = strdup(message);
   } else {
     State *nextState = startState.getItem(startStateId, NULL);
-    size_t numStartStates = 0;
+    size_t numStartStates = 1;
     while (nextState->out1) {
       nextState = nextState->out1;
       numStartStates++;
     }
     nextState->out1 = baseSplitState;
-    char message[strlen(baseSplitState->message)+50];
-    sprintf(message, "%s[%zu]", baseSplitState->message, numStartStates);
+    char message[strlen(startStateName)+50];
+    sprintf(message, "%s[%zu]", startStateName, numStartStates);
     if (baseSplitState->message) free((void*)baseSplitState->message);
     baseSplitState->message = strdup(message);
   }
