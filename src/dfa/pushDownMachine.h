@@ -1,7 +1,7 @@
 #ifndef PUSH_DOWN_MACHINE_H
 #define PUSH_DOWN_MACHINE_H
 
-#include "dfa/automataState.h"
+#include "dfa/automataStack.h"
 
 namespace DeterministicFiniteAutomaton {
 
@@ -12,11 +12,16 @@ namespace DeterministicFiniteAutomaton {
   class PushDownMachine {
 
     public:
+      bool invariant(void) const {
+        return curState.invariant();
+      }
+
       /// \brief Create a new PushDownMachine instance.
       PushDownMachine(DFA *aDFA) {
         dfa        = aDFA;
         nfa        = dfa->getNFA();
         allocator  = dfa->getStateAllocator();
+        ASSERT_INVARIANT;
       }
 
       /// \brief Run the PushDownAutomata from any the given start
@@ -36,7 +41,7 @@ namespace DeterministicFiniteAutomaton {
                           PDMTracer *pdmTracer = NULL,
                           bool       partialOk = false);
 
-    private:
+    protected:
 
 #include "pushDownMachineInline.h"
 
@@ -54,7 +59,7 @@ namespace DeterministicFiniteAutomaton {
       AutomataState curState;
 
       /// \brief The push down stack for this PushDownAutomata.
-      VarArray<AutomataState> stack;
+      AutomataStack stack;
 
       /// Allow complete access from the associated tracer.
       friend class PDMTracer;

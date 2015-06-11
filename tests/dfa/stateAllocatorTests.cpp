@@ -4,8 +4,8 @@ using namespace bandit;
 #include <string.h>
 #include <stdio.h>
 
-#ifndef private
-#define private public
+#ifndef protected
+#define protected public
 #endif
 
 #include "nfaBuilder.h"

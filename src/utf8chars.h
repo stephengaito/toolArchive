@@ -5,8 +5,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <assert.h>
-#define ASSERT assert
+#include "invariants.h"
 
 #define merge3(bufferName, str0, str1, str2)			\
   char bufferName[strlen(str0)+strlen(str1)+strlen(str2)+10];	\
@@ -40,6 +39,33 @@ typedef union utf8Char_struct {
 class Utf8Chars {
   public:
 
+    bool invariant1(void) const {
+      if ((origUtf8Chars == NULL) ||
+          (utf8Chars     == NULL) ||
+          (nextByte      == NULL) ||
+          (lastByte      == NULL)) {
+        if (origUtf8Chars != NULL) return false;
+        if (utf8Chars     != NULL) return false;
+        if (nextByte      != NULL) return false;
+        if (lastByte      != NULL) return false;
+      }
+      return true;
+    }
+    bool invariant2(void) const {
+      if (!((origUtf8Chars <= lastByte) &&
+            (utf8Chars     <= lastByte) &&
+            (nextByte      <= lastByte) &&
+            (utf8Chars     <= nextByte) &&
+            (origUtf8Chars <= utf8Chars))) return false;
+      return true;
+    }
+    bool invariant3(void) const {
+      return validUtf8Chars(utf8Chars, lastByte);
+    }
+    bool invariant(void) const {
+      return invariant1() && invariant2() && invariant3();
+    }
+
     /// \brief The ownership model for the Utf8Chars.
     enum Ownership {
       DoNotOwn, TakeOwnership, Duplicate
@@ -65,25 +91,35 @@ class Utf8Chars {
     /// \brief Create a cloned copy of this Utf8Chars starting at
     /// the current location and *not* owning the underlying C-String.
     Utf8Chars *clone(bool subStream = false) {
+      ASSERT_INVARIANT3;
       Utf8Chars *result = new Utf8Chars(utf8Chars, DoNotOwn);
       if (subStream) result->utf8Chars = nextByte;
       result->nextByte = nextByte;
       result->origUtf8Chars = origUtf8Chars;
+      result->lastByte = lastByte;
+      ASSERT(result->invariant1());
+      ASSERT(result->invariant2());
+      ASSERT(result->invariant3());
       return result;
     }
 
     void updatePositionFrom(Utf8Chars *otherChars) {
       // return if otherChars is not a clone of this
       if (!otherChars)                                       return;
+      ASSERT(otherChars->invariant1());
+      ASSERT(otherChars->invariant2());
+      ASSERT(otherChars->invariant3());
       if (origUtf8Chars        != otherChars->origUtf8Chars) return;
       if (lastByte             != otherChars->lastByte)      return;
       if (otherChars->nextByte <  utf8Chars)                 return;
       nextByte = otherChars->nextByte;
+      ASSERT_INVARIANT3;
     }
 
     /// \brief Returns true if the last character was the last one
     /// in the underlying C-String.
     bool atEnd(void) {
+      ASSERT_INVARIANT3;
       return (lastByte <= nextByte);
     }
 
@@ -118,12 +154,14 @@ class Utf8Chars {
     /// return a null character (which could be interpreted to represent
     /// the end of the Utf8Chars character stream.
     char getNextByte(void) {
+      ASSERT_INVARIANT3;
       if (lastByte < nextByte) return 0;
       return *nextByte++;
     }
 
     /// \brief Returns the stream start.
     const char *getStart(void) {
+      ASSERT_INVARIANT3;
       return utf8Chars;
     }
 
@@ -131,16 +169,19 @@ class Utf8Chars {
     /// of UTF8 characters, in the stream from the start to the current
     /// character.
     size_t getNumberOfBytesRead(void) {
+      ASSERT_INVARIANT3;
       if (lastByte <= nextByte) nextByte = lastByte;
       return nextByte - utf8Chars;
     }
 
     /// \brief Returns a (strndup'ed) copy of the current stream read.
     char *getCopyOfTextRead(void) {
+      ASSERT_INVARIANT3;
       return strndup(utf8Chars, getNumberOfBytesRead());
     }
 
     size_t getNumberOfBytesToRead(void) {
+      ASSERT_INVARIANT3;
       if (lastByte <= nextByte) nextByte = lastByte;
       return lastByte - nextByte;
     }
@@ -148,6 +189,7 @@ class Utf8Chars {
     /// \brief Returns a (strndup'ed) copy of the stream which has not
     /// yet been read.
     char *getCopyOfTextToRead(size_t numBytesToCopy = 30) {
+      ASSERT_INVARIANT3;
       if (lastByte <= nextByte) nextByte = lastByte;
       return strndup(nextByte, numBytesToCopy);
     }
@@ -162,7 +204,10 @@ class Utf8Chars {
     /// \brief Convert an integer code point into a UTF8 character
     static utf8Char_t codePoint2utf8Char(uint64_t codePoint);
 
-  private:
+    static bool validUtf8Chars(const char *textStart, size_t textLength);
+    static bool validUtf8Chars(const char *textStart, const char *textEnd);
+
+  protected:
 
     /// \brief Whether or not this C-string is owned by this object
     bool ownsString;

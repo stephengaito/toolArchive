@@ -22,10 +22,16 @@ class Token {
     /// \brief The token id wrapped with the ignore bit.
     typedef value_t WrappedTokenId;
 
+    bool invariant(void) const {
+      if (!tokens.invariant()) return false;
+      return Utf8Chars::validUtf8Chars(textStart, textLength);
+    }
+
     Token(void) : tokens() {
       tokenId    = 0;
       textStart  = NULL;
       textLength = 0;
+      ASSERT_INVARIANT;
     }
 
     /// \brief Destroy the forest of ParseTrees.
@@ -36,6 +42,7 @@ class Token {
     /// will potentially be freed as well (depending upon the explicit
     /// ownership registered with each Utf8Chars instance).
     ~Token(void) {
+      ASSERT_INVARIANT;
       tokenId    = 0;
       textStart  = NULL;
       textLength = 0;
@@ -56,11 +63,13 @@ class Token {
 //    }
 
     void deepCopyFrom(const Token &other) {
+      ASSERT(other.invariant());
       Token nullToken;
       tokenId    = other.tokenId;
       textStart  = other.textStart;
       textLength = other.textLength;
       tokens.deepCopyFrom(other.tokens);
+      ASSERT_INVARIANT;
     }
 
     Token *deepClone(void) {
@@ -72,6 +81,7 @@ class Token {
     void setText(const char *aTextStart, size_t aTextLength) {
       textStart  = aTextStart;
       textLength = aTextLength;
+      ASSERT_INVARIANT;
     }
 
     void setId(TokenId aTokenId) {
@@ -79,7 +89,9 @@ class Token {
     }
 
     void addChildToken(Token *childToken) {
+      ASSERT(childToken->invariant());
       tokens.pushItem(*childToken);
+      ASSERT_INVARIANT;
     }
 
     static WrappedTokenId wrapTokenId(TokenId aTokenId, bool ignoreToken) {
@@ -96,13 +108,15 @@ class Token {
 
     void printOn(FILE *outFile, size_t indent = 0);
 
-  private:
+  protected:
 
     void operator=(const Token &other) {
+      ASSERT(other.invariant());
       tokenId    = other.tokenId;
       textStart  = other.textStart;
       textLength = other.textLength;
       tokens     = other.tokens;
+      ASSERT_INVARIANT;
     }
 
     /// \brief The Wrapped Token ID of a given token.
@@ -114,7 +128,29 @@ class Token {
     /// \brief The length of text from which this token was parsed.
     size_t      textLength;
 
-    typedef VarArray<Token> TokenArray;
+    class TokenArray : public VarArray<Token> {
+      public:
+       bool invariant(void) const {
+         if (!VarArray<Token>::invariant()) return false;
+
+         for (size_t i = 0 ; i < numItems; i++) {
+           if (!itemArray[i].invariant()) return false;
+         }
+         return true;
+       }
+
+      void operator=(const TokenArray &other) {
+        ASSERT(other.invariant());
+        numItems  = 0;
+        arraySize = 0;
+        if (itemArray) free(itemArray);
+        itemArray = NULL;
+        for (size_t i = 0; i < numItems; i++) {
+          pushItem(other.itemArray[i]);
+        }
+        ASSERT_INVARIANT;
+      }
+    };
 
     /// \brief The number of child tokens which make up this token.
     TokenArray tokens;

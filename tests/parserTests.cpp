@@ -5,8 +5,8 @@ using namespace bandit;
 #include <stdio.h>
 #include <exception>
 
-#ifndef private
-#define private public
+#ifndef protected
+#define protected public
 #endif
 
 #include <parser.h>
@@ -21,7 +21,7 @@ go_bandit([](){
 
   printf("\n----------------------------------\n");
   printf(  "Parser\n");
-//  printf(  " Parser = %zu bytes (%zu bits)\n", sizeof(Parser),  sizeof(Parser)*8);
+  printf(  " Parser = %zu bytes (%zu bits)\n", sizeof(Parser),  sizeof(Parser)*8);
   printf(  "----------------------------------\n");
 
   /// \brief We test the Parser class.

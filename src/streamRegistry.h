@@ -45,7 +45,7 @@ class StreamRegistry {
       streams.pushItem(someUtf8Chars);
     }
 
-  private:
+  protected:
 
     /// \brief The collection of Ut8Chars streams.
     VarArray<Utf8Chars*> streams;

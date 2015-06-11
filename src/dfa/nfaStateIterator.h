@@ -41,9 +41,9 @@ namespace DeterministicFiniteAutomaton {
         return NULL;
       }
 
-    private:
+    protected:
 
-      /// \brief ALlow a StateAllocator direct access to the private
+      /// \brief ALlow a StateAllocator direct access to the protected
       /// constructor method of an NFAStateIterator.
       friend class StateAllocator;
 
@@ -56,6 +56,7 @@ namespace DeterministicFiniteAutomaton {
       NFAStateIterator(NFAStateMapping *aMapping,
                        size_t stateSize,
                        State *state) {
+        origDState = state;
         curByte = state;
         endByte = curByte + stateSize;
         curBit  = 1;
@@ -84,6 +85,9 @@ namespace DeterministicFiniteAutomaton {
       /// bit set.
       size_t  curBit;
 
+      State *origDState;
+      friend class AutomataState;
+      friend class PDMTracer;
   };
 
 }; // namespace DeterministicFiniteAutomaton

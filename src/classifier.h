@@ -73,7 +73,7 @@ class Classifier {
       const char* aUtf8Char ///< [in] a UTF8 character to be classified. If there are multiple characters **ONLY** the first character is classified.
     );
 
-  private:
+  protected:
     /// \brief The Hat-Trie implementing the class name to class set
     /// mapping used to register a given classification bit set.
     hattrie_t *className2classSet;

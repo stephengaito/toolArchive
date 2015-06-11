@@ -118,7 +118,7 @@ namespace DeterministicFiniteAutomaton {
         return allocator;
       }
 
-    private:
+    protected:
       /// \brief The NFA associated to this DFA.
       NFA *nfa;
 

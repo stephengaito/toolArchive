@@ -55,6 +55,7 @@ void PDMTracer::reportState(size_t indent) {
   fprintf(traceFile, "\n");
   reportTokens(indent);
   reportDFAState(indent);
+  ASSERT(pdm->curState.dState == pdm->curState.iterator->origDState);
 }
 
 void PDMTracer::reportStreamPrefix(void) {

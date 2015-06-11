@@ -153,6 +153,7 @@ void NFABuilder::compileRegularExpressionForTokenId(
         // find the reStartId for this reStartStateName
         if (reStartStateName[0] == 0) throw LexerException("mallformed reStart name");
         reStartStateId = nfa->findStartStateId(reStartStateName);
+        if (reStartStateId == -1L) throw LexerException("unregistered reStartStateId");
         // now repeat the natom manipulate done for checkCharacter
         if (natom > 1) {
           --natom;

@@ -5,8 +5,8 @@ using namespace bandit;
 #include <stdio.h>
 #include <exception>
 
-#ifndef private
-#define private public
+#ifndef protected
+#define protected public
 #endif
 
 #include "nfaBuilder.h"
@@ -110,6 +110,7 @@ go_bandit([](){
       AssertThat(automataState.token,  Is().Not().EqualTo((void*)0));
       AssertThat(automataState.stream, Is().Not().EqualTo((void*)0));
       AssertThat(automataState.iterator, Is().Not().EqualTo((void*)0));
+      AssertThat(automataState.dState, Is().Not().EqualTo((void*)0));
       AssertThat(automataState.dState, Is().Not().EqualTo(dState));
       AssertThat(automataState.allocator, Equals(allocator));
       AutomataState newAutomataState;

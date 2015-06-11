@@ -101,7 +101,7 @@ namespace DeterministicFiniteAutomaton {
       void backtrack(size_t indent = 0);
       void errorReturn(size_t indent = 0);
 
-    private:
+    protected:
 
       /// \brief The currently associated PushDownMachine.
       ///

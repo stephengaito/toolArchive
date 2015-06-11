@@ -70,7 +70,7 @@ namespace DeterministicFiniteAutomaton {
                                        dfaStateProbeSize);
       }
 
-    private:
+    protected:
 
       /// \brief Copy the DFA::DState bytes into the dfaStateProbe array.
       void assembleStateProbe(State *state) {

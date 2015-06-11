@@ -36,7 +36,7 @@ class Symbols {
     /// If the symbol has never been registered, returns NULL.
     SymbolEntry *getSymbol(const char * symbol, size_t symbolLen);
 
-  private:
+  protected:
 
     /// \brief The symbol to symbolEntry mapping
     hattrie_t *symbol2SymbolEntryMap;

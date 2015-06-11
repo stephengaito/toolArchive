@@ -5,8 +5,8 @@ using namespace bandit;
 #include <stdio.h>
 #include <exception>
 
-#ifndef private
-#define private public
+#ifndef protected
+#define protected public
 #endif
 
 #include <stdio.h>

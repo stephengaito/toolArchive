@@ -64,6 +64,9 @@
       }
 
       void setupRestart(NFA::State *nfaState, PDMTracer *pdmTracer) {
+        ASSERT(dfa);
+        ASSERT(nfa);
+        ASSERT(nfaState);
         // we need to try this path
         //
         // prepare messages for each possible AutomataState
@@ -84,6 +87,7 @@
         // now set up the subDFA state
         NFA::State *reStartNFAState =
           nfa->getStartState(nfaState->matchData.r);
+        ASSERT(reStartNFAState);
         condMerge3(restartMessage, PDMTraceRestartMessages(pdmTracer),
           "restart{", reStartNFAState->message, "}", "restart");
         pushNewToken(pdmTracer,

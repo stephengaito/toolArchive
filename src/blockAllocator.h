@@ -11,12 +11,29 @@
 class BlockAllocator {
   public:
 
+    bool invariant(void) const {
+      if (endAllocationByte < curAllocationByte) return false;
+      if (blocks.getNumItems() == 0) {
+        if (endAllocationByte != NULL) return false;
+        if (curAllocationByte != NULL) return false;
+        return true;
+      }
+      char *curBlock = blocks.getTop();
+      if (curBlock != NULL) {
+        if (curAllocationByte    <  curBlock)          return false;
+        if (curBlock+blockSize+1 <  curAllocationByte) return false;
+        if (curBlock+blockSize+1 != endAllocationByte) return false;
+      }
+      return true;
+    }
+
     /// \brief Create a new block allocator which allocates a given
     /// blockSize.
     BlockAllocator(size_t aBlockSize) {
       blockSize = aBlockSize;
       curAllocationByte = NULL;
       endAllocationByte = NULL;
+      ASSERT_INVARIANT;
     }
 
     /// \brief Clear (free) all of the blocks.
@@ -25,37 +42,45 @@ class BlockAllocator {
         char* aBlock = blocks.popItem();
         if (aBlock) free(aBlock);
       }
+      curAllocationByte = NULL;
+      endAllocationByte = NULL;
+      ASSERT_INVARIANT;
     }
 
     /// \brief Destory the block allocator and all of its blocks.
     ~BlockAllocator(void) {
+      ASSERT_INVARIANT;
       clearBlocks();
       blockSize = 0;
       curAllocationByte = NULL;
       endAllocationByte = NULL;
     }
 
-  private:
+  protected:
     // \brief Add a new allocation block to this blockAllocator.
     void addNewBlock(void) {
-        curAllocationByte = (char*)calloc(blockSize, 1);
-        endAllocationByte = curAllocationByte + blockSize + 1;
-        blocks.pushItem(curAllocationByte);
+      ASSERT_INVARIANT;
+      curAllocationByte = (char*)calloc(blockSize, 1);
+      endAllocationByte = curAllocationByte + blockSize + 1;
+      blocks.pushItem(curAllocationByte);
+      ASSERT_INVARIANT;
     }
 
   public:
     /// \brief Allocate a new (sub)structure of the given size.
     char *allocateNewStructure(size_t structureSize) {
+      ASSERT_INVARIANT;
       if (endAllocationByte <= curAllocationByte + structureSize) {
         // we need to allocate a new block
         addNewBlock();
       }
       char *newStructure = curAllocationByte;
       curAllocationByte += structureSize;
+      ASSERT_INVARIANT;
       return newStructure;
     }
 
-  private:
+  protected:
 
     /// \brief The current block from which allocations are being made.
     char *curAllocationByte;

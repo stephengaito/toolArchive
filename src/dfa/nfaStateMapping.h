@@ -60,7 +60,7 @@ namespace DeterministicFiniteAutomaton {
         return int2nfaStatePtr[nfaStateNumber];
       }
 
-    private:
+    protected:
 
       /// \brief The DFA::StateAllocator for this NFAStateMapping.
       ///

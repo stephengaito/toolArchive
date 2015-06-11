@@ -20,6 +20,8 @@ Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
 
   restart:
   while(true) {
+    ASSERT(stack.invariant());
+    ASSERT(curState.invariant());
     if (pdmTracer) pdmTracer->reportState();
     // scan current dfa state for ReStart NFA states
     if (pdmTracer) pdmTracer->checkForRestart();

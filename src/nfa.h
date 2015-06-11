@@ -212,7 +212,7 @@ class NFA {
                                  const char *message,
                                  State *state);
 
-  private:
+  protected:
 
     /// \brief A BlockAllocator which allocates new NFA::States.
     BlockAllocator *stateAllocator;

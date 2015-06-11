@@ -77,7 +77,7 @@ class NFABuilder {
                                             bool ignoreToken = false)
                                             throw (LexerException);
 
-  private:
+  protected:
     /// \brief a Ptrlist is a linked list of NFA::State structures
     /// which the NFABuilder::patch method should patck to provide
     /// a fully specified NFA structure.
@@ -130,7 +130,7 @@ class NFABuilder {
       return stack.popItem();
     }
 
-  private:
+  protected:
     /// \brief The NFA for which this NFABuilder is being constructed.
     NFA *nfa;
 

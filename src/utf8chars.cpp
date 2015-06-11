@@ -61,9 +61,11 @@ Utf8Chars::Utf8Chars(const char* someUtf8Chars,
   utf8Chars = origUtf8Chars;
   lastByte  = utf8Chars+strlen(utf8Chars);
   restart();
+  ASSERT_INVARIANT3;
 }
 
 Utf8Chars::~Utf8Chars(void) {
+  ASSERT_INVARIANT3;
   if (utf8Chars && ownsString) free((void*)utf8Chars);
   origUtf8Chars = NULL;
   utf8Chars     = NULL;
@@ -80,6 +82,7 @@ void Utf8Chars::restart(void) {
 // [UTF-8::Description](http://en.wikipedia.org/wiki/UTF-8#Description)
 //
 void Utf8Chars::backup(void) {
+  ASSERT_INVARIANT3;
   // In case we are beyond the end... ensure we move back to the end
   if (lastByte <= nextByte) nextByte = lastByte;
   while(true) {
@@ -88,11 +91,13 @@ void Utf8Chars::backup(void) {
     // ensure we have not backed off over the front of the string
     if (nextByte < utf8Chars) {
        restart();
+       ASSERT_INVARIANT3;
        return;
     }
     // check to see if this is "start" byte
     if ((*nextByte & 0xC0) != 0x80) {
       // this is a start byte... so we are done
+      ASSERT_INVARIANT3;
       return;
     }
   }
@@ -102,6 +107,7 @@ void Utf8Chars::backup(void) {
 // [UTF-8::Description](http://en.wikipedia.org/wiki/UTF-8#Description)
 //
 utf8Char_t Utf8Chars::nextUtf8Char(void) {
+  ASSERT_INVARIANT3;
   utf8Char_t nullChar;
   nullChar.u = 0;
 
@@ -159,6 +165,7 @@ utf8Char_t Utf8Chars::nextUtf8Char(void) {
 }
 
 bool Utf8Chars::containsUtf8Char(utf8Char_t expectedUtf8Char) {
+  ASSERT_INVARIANT3;
   restart();
   while( nextByte < lastByte) {
     utf8Char_t actualUtf8Char = nextUtf8Char();
@@ -166,6 +173,88 @@ bool Utf8Chars::containsUtf8Char(utf8Char_t expectedUtf8Char) {
     if (actualUtf8Char.u == expectedUtf8Char.u) return true;
   }
   return false;
+}
+
+// We use the Wikipedia
+// [UTF-8::Description](http://en.wikipedia.org/wiki/UTF-8#Description)
+//
+bool Utf8Chars::validUtf8Chars(const char *textStart, size_t textLength) {
+  if ((textStart==NULL) && (0 < textLength)) return false;
+  return validUtf8Chars(textStart, textStart+textLength);
+}
+
+// We use the Wikipedia
+// [UTF-8::Description](http://en.wikipedia.org/wiki/UTF-8#Description)
+//
+bool Utf8Chars::validUtf8Chars(const char *textStart, const char *textEnd) {
+  if ((textStart==NULL) && (textEnd==NULL)) return true;
+  if ((textStart==NULL) && (textEnd!=NULL)) return false;
+  if ((textEnd==NULL) && (textStart!=NULL)) return false;
+  if (textEnd < textStart) return false;
+  for ( ; textStart < textEnd; textStart++) {
+    if (((*textStart)&0x80)==0x00) continue;
+    if (((*textStart)&0xE0)==0xC0) {
+      textStart++;
+      if (textEnd <= textStart)    return false;
+      if (((*textStart)&0xC0)!=0x80) return false;
+      continue;
+    }
+    if (((*textStart)&0xF0)==0xE0) {
+      textStart++;
+      if (textEnd <= textStart)    return false;
+      if (((*textStart)&0xC0)!=0x80) return false;
+      textStart++;
+      if (textEnd <= textStart)    return false;
+      if (((*textStart)&0xC0)!=0x80) return false;
+      continue;
+    }
+    if (((*textStart)&0xF8)==0xF0) {
+      textStart++;
+      if (textEnd <= textStart)    return false;
+      if (((*textStart)&0xC0)!=0x80) return false;
+      textStart++;
+      if (textEnd <= textStart)    return false;
+      if (((*textStart)&0xC0)!=0x80) return false;
+      textStart++;
+      if (textEnd <= textStart)    return false;
+      if (((*textStart)&0xC0)!=0x80) return false;
+      continue;
+    }
+    if (((*textStart)&0xFC)==0xF8) {
+      textStart++;
+      if (textEnd <= textStart)    return false;
+      if (((*textStart)&0xC0)!=0x80) return false;
+      textStart++;
+      if (textEnd <= textStart)    return false;
+      if (((*textStart)&0xC0)!=0x80) return false;
+      textStart++;
+      if (textEnd <= textStart)    return false;
+      if (((*textStart)&0xC0)!=0x80) return false;
+      textStart++;
+      if (textEnd <= textStart)    return false;
+      if (((*textStart)&0xC0)!=0x80) return false;
+      continue;
+    }
+    if (((*textStart)&0xFE)==0xFC) {
+      textStart++;
+      if (textEnd <= textStart)    return false;
+      if (((*textStart)&0xC0)!=0x80) return false;
+      textStart++;
+      if (textEnd <= textStart)    return false;
+      if (((*textStart)&0xC0)!=0x80) return false;
+      textStart++;
+      if (textEnd <= textStart)    return false;
+      if (((*textStart)&0xC0)!=0x80) return false;
+      textStart++;
+      if (textEnd <= textStart)    return false;
+      if (((*textStart)&0xC0)!=0x80) return false;
+      textStart++;
+      if (textEnd <= textStart)    return false;
+      if (((*textStart)&0xC0)!=0x80) return false;
+      continue;
+    }
+  }
+  return true;
 }
 
 // We use the Wikipedia

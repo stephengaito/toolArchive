@@ -100,7 +100,7 @@ namespace DeterministicFiniteAutomaton {
         return new NFAStateIterator(nfaStateMapping, stateSize, state);
       }
 
-    private:
+    protected:
       /// \brief The NFA associated to this DFA::StateAllocator.
       NFA *nfa;
 

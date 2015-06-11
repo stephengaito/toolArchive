@@ -41,19 +41,61 @@ class Parser {
 
     /// \brief Create a Parser.
     Parser(void) {
-      classifier = new Classifier();
-      nfa        = new NFA(classifier);
-      nfaBuilder = new NFABuilder(nfa);
-      dfa        = NULL;
+      classifier   = new Classifier();
+      nfa          = new NFA(classifier);
+      nfaBuilder   = new NFABuilder(nfa);
+      lastClassSet = 1;
+      dfa          = NULL;
     }
 
     /// \brief Setup the Classifier to classify white space using the
-    /// classSet_t 1.
+    /// lastClasseSet (a progression of consequtive powers of 2).
     ///
     /// No classification is made if the Parser has already been compiled.
-    void classifyWhiteSpace(void) {
-      if(!dfa) classifier->classifyWhiteSpace(1);
+    Classifier::classSet_t classifyWhiteSpace(void) {
+      Classifier::classSet_t classSet = lastClassSet;
+      lastClassSet <<=1;
+      classifyWhiteSpace(classSet);
+      return classSet;
      };
+
+    /// \brief Setup the Classifier to classify white space using the
+    /// classSet provided.
+    ///
+    /// No classification is made if the Parser has already been compiled.
+    void classifyWhiteSpace(Classifier::classSet_t classSet) {
+      if(!dfa) classifier->classifyWhiteSpace(classSet);
+     };
+
+    /// \brief Setup the Classifier to classify white space using the
+    /// lastClasseSet (a progression of consequtive powers of 2).
+    ///
+    /// No classification is made if the Parser has already been compiled.
+    Classifier::classSet_t classifyUtf8Chars(const char *chars2Classify,
+                                             const char *className) {
+      Classifier::classSet_t classSet = lastClassSet;
+      lastClassSet <<=1;
+      classifyUtf8Chars(chars2Classify, className, classSet);
+      return classSet;
+     };
+
+    /// \brief Setup the Classifier to classify white space using the
+    /// classeSet provided.
+    ///
+    /// No classification is made if the Parser has already been compiled.
+    void classifyUtf8Chars(const char *chars2Classify,
+                           const char *className,
+                           Classifier::classSet_t classSet) {
+      if(!dfa) {
+        classifier->registerClassSet(className, classSet);
+        classifier->classifyUtf8CharsAs(chars2Classify, className);
+      }
+     };
+
+    void addCharacterClass(const char* aClassName,
+                           Classifier::classSet_t aCharacterClass) {
+      if (!dfa) classifier->registerClassSet(aClassName, aCharacterClass);
+    }
 
     /// \brief Add a Regular-Expression/TokenId to the Parser.
     ///
@@ -104,7 +146,7 @@ class Parser {
       return NULL;
     }
 
-  private:
+  protected:
 
     /// \brief The Classifier used to classify UTF8 characters.
     Classifier *classifier;
@@ -114,6 +156,8 @@ class Parser {
 
     /// \brief The NFABuilder used to build the NFA from regular expressions.
     NFABuilder *nfaBuilder;
+
+    Classifier::classSet_t lastClassSet;
 
     /// \brief The DFA used to scan Utf8Chars streams.
     ///
