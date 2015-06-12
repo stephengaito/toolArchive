@@ -43,7 +43,9 @@ namespace DeterministicFiniteAutomaton {
         RestartMessages=262144,
         PDMTokens=524288,
         Progress=(PDMMatch|CurStreamPosition|RestartMessages),
-        PDMStack=(StackPushes|StackPops|StackSwaps)
+        PDMStack=(StackPushes|StackPops|StackSwaps),
+        SimpleState=(NFAState|DFAState|AutomataStack|PDMTokens|PDMState),
+        Transitions=(PDMErrorReturn|PDMBackTrack|PDMFailedBackTrack|PDMNextDFAState|PDMFailedWithStream|PDMDone|PDMMatch)
       };
 
       /// \brief Create a new PushDownMachine instance.
