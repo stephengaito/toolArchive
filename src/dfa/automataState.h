@@ -9,6 +9,10 @@ namespace DeterministicFiniteAutomaton {
   class AutomataState {
     public:
 
+      enum AutomataStateType {
+        ASCall, ASBackTrack
+      };
+
       bool invariant1(void) const {
         if (allocator  == NULL) {
           if (dState   != NULL) return false;
@@ -233,17 +237,35 @@ namespace DeterministicFiniteAutomaton {
         ASSERT(other.invariant1());
         ASSERT(other.invariant2());
         ASSERT(other.invariant3());
-        allocator = other.allocator;
-        iterator  = other.iterator;
-        stream    = other.stream;
-        dState    = other.dState;
-        token     = other.token;
-        message   = other.message;
+        automataStateType = other.automataStateType;
+        startStateId      = other.startStateId;
+        message           = other.message;
+        allocator         = other.allocator;
+        dState            = other.dState;
+        iterator          = other.iterator;
+        stream            = other.stream;
+        token             = other.token;
         ASSERT_INVARIANT5;
       }
 
+      AutomataStateType automataStateType;
+
+      NFA::StartStateId startStateId;
+
+      /// \brief A useful message used by the Tracer
+      const char *message;
+
       /// \brief The allocator associated with this AutomataState.
       StateAllocator *allocator;
+
+      /// \brief A copy of the current DFA::State.
+      ///
+      /// As each reStart NFA::State alternatives are tried,
+      /// the corresponding NFA::State bits in this DFA::State
+      /// are cleared, so that if no reStart NFA::State(s)
+      /// succeed we can try to compute the next DFA:State
+      /// using the non-reStart NFA::States.
+      State *dState;
 
       /// \brief An iterator over a copy of the current DFA::State.
       ///
@@ -255,20 +277,8 @@ namespace DeterministicFiniteAutomaton {
       /// been recognized.
       Utf8Chars *stream;
 
-      /// \brief A copy of the current DFA::State.
-      ///
-      /// As each reStart NFA::State alternatives are tried,
-      /// the corresponding NFA::State bits in this DFA::State
-      /// are cleared, so that if no reStart NFA::State(s)
-      /// succeed we can try to compute the next DFA:State
-      /// using the non-reStart NFA::States.
-      State *dState;
-
       /// \brief A copy of the currently partially constructed token
       Token *token;
-
-      /// \brief A useful message used by the Tracer
-      const char *message;
 
       friend class PDMTracer;
       friend class VarArray<AutomataState>;

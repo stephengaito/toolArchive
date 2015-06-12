@@ -4,6 +4,7 @@ using namespace bandit;
 #include <string.h>
 #include <stdio.h>
 #include <exception>
+#include <execinfo.h>
 
 #ifndef protected
 #define protected public
