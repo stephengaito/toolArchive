@@ -55,55 +55,53 @@ struct AssertionFailure : bandit::detail::assertion_exception {
   AssertionFailure(const std::string& message) :
     bandit::detail::assertion_exception(message) {};
 
-  /// \brief Test the provided condition and throw an AssertionFailure
-  /// exception if the condition is false.
-  ///
-  /// When used together with the ASSERT macro, all failed assertions 
-  /// have recent call stack information appended to the messages.
-  static void testCondition(bool condition,
+  /// \brief Add the recent function call information from the call
+  /// stack and then rethrow the exception.
+  static void addStackTrace(const AssertionFailure& af,
                             const std::string& filename,
                             const unsigned int linenumber) {
-
-    try {
-      // test the condition...
-      if (!condition) throw AssertionFailure("assertion failed");
-    } catch (const AssertionFailure& af) {
-      // now add the filename and line numbers provided....
-      // and add recent call stack information...
-      std::string message(af.what());
+    // now add the filename and line numbers provided....
+    // and add recent call stack information...
+    std::string message(af.what());
+    void *stackReturnAddressList[MAX_FRAMES+1];
+    size_t numFrames = backtrace(stackReturnAddressList, MAX_FRAMES);
+    if (1 < numFrames) {
       message += "\nRecent call stack:";
-      void *stackReturnAddressList[MAX_FRAMES+1];
-      size_t numFrames = backtrace(stackReturnAddressList, MAX_FRAMES);
-      if (1 < numFrames) {
-        if (4 < numFrames) numFrames = 4;
-        char **stackFrameSymbols =
-          backtrace_symbols(stackReturnAddressList, numFrames);
-        for (size_t i = 1; i < numFrames; i++) {
-          message += "\n  ";
-          char *callName   = NULL;
-          char *callOffset = NULL;
-          for ( char *p = stackFrameSymbols[i]; *p; p++) {
-            if (*p == '(') callName = ++p;
-            if (*p == '+') { *p = 0; callOffset = ++p; }
-            if (*p == ')') *p = 0;
-          }
-          size_t functionNameBufferSize = 1024;
-          char functionNameBuffer[1024];
-          int status = 0;
-          char *functionNameResult =
-            abi::__cxa_demangle(callName, functionNameBuffer,
-                                &functionNameBufferSize, &status);
-          char *functionName = callName;
-          if (status == 0) functionName = functionNameResult;
-          message += functionName;
+      if (4 < numFrames) numFrames = 4;
+      char **stackFrameSymbols =
+        backtrace_symbols(stackReturnAddressList, numFrames);
+      for (size_t i = 1; i < numFrames; i++) {
+        message += "\n  ";
+        char *callName   = NULL;
+        char *callOffset = NULL;
+        for ( char *p = stackFrameSymbols[i]; *p; p++) {
+          if (*p == '(') callName = ++p;
+          if (*p == '+') { *p = 0; callOffset = ++p; }
+          if (*p == ')') *p = 0;
         }
+        size_t functionNameBufferSize = 1024;
+        char functionNameBuffer[1024];
+        int status = 0;
+        char *functionNameResult =
+          abi::__cxa_demangle(callName, functionNameBuffer,
+                              &functionNameBufferSize, &status);
+        char *functionName = callName;
+        if (status == 0) functionName = functionNameResult;
+        message += functionName;
       }
-      throw bandit::detail::assertion_exception(message, filename, linenumber);
     }
+    throw bandit::detail::assertion_exception(message, filename, linenumber);
   }
+
 };
 
-#define ASSERT(cond) AssertionFailure::testCondition((cond), __FILE__, __LINE__)
+#define ASSERT(condition)						 \
+  try {									 \
+    if (!(condition)) throw AssertionFailure("("#condition") is false"); \
+  } catch (const AssertionFailure& af) {				 \
+    AssertionFailure::addStackTrace(af, __FILE__, __LINE__);		 \
+  }
+
 #endif // DEBUG defined
 
 #endif // ASSERTIONS_H not defined

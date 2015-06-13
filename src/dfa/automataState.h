@@ -10,7 +10,7 @@ namespace DeterministicFiniteAutomaton {
     public:
 
       enum AutomataStateType {
-        ASCall, ASBackTrack
+        ASInvalid=0, ASCall=1, ASBackTrack=2
       };
 
       bool invariant(void) const {
@@ -34,12 +34,14 @@ namespace DeterministicFiniteAutomaton {
       }
 
       AutomataState(void) {
-        allocator = NULL;
-        iterator  = NULL;
-        stream    = NULL;
-        dState    = NULL;
-        token     = NULL;
-        message   = NULL;
+        automataStateType = ASInvalid;
+        startStateId      = 0;
+        allocator         = NULL;
+        iterator          = NULL;
+        stream            = NULL;
+        dState            = NULL;
+        token             = NULL;
+        message           = NULL;
         ASSERT(invariant());
       }
 
@@ -55,6 +57,8 @@ namespace DeterministicFiniteAutomaton {
         stream   = aStream->clone();
         token    = new Token();
         message  = strdup(aMessage);
+        automataStateType = ASInvalid;
+        startStateId      = 0;
         ASSERT(invariant());
       }
 
