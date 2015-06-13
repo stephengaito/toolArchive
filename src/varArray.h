@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "invariants.h"
+#include "assertions.h"
 
 #ifndef VarArrayIncrement
 #define VarArrayIncrement 10
@@ -26,7 +26,7 @@ class VarArray {
       numItems  = 0;
       arraySize = 0;
       itemArray = NULL;
-      ASSERT_INVARIANT;
+      ASSERT(invariant());
     }
 
     /// \brief Explicitly destroy a VarArray.
@@ -34,7 +34,7 @@ class VarArray {
     /// Note that this should be invoked implicitly when ever the
     /// containing object gets deleted.
     ~VarArray(void) {
-      ASSERT_INVARIANT;
+      ASSERT(invariant());
       if (itemArray) free(itemArray);
       itemArray = NULL;
       numItems  = 0;
@@ -50,7 +50,7 @@ class VarArray {
       if (itemArray && other.itemArray) {
         memcpy(itemArray, other.itemArray, arraySize*sizeof(ItemT));
       }
-      ASSERT_INVARIANT;
+      ASSERT(invariant());
     }
 
     VarArray *shallowClone(void) {
@@ -71,7 +71,7 @@ class VarArray {
           itemArray[i].deepCopyFrom(other.itemArray[i]);
         }
       }
-      ASSERT_INVARIANT;
+      ASSERT(invariant());
     }
 
     VarArray *deepClone(void) {
@@ -87,7 +87,7 @@ class VarArray {
 
     /// \brief Push a new item onto the "top" of the array.
     void pushItem(ItemT anItem) {
-      ASSERT_INVARIANT;
+      ASSERT(invariant());
       if (arraySize <= numItems) {
         // we need to increase the size of the array
         ItemT *oldArray = itemArray;
@@ -100,34 +100,34 @@ class VarArray {
       }
       itemArray[numItems] = anItem;
       numItems++;
-      ASSERT_INVARIANT;
+      ASSERT(invariant());
     }
 
     /// \brief Get the requested item.
     ///
     /// Returns the default provided if the itemNumber is out of range.
     ItemT getItem(size_t itemNumber, ItemT defaultItem) {
-      ASSERT_INVARIANT;
+      ASSERT(invariant());
       if (numItems <= itemNumber) return defaultItem;
       return itemArray[itemNumber];
     }
 
     /// \brief Set the requested item to the value provided.
     void setItem(size_t itemNumber, ItemT anItem) {
-      ASSERT_INVARIANT;
+      ASSERT(invariant());
       if (itemNumber < numItems) itemArray[itemNumber] = anItem;
     }
 
     /// \brief Get the top item
     ItemT getTop(void) const {
-      ASSERT_INVARIANT;
+      ASSERT(invariant());
       ASSERT(numItems);
       return itemArray[numItems-1];
     }
 
     /// \brief Remove and return the "top" item on the array.
     ItemT popItem(void) {
-      ASSERT_INVARIANT;
+      ASSERT(invariant());
       ASSERT(numItems); // incorrectly matched push/pops
       numItems--;
       return itemArray[numItems];
@@ -135,7 +135,7 @@ class VarArray {
 
     /// \brief Copy the items in this array into the buffer provided.
     void copyItems(void*buffer, size_t bufferSize) {
-      ASSERT_INVARIANT;
+      ASSERT(invariant());
       if (numItems*sizeof(ItemT) < bufferSize) {
         bufferSize = numItems*sizeof(ItemT);
       }
@@ -146,7 +146,7 @@ class VarArray {
     }
 
     void swapTopTwoItems(void) {
-      ASSERT_INVARIANT;
+      ASSERT(invariant());
       if (numItems < 2) return;
       ItemT tempItem        = itemArray[numItems-1];
       itemArray[numItems-1] = itemArray[numItems-2];
@@ -156,7 +156,7 @@ class VarArray {
     /// \brief Remove all items from this array.
     void clearItems(void) {
       numItems = 0;
-      ASSERT_INVARIANT;
+      ASSERT(invariant());
     }
 
   protected:

@@ -21,7 +21,7 @@ namespace DeterministicFiniteAutomaton {
         dfa        = aDFA;
         nfa        = dfa->getNFA();
         allocator  = dfa->getStateAllocator();
-        ASSERT_INVARIANT;
+        ASSERT(invariant());
       }
 
       /// \brief Run the PushDownAutomata from any the given start

@@ -61,11 +61,11 @@ Utf8Chars::Utf8Chars(const char* someUtf8Chars,
   utf8Chars = origUtf8Chars;
   lastByte  = utf8Chars+strlen(utf8Chars);
   restart();
-  ASSERT_INVARIANT3;
+  ASSERT(invariant());
 }
 
 Utf8Chars::~Utf8Chars(void) {
-  ASSERT_INVARIANT3;
+  ASSERT(invariant());
   if (utf8Chars && ownsString) free((void*)utf8Chars);
   origUtf8Chars = NULL;
   utf8Chars     = NULL;
@@ -82,7 +82,7 @@ void Utf8Chars::restart(void) {
 // [UTF-8::Description](http://en.wikipedia.org/wiki/UTF-8#Description)
 //
 void Utf8Chars::backup(void) {
-  ASSERT_INVARIANT3;
+  ASSERT(invariant());
   // In case we are beyond the end... ensure we move back to the end
   if (lastByte <= nextByte) nextByte = lastByte;
   while(true) {
@@ -91,13 +91,13 @@ void Utf8Chars::backup(void) {
     // ensure we have not backed off over the front of the string
     if (nextByte < utf8Chars) {
        restart();
-       ASSERT_INVARIANT3;
+       ASSERT(invariant());
        return;
     }
     // check to see if this is "start" byte
     if ((*nextByte & 0xC0) != 0x80) {
       // this is a start byte... so we are done
-      ASSERT_INVARIANT3;
+      ASSERT(invariant());
       return;
     }
   }
@@ -107,7 +107,7 @@ void Utf8Chars::backup(void) {
 // [UTF-8::Description](http://en.wikipedia.org/wiki/UTF-8#Description)
 //
 utf8Char_t Utf8Chars::nextUtf8Char(void) {
-  ASSERT_INVARIANT3;
+  ASSERT(invariant());
   utf8Char_t nullChar;
   nullChar.u = 0;
 
@@ -165,7 +165,7 @@ utf8Char_t Utf8Chars::nextUtf8Char(void) {
 }
 
 bool Utf8Chars::containsUtf8Char(utf8Char_t expectedUtf8Char) {
-  ASSERT_INVARIANT3;
+  ASSERT(invariant());
   restart();
   while( nextByte < lastByte) {
     utf8Char_t actualUtf8Char = nextUtf8Char();

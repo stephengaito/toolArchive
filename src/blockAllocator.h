@@ -12,17 +12,23 @@ class BlockAllocator {
   public:
 
     bool invariant(void) const {
-      if (endAllocationByte < curAllocationByte) return false;
+      if (endAllocationByte < curAllocationByte)
+        throw AssertionFailure("incorrectly ordered allocation bytes");
       if (blocks.getNumItems() == 0) {
-        if (endAllocationByte != NULL) return false;
-        if (curAllocationByte != NULL) return false;
+        if (endAllocationByte != NULL)
+          throw AssertionFailure("no blocks but endAllocationByte not NULL");
+        if (curAllocationByte != NULL)
+          throw AssertionFailure("no blocks but curAllocationByte not NULL");
         return true;
       }
       char *curBlock = blocks.getTop();
       if (curBlock != NULL) {
-        if (curAllocationByte    <  curBlock)          return false;
-        if (curBlock+blockSize+1 <  curAllocationByte) return false;
-        if (curBlock+blockSize+1 != endAllocationByte) return false;
+        if (curAllocationByte    <  curBlock)
+          throw AssertionFailure("curAllocationByte below block");
+        if (curBlock+blockSize+1 <  curAllocationByte)
+          throw AssertionFailure("curAllocationByte above block");
+        if (curBlock+blockSize+1 != endAllocationByte)
+          throw AssertionFailure("incorrect endAllocationByte for block");
       }
       return true;
     }
@@ -33,7 +39,7 @@ class BlockAllocator {
       blockSize = aBlockSize;
       curAllocationByte = NULL;
       endAllocationByte = NULL;
-      ASSERT_INVARIANT;
+      ASSERT(invariant());
     }
 
     /// \brief Clear (free) all of the blocks.
@@ -44,12 +50,12 @@ class BlockAllocator {
       }
       curAllocationByte = NULL;
       endAllocationByte = NULL;
-      ASSERT_INVARIANT;
+      ASSERT(invariant());
     }
 
     /// \brief Destory the block allocator and all of its blocks.
     ~BlockAllocator(void) {
-      ASSERT_INVARIANT;
+      ASSERT(invariant());
       clearBlocks();
       blockSize = 0;
       curAllocationByte = NULL;
@@ -59,24 +65,24 @@ class BlockAllocator {
   protected:
     // \brief Add a new allocation block to this blockAllocator.
     void addNewBlock(void) {
-      ASSERT_INVARIANT;
+      ASSERT(invariant());
       curAllocationByte = (char*)calloc(blockSize, 1);
       endAllocationByte = curAllocationByte + blockSize + 1;
       blocks.pushItem(curAllocationByte);
-      ASSERT_INVARIANT;
+      ASSERT(invariant());
     }
 
   public:
     /// \brief Allocate a new (sub)structure of the given size.
     char *allocateNewStructure(size_t structureSize) {
-      ASSERT_INVARIANT;
+      ASSERT(invariant());
       if (endAllocationByte <= curAllocationByte + structureSize) {
         // we need to allocate a new block
         addNewBlock();
       }
       char *newStructure = curAllocationByte;
       curAllocationByte += structureSize;
-      ASSERT_INVARIANT;
+      ASSERT(invariant());
       return newStructure;
     }
 

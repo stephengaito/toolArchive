@@ -10,6 +10,8 @@ include("$ENV{HOME}/.cmake/CMakeLists.txt")
 # Load our utilities
 include("CMakeUtils.txt")
 
+setDefaultBuildType("DEBUG" "-DDEBUG")
+
 project (DynamicUTF8Parser)
 
 loadLLVM()

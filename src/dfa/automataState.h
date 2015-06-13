@@ -13,39 +13,24 @@ namespace DeterministicFiniteAutomaton {
         ASCall, ASBackTrack
       };
 
-      bool invariant1(void) const {
-        if (allocator  == NULL) {
-          if (dState   != NULL) return false;
-          if (iterator != NULL) return false;
-        }
-        return true;
-      }
-      bool invariant2(void) const {
-        if (dState != NULL) {
-          if (iterator == NULL) return false;
-          if (iterator->origDState != dState) return false;
-        }
-        return true;
-      }
-      bool invariant3(void) const {
-        if ((stream  != NULL) && (!stream->invariant())) return false;
-        return true;
-      }
-      bool invariant4(void) const {
-        if ((token   != NULL) && (!token->invariant()))  return false;
-        return true;
-      }
-      bool invariant5(void) const {
-        if ((message != NULL) &&
-            (!Utf8Chars::validUtf8Chars(message, strlen(message)))) return false;
-        return true;
-      }
       bool invariant(void) const {
-        return (invariant1() &&
-                invariant2() &&
-                invariant3() &&
-                invariant4() &&
-                invariant5());
+        if (allocator  == NULL) {
+          if (dState   != NULL) throw AssertionFailure("dstate not NULL");
+          if (iterator != NULL) throw AssertionFailure("iterator not NULL");
+        }
+        if (dState != NULL) {
+          if (iterator == NULL) throw AssertionFailure("iterator should not be NULL");
+          if (iterator->origDState != dState)
+            throw AssertionFailure("iterator on wrong dState");
+        }
+        if ((stream  != NULL) && (!stream->invariant()))
+          throw AssertionFailure("stream failed invariant");
+        if ((token   != NULL) && (!token->invariant()))
+          throw AssertionFailure("token failed invariant");
+        if ((message != NULL) &&
+            (!Utf8Chars::validUtf8Chars(message, strlen(message))))
+          throw AssertionFailure("message corrupted");
+        return true;
       }
 
       AutomataState(void) {
@@ -55,7 +40,7 @@ namespace DeterministicFiniteAutomaton {
         dState    = NULL;
         token     = NULL;
         message   = NULL;
-        ASSERT_INVARIANT5;
+        ASSERT(invariant());
       }
 
       void initialize(StateAllocator *anAllocator,
@@ -70,7 +55,7 @@ namespace DeterministicFiniteAutomaton {
         stream   = aStream->clone();
         token    = new Token();
         message  = strdup(aMessage);
-        ASSERT_INVARIANT5;
+        ASSERT(invariant());
       }
 
       void update(State *aDState,
@@ -88,9 +73,7 @@ namespace DeterministicFiniteAutomaton {
         Utf8Chars *oldStream = stream;
         if (stream) {
           stream   = stream->clone(!cloneToken);
-          ASSERT(stream->invariant1());
-          ASSERT(stream->invariant2());
-          ASSERT(stream->invariant3());
+          ASSERT(stream->invariant());
         }
         if (clearOldState && oldStream) delete oldStream;
 
@@ -105,18 +88,14 @@ namespace DeterministicFiniteAutomaton {
 
         if (clearOldState && message) free((void*)message);
         message  = strdup(aMessage);
-        ASSERT_INVARIANT5;
+        ASSERT(invariant());
       }
 
       void copyFrom(const AutomataState &other,
                     bool keepStreamPosition = false,
                     bool clearOldState = true) {
-        ASSERT_INVARIANT5;
-        ASSERT(other.invariant1());
-        ASSERT(other.invariant2());
-        ASSERT(other.invariant3());
-        ASSERT(other.invariant4());
-        ASSERT(other.invariant5());
+        ASSERT(invariant());
+        ASSERT(other.invariant());
         ASSERT(allocator || other.allocator);
         if (!allocator) allocator = other.allocator;
 
@@ -137,11 +116,11 @@ namespace DeterministicFiniteAutomaton {
 
         if (clearOldState && message) free((void*)message);
         message = other.message;
-        ASSERT_INVARIANT5;
+        ASSERT(invariant());
       }
 
       void clear(void) {
-        ASSERT_INVARIANT5;
+        ASSERT(invariant());
         if (iterator) delete iterator;
         iterator  = NULL;
         if (stream)   delete stream;
@@ -156,28 +135,28 @@ namespace DeterministicFiniteAutomaton {
       }
 
       NFAStateIterator *getIterator(void) {
-        ASSERT_INVARIANT5;
+        ASSERT(invariant());
         return iterator;
       }
 
       Utf8Chars *getStream(void) {
-        ASSERT_INVARIANT5;
+        ASSERT(invariant());
         return stream;
       }
 
       const char *getMessage(void) {
-        ASSERT_INVARIANT5;
+        ASSERT(invariant());
         return message;
       }
 
       void setMessage(const char *aMessage) {
         if (message) free((void*)message);
         message = strdup(aMessage);
-        ASSERT_INVARIANT5;
+        ASSERT(invariant());
       }
 
       State *getDState(void) {
-        ASSERT_INVARIANT5;
+        ASSERT(invariant());
         return dState;
       }
       void setDState(State *aDState) {
@@ -185,34 +164,34 @@ namespace DeterministicFiniteAutomaton {
         ASSERT(aDState);
         dState = allocator->clone(aDState);
         iterator = allocator->getNewIteratorOn(dState);
-        ASSERT_INVARIANT5;
+        ASSERT(invariant());
       }
       void clearNFAState(NFA::State *nfaState) {
         ASSERT(allocator);
         ASSERT(nfaState);
         ASSERT(dState);
         allocator->clearNFAState(dState, nfaState);
-        ASSERT_INVARIANT5;
+        ASSERT(invariant());
       }
       NFA::State *stateMatchesToken(State *tokenStates) {
         ASSERT(allocator);
         ASSERT(tokenStates);
         ASSERT(dState);
-        ASSERT_INVARIANT5;
+        ASSERT(invariant());
         return allocator->stateMatchesToken(dState, tokenStates);
       }
 
       void setTokenId(Token::TokenId tokenId) {
         ASSERT(token);
         token->setId(tokenId);
-        ASSERT_INVARIANT5;
+        ASSERT(invariant());
       }
 
       void setTokenText(void) {
         ASSERT(token);
         ASSERT(stream);
         token->setText(stream->getStart(), stream->getNumberOfBytesRead());
-        ASSERT_INVARIANT5;
+        ASSERT(invariant());
       }
 
       void addChildToken(Token *childToken) {
@@ -220,23 +199,21 @@ namespace DeterministicFiniteAutomaton {
         ASSERT(token);
         ASSERT(token->invariant());
         token->addChildToken(childToken);
-        ASSERT_INVARIANT5;
+        ASSERT(invariant());
       }
 
       Token *releaseToken(void) {
-        ASSERT_INVARIANT5;
+        ASSERT(invariant());
         Token *oldToken = token;
         token = new Token();
-        ASSERT_INVARIANT5;
+        ASSERT(invariant());
         return oldToken;
       }
 
     protected:
 
       void operator=(const AutomataState &other) {
-        ASSERT(other.invariant1());
-        ASSERT(other.invariant2());
-        ASSERT(other.invariant3());
+        ASSERT(other.invariant());
         automataStateType = other.automataStateType;
         startStateId      = other.startStateId;
         message           = other.message;
@@ -245,7 +222,7 @@ namespace DeterministicFiniteAutomaton {
         iterator          = other.iterator;
         stream            = other.stream;
         token             = other.token;
-        ASSERT_INVARIANT5;
+        ASSERT(invariant());
       }
 
       AutomataStateType automataStateType;

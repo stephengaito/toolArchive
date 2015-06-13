@@ -10,10 +10,12 @@ namespace DeterministicFiniteAutomaton {
     public:
 
       bool invariant(void) const {
-        if (!VarArray<AutomataState>::invariant()) return false;
+        if (!VarArray<AutomataState>::invariant())
+          throw AssertionFailure("AutomataState varArray failed invariant");
 
         for (size_t i = 0; i < numItems; i++) {
-          if (!itemArray[i].invariant()) return false;
+          if (!itemArray[i].invariant())
+            throw AssertionFailure("AutomataState entry failed invariant");
         }
         return true;
       }

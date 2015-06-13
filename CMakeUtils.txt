@@ -1,5 +1,15 @@
 # This is a collection of utilities used by the main CMake file
 
+# Set the default build type
+#
+function(setDefaultBuildType buildType cFlags)
+  if (NOT DEFINED CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE ${buildType})
+  endif (NOT DEFINED CMAKE_BUILD_TYPE)
+  set(CMAKE_C_FLAGS "${cFlags} ${CMAKE_C_FLAGS}" CACHE STRING "" FORCE )
+  add_definitions(${CMAKE_C_FLAGS})
+endfunction(setDefaultBuildType)
+
 # Load the LLVM utilities
 #
 macro(loadLLVM)

@@ -23,15 +23,18 @@ class Token {
     typedef value_t WrappedTokenId;
 
     bool invariant(void) const {
-      if (!tokens.invariant()) return false;
-      return Utf8Chars::validUtf8Chars(textStart, textLength);
+      if (!tokens.invariant())
+        throw AssertionFailure("child tokens failed invariant");
+      if (!Utf8Chars::validUtf8Chars(textStart, textLength))
+        throw AssertionFailure("token text not valid UTF8");
+      return true;
     }
 
     Token(void) : tokens() {
       tokenId    = 0;
       textStart  = NULL;
       textLength = 0;
-      ASSERT_INVARIANT;
+      ASSERT(invariant());
     }
 
     /// \brief Destroy the forest of ParseTrees.
@@ -42,7 +45,7 @@ class Token {
     /// will potentially be freed as well (depending upon the explicit
     /// ownership registered with each Utf8Chars instance).
     ~Token(void) {
-      ASSERT_INVARIANT;
+      ASSERT(invariant());
       tokenId    = 0;
       textStart  = NULL;
       textLength = 0;
@@ -69,7 +72,7 @@ class Token {
       textStart  = other.textStart;
       textLength = other.textLength;
       tokens.deepCopyFrom(other.tokens);
-      ASSERT_INVARIANT;
+      ASSERT(invariant());
     }
 
     Token *deepClone(void) {
@@ -81,7 +84,7 @@ class Token {
     void setText(const char *aTextStart, size_t aTextLength) {
       textStart  = aTextStart;
       textLength = aTextLength;
-      ASSERT_INVARIANT;
+      ASSERT(invariant());
     }
 
     void setId(TokenId aTokenId) {
@@ -91,7 +94,7 @@ class Token {
     void addChildToken(Token *childToken) {
       ASSERT(childToken->invariant());
       tokens.pushItem(*childToken);
-      ASSERT_INVARIANT;
+      ASSERT(invariant());
     }
 
     static WrappedTokenId wrapTokenId(TokenId aTokenId, bool ignoreToken) {
@@ -116,7 +119,7 @@ class Token {
       textStart  = other.textStart;
       textLength = other.textLength;
       tokens     = other.tokens;
-      ASSERT_INVARIANT;
+      ASSERT(invariant());
     }
 
     /// \brief The Wrapped Token ID of a given token.
@@ -148,7 +151,7 @@ class Token {
         for (size_t i = 0; i < numItems; i++) {
           pushItem(other.itemArray[i]);
         }
-        ASSERT_INVARIANT;
+        ASSERT(invariant());
       }
     };
 
