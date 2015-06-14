@@ -18,6 +18,7 @@
 // WE ARE NOT IN DEBUG/DEVELOPMENT
 // SO REMOVE ALL ASSERTS
 #define ASSERT(cond)
+#define ASSERT_MESSAGE(cond, message)
 //////////////////////////////////////////////////////////////////////////////
 
 #else // DEBUG defined
@@ -98,6 +99,13 @@ struct AssertionFailure : bandit::detail::assertion_exception {
 #define ASSERT(condition)						 \
   try {									 \
     if (!(condition)) throw AssertionFailure("("#condition") is false"); \
+  } catch (const AssertionFailure& af) {				 \
+    AssertionFailure::addStackTrace(af, __FILE__, __LINE__);		 \
+  }
+
+#define ASSERT_MESSAGE(condition, message)				 \
+  try {									 \
+    if (!(condition)) throw AssertionFailure("("#condition") is false "#message); \
   } catch (const AssertionFailure& af) {				 \
     AssertionFailure::addStackTrace(af, __FILE__, __LINE__);		 \
   }

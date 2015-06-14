@@ -90,7 +90,7 @@ namespace DeterministicFiniteAutomaton {
       void reportStreamPrefix();
       void reportStreamPostfix();
       void swap(size_t indent = 0);
-      void push(const char *message0, const char *message1, size_t indent = 0);
+      void push(const char *message, size_t indent = 0);
       void pop(const char *message, size_t indent = 0);
       void checkForRestart(size_t indent = 0);
       /// \brief Trace the use of a restart state transition.

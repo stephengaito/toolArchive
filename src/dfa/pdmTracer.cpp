@@ -26,7 +26,7 @@ void PDMTracer::reportDFAState(size_t indent) {
    NFAStateIterator iterator =
     pdm->allocator->newIteratorOn(pdm->curState.dState);
   fprintf(traceFile, "%sCurrent state: %s\n",
-    indents[indent], pdm->curState.message);
+    indents[indent], pdm->curState.getStartStateMessage());
   fprintf(traceFile, "%sNFA states:\n",
           indents[indent]);
   while (NFA::State *nfaState = iterator.nextState()) {
@@ -37,11 +37,13 @@ void PDMTracer::reportDFAState(size_t indent) {
 void PDMTracer::reportAutomataStack(size_t indent) {
   if (!traceFile || !trace(AutomataStack)) return;
   fprintf(traceFile, "-------------------------------------\n");
-  fprintf(traceFile, "%sAutomataStack:\n", indents[indent]);
+  fprintf(traceFile, "%sAutomataStack (%zu):\n", indents[indent],
+          pdm->stack.getNumItems());
   for (size_t i = 0; i < pdm->stack.getNumItems(); i++) {
-    fprintf(traceFile, "%s%s\n",
-      indents[indent+1],
-      pdm->stack.getItem(i, AutomataState()).message);
+    fprintf(traceFile, "%s%zu: %s(%s)\n",
+      indents[indent+1], i,
+      pdm->stack.getItem(i, AutomataState()).getStateTypeMessage(),
+      pdm->stack.getItem(i, AutomataState()).getStartStateMessage());
   }
   fprintf(traceFile, "-------------------------------------\n");
 }
@@ -74,7 +76,8 @@ void PDMTracer::reportStreamPostfix(void) {
 
 void PDMTracer::reportChar(utf8Char_t curChar, size_t indent) {
   if (!traceFile || !trace(CurStreamPosition)) return;
-  fprintf(traceFile, "%s%s:", indents[indent], pdm->curState.message);
+  fprintf(traceFile, "%s%s:", indents[indent],
+          pdm->curState.getStartStateMessage());
   reportStreamPrefix();
   fprintf(traceFile, "%s(%lu)", curChar.c, curChar.u);
   reportStreamPostfix();
@@ -88,17 +91,17 @@ void PDMTracer::reportTokens(size_t indent) {
   fprintf(traceFile, "-------------------------------------\n");
 }
 
-void PDMTracer::push(const char *message0, const char *message1,
-                     size_t indent) {
+void PDMTracer::push(const char *message, size_t indent) {
   if (!traceFile || !trace(StackPushes)) return;
   fprintf(traceFile, "%spush::%s(%s)<%s> \n",
-          indents[indent], pdm->curState.message, message0, message1);
+          indents[indent], pdm->curState.getStateTypeMessage(),
+          pdm->curState.getStartStateMessage(), message);
 }
 
 void PDMTracer::pop(const char *message, size_t indent) {
   if (!traceFile || !trace(StackPops)) return;
   fprintf(traceFile, "%spop::%s (%s)\n", indents[indent],
-          pdm->curState.message, message);
+          pdm->curState.getStartStateMessage(), message);
 }
 
 void PDMTracer::swap(size_t indent) {

@@ -14,6 +14,9 @@ namespace DeterministicFiniteAutomaton {
       };
 
       bool invariant(void) const {
+        if (dfa == NULL) {
+          if (allocator != NULL) throw AssertionFailure("allocator not NULL when dfa is NULL");
+        }
         if (allocator  == NULL) {
           if (dState   != NULL) throw AssertionFailure("dstate not NULL");
           if (iterator != NULL) throw AssertionFailure("iterator not NULL");
@@ -27,9 +30,6 @@ namespace DeterministicFiniteAutomaton {
           throw AssertionFailure("stream failed invariant");
         if ((token   != NULL) && (!token->invariant()))
           throw AssertionFailure("token failed invariant");
-        if ((message != NULL) &&
-            (!Utf8Chars::validUtf8Chars(message, strlen(message))))
-          throw AssertionFailure("message corrupted");
         return true;
       }
 
@@ -41,7 +41,6 @@ namespace DeterministicFiniteAutomaton {
         stream            = NULL;
         dState            = NULL;
         token             = NULL;
-        message           = NULL;
         ASSERT(invariant());
       }
 
@@ -57,13 +56,6 @@ namespace DeterministicFiniteAutomaton {
         ASSERT(allocator);
         dState = allocator->clone(dState);
         iterator = allocator->getNewIteratorOn(dState);
-        NFA *nfa = dfa->getNFA();
-        ASSERT(nfa);
-        NFA::State *nfaState = nfa->getStartState(startStateId);
-        ASSERT(nfaState);
-        message = nfaState->message;
-        ASSERT(message);
-        message  = strdup(message);
         ASSERT(aStream);
         stream   = aStream->clone();
         token    = new Token();
@@ -72,9 +64,9 @@ namespace DeterministicFiniteAutomaton {
       }
 
       void update(State *aDState,
-                  const char *aMessage,
                   bool cloneToken    = false,
                   bool clearOldState = false) {
+        ASSERT(dfa);
         ASSERT(allocator);
         ASSERT(aDState);
         if (clearOldState && dState)  allocator->unallocateState(dState);
@@ -99,8 +91,6 @@ namespace DeterministicFiniteAutomaton {
         }
         if (clearOldState && oldToken) delete oldToken;
 
-        if (clearOldState && message) free((void*)message);
-        message  = strdup(aMessage);
         ASSERT(invariant());
       }
 
@@ -109,6 +99,10 @@ namespace DeterministicFiniteAutomaton {
                     bool clearOldState = true) {
         ASSERT(invariant());
         ASSERT(other.invariant());
+
+        ASSERT(dfa       || other.dfa);
+        if (!dfa) dfa = other.dfa;
+
         ASSERT(allocator || other.allocator);
         if (!allocator) allocator = other.allocator;
 
@@ -127,8 +121,6 @@ namespace DeterministicFiniteAutomaton {
         if (clearOldState && token) delete token;
          token = other.token;
 
-        if (clearOldState && message) free((void*)message);
-        message = other.message;
         ASSERT(invariant());
       }
 
@@ -142,9 +134,8 @@ namespace DeterministicFiniteAutomaton {
         dState    = NULL;
         if (token)   delete token;
         token     = NULL;
-        if (message)  free((void*)message);
-        message   = NULL;
         allocator = NULL; // we do not own the allocator
+        dfa       = NULL; // we do not own the DFA
       }
 
       NFAStateIterator *getIterator(void) {
@@ -157,15 +148,33 @@ namespace DeterministicFiniteAutomaton {
         return stream;
       }
 
-      const char *getMessage(void) {
-        ASSERT(invariant());
-        return message;
+      void setStateType(AutomataStateType stateType) {
+        automataStateType = stateType;
+      }
+      AutomataStateType getStateType(void) {
+        return automataStateType;
       }
 
-      void setMessage(const char *aMessage) {
-        if (message) free((void*)message);
-        message = strdup(aMessage);
+      const char *getStateTypeMessage(void) {
         ASSERT(invariant());
+        switch(automataStateType) {
+        case ASCall:
+          return "Call";
+        case ASBackTrack:
+          return "BackTrack point";
+        default:
+          return "INVALID";
+        }
+        ASSERT_MESSAGE(false, "should never reach here");
+      }
+
+      const char *getStartStateMessage(void) {
+        ASSERT(dfa);
+        NFA *nfa = dfa->getNFA();
+        ASSERT(nfa);
+        NFA::State *nfaState = nfa->getStartState(startStateId);
+        ASSERT(nfaState);
+        return nfaState->message;
       }
 
       State *getDState(void) {
@@ -229,7 +238,7 @@ namespace DeterministicFiniteAutomaton {
         ASSERT(other.invariant());
         automataStateType = other.automataStateType;
         startStateId      = other.startStateId;
-        message           = other.message;
+        dfa               = other.dfa;
         allocator         = other.allocator;
         dState            = other.dState;
         iterator          = other.iterator;
@@ -241,9 +250,6 @@ namespace DeterministicFiniteAutomaton {
       AutomataStateType automataStateType;
 
       NFA::StartStateId startStateId;
-
-      /// \brief A useful message used by the Tracer
-      const char *message;
 
       /// \brief The allocator associated with this AutomataState.
       DFA *dfa;
