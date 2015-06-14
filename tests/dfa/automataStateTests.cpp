@@ -41,9 +41,13 @@ go_bandit([](){
       DFA *dfa = new DFA(nfa);
       StateAllocator *allocator = dfa->getStateAllocator();
       Utf8Chars *someChars = new Utf8Chars("some characters");
-      const char *testMessage = "this is a test message";
-      State *dState = dfa->getDFAStartState("start");
-      automataState.initialize(allocator, someChars, dState, testMessage);
+      NFA::StartStateId startStateId = nfa->findStartStateId("start");
+      NFA::State *nfaState = nfa->getStartState(startStateId);
+      const char* testMessage = nfaState->message;
+      State *dState = dfa->getDFAStartState(startStateId);
+      automataState.initialize(dfa, someChars, startStateId);
+      AssertThat(automataState.dfa, Equals(dfa));
+      AssertThat(automataState.allocator, Equals(allocator));
       AssertThat(automataState.message, Is().Not().EqualTo((void*)0));
       AssertThat(automataState.message, Is().Not().EqualTo((char*)testMessage));
       AssertThat(automataState.message, Equals(testMessage));
@@ -53,7 +57,6 @@ go_bandit([](){
       AssertThat(automataState.iterator, Is().Not().EqualTo((void*)0));
       AssertThat(automataState.dState, Is().Not().EqualTo((void*)0));
       AssertThat(automataState.dState, Is().Not().EqualTo(dState));
-      AssertThat(automataState.allocator, Is().Not().EqualTo((void*)0));
     });
 
     it("Initialize an AutomataState and update it", [&](){
@@ -65,10 +68,14 @@ go_bandit([](){
       DFA *dfa = new DFA(nfa);
       StateAllocator *allocator = dfa->getStateAllocator();
       Utf8Chars *someChars = new Utf8Chars("some characters");
-      const char *testMessage = "this is a test message";
-      State *dState = dfa->getDFAStartState("start");
+      NFA::StartStateId startStateId = nfa->findStartStateId("start");
+      NFA::State *nfaState = nfa->getStartState(startStateId);
+      const char* testMessage = nfaState->message;
+      State *dState = dfa->getDFAStartState(startStateId);
       AutomataState automataState;
-      automataState.initialize(allocator, someChars, dState, testMessage);
+      automataState.initialize(dfa, someChars, startStateId);
+      AssertThat(automataState.dfa, Equals(dfa));
+      AssertThat(automataState.allocator, Equals(allocator));
       AssertThat(automataState.message, Is().Not().EqualTo((char*)testMessage));
       AssertThat(automataState.message, Equals(testMessage));
       AssertThat(automataState.token,   Is().Not().EqualTo((void*)0));
@@ -101,10 +108,14 @@ go_bandit([](){
       DFA *dfa = new DFA(nfa);
       StateAllocator *allocator = dfa->getStateAllocator();
       Utf8Chars *someChars = new Utf8Chars("some characters");
-      const char *testMessage = "this is a test message";
-      State *dState = dfa->getDFAStartState("start");
+      NFA::StartStateId startStateId = nfa->findStartStateId("start");
+      NFA::State *nfaState = nfa->getStartState(startStateId);
+      const char* testMessage = nfaState->message;
+      State *dState = dfa->getDFAStartState(startStateId);
       AutomataState automataState;
-      automataState.initialize(allocator, someChars, dState, testMessage);
+      automataState.initialize(dfa, someChars, startStateId);
+      AssertThat(automataState.dfa, Equals(dfa));
+      AssertThat(automataState.allocator, Equals(allocator));
       AssertThat(automataState.message, Is().Not().EqualTo((char*)testMessage));
       AssertThat(automataState.message, Equals(testMessage));
       AssertThat(automataState.token,  Is().Not().EqualTo((void*)0));
@@ -145,10 +156,14 @@ go_bandit([](){
       DFA *dfa = new DFA(nfa);
       StateAllocator *allocator = dfa->getStateAllocator();
       Utf8Chars *someChars = new Utf8Chars("some characters");
-      const char *testMessage = "this is a test message";
-      State *dState = dfa->getDFAStartState("start");
+      NFA::StartStateId startStateId = nfa->findStartStateId("start");
+      NFA::State *nfaState = nfa->getStartState(startStateId);
+      const char* testMessage = nfaState->message;
+      State *dState = dfa->getDFAStartState(startStateId);
       AutomataState automataState;
-      automataState.initialize(allocator, someChars, dState, testMessage);
+      automataState.initialize(dfa, someChars, startStateId);
+      AssertThat(automataState.dfa, Equals(dfa));
+      AssertThat(automataState.allocator, Equals(allocator));
       AssertThat(automataState.message, Is().Not().EqualTo((char*)testMessage));
       AssertThat(automataState.message, Equals(testMessage));
       AssertThat(automataState.token,  Is().Not().EqualTo((void*)0));

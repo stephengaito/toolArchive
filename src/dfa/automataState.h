@@ -45,20 +45,29 @@ namespace DeterministicFiniteAutomaton {
         ASSERT(invariant());
       }
 
-      void initialize(StateAllocator *anAllocator,
-                      Utf8Chars      *aStream,
-                      State          *aDState,
-                      const char     *aMessage) {
-        allocator = anAllocator;
+      void initialize(DFA               *aDFA,
+                      Utf8Chars         *aStream,
+                      NFA::StartStateId  aStartStateId) {
+        dfa = aDFA;
+        ASSERT(dfa);
+        startStateId = aStartStateId;
+        dState = dfa->getDFAStartState(startStateId);
+        ASSERT(dState);
+        allocator = dfa->getStateAllocator();
         ASSERT(allocator);
-        dState   = allocator->clone(aDState);
+        dState = allocator->clone(dState);
         iterator = allocator->getNewIteratorOn(dState);
+        NFA *nfa = dfa->getNFA();
+        ASSERT(nfa);
+        NFA::State *nfaState = nfa->getStartState(startStateId);
+        ASSERT(nfaState);
+        message = nfaState->message;
+        ASSERT(message);
+        message  = strdup(message);
         ASSERT(aStream);
         stream   = aStream->clone();
         token    = new Token();
-        message  = strdup(aMessage);
-        automataStateType = ASInvalid;
-        startStateId      = 0;
+        automataStateType = ASCall;
         ASSERT(invariant());
       }
 
@@ -237,6 +246,8 @@ namespace DeterministicFiniteAutomaton {
       const char *message;
 
       /// \brief The allocator associated with this AutomataState.
+      DFA *dfa;
+
       StateAllocator *allocator;
 
       /// \brief A copy of the current DFA::State.

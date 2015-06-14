@@ -14,9 +14,7 @@ Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
 
   if (pdmTracer) pdmTracer->setPDM(this);
 
-  curState.initialize(allocator, charStream,
-                      dfa->getDFAStartState(startStateId),
-                      nfa->getStartState(startStateId)->message);
+  curState.initialize(dfa, charStream, startStateId);
 
   restart:
   while(true) {

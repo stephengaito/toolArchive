@@ -68,9 +68,11 @@ go_bandit([](){
       AssertThat(pdm->stack.getNumItems(), Equals(0));
       StateAllocator *allocator = dfa->getStateAllocator();
       Utf8Chars *someChars = new Utf8Chars("some characters");
-      const char *testMessage = "this is a test message";
-      State *dState = dfa->getDFAStartState("start");
-      pdm->curState.initialize(allocator, someChars, dState, testMessage);
+      NFA::StartStateId startStateId = nfa->findStartStateId("start");
+      NFA::State *nfaState = nfa->getStartState(startStateId);
+      const char* testMessage = nfaState->message;
+      State *dState = dfa->getDFAStartState(startStateId);
+      pdm->curState.initialize(dfa, someChars, startStateId);
       AssertThat(pdm->curState.message, Is().Not().EqualTo((char*)testMessage));
       AssertThat(pdm->curState.message, Equals(testMessage));
       AssertThat(pdm->curState.token, Is().Not().EqualTo((void*)0));
