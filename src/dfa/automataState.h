@@ -10,7 +10,7 @@ namespace DeterministicFiniteAutomaton {
     public:
 
       enum AutomataStateType {
-        ASInvalid=0, ASCall=1, ASBackTrack=2
+        ASInvalid=0, ASBackTrack=1, ASContinue=2, ASRestart=3
       };
 
       bool invariant(void) const {
@@ -49,48 +49,52 @@ namespace DeterministicFiniteAutomaton {
                       NFA::StartStateId  aStartStateId) {
         dfa = aDFA;
         ASSERT(dfa);
-        startStateId = aStartStateId;
-        dState = dfa->getDFAStartState(startStateId);
-        ASSERT(dState);
         allocator = dfa->getStateAllocator();
         ASSERT(allocator);
-        dState = allocator->clone(dState);
-        iterator = allocator->getNewIteratorOn(dState);
+        setStartStateId(aStartStateId);
         ASSERT(aStream);
         stream   = aStream->clone();
         token    = new Token();
-        automataStateType = ASCall;
+        automataStateType = ASRestart;
         ASSERT(invariant());
       }
 
-      void update(State *aDState,
-                  bool cloneToken    = false,
-                  bool clearOldState = false) {
+      void setStartStateId(NFA::StartStateId aStartStateId) {
+        startStateId = aStartStateId;
         ASSERT(dfa);
+        setDState(dfa->getDFAStartState(startStateId));
+        ASSERT(invariant());
+      }
+
+      void setDState(State *aDState, bool clearOldState = false) {
         ASSERT(allocator);
-        ASSERT(aDState);
         if (clearOldState && dState)  allocator->unallocateState(dState);
         dState   = allocator->clone(aDState);
 
         if (clearOldState && iterator) delete iterator;
         if (dState) iterator = allocator->getNewIteratorOn(dState);
+        ASSERT(invariant());
+      }
 
+      void cloneSubStream(bool subStream, bool clearOldState = false) {
         Utf8Chars *oldStream = stream;
         if (stream) {
-          stream   = stream->clone(!cloneToken);
+          stream   = stream->clone(subStream);
           ASSERT(stream->invariant());
         }
         if (clearOldState && oldStream) delete oldStream;
+        ASSERT(invariant());
+      }
 
+      void cloneToken(bool shouldCloneToken, bool clearOldState = false) {
         Token *oldToken = token;
-        if (cloneToken) {
+        if (shouldCloneToken) {
           if (token) token = token->deepClone();
           else token = new Token();
         } else {
           token = new Token();
         }
         if (clearOldState && oldToken) delete oldToken;
-
         ASSERT(invariant());
       }
 
@@ -158,10 +162,12 @@ namespace DeterministicFiniteAutomaton {
       const char *getStateTypeMessage(void) {
         ASSERT(invariant());
         switch(automataStateType) {
-        case ASCall:
-          return "Call";
         case ASBackTrack:
-          return "BackTrack point";
+          return "BackTrack";
+        case ASContinue:
+          return "Continue";
+        case ASRestart:
+          return "Restart";
         default:
           return "INVALID";
         }
@@ -181,13 +187,13 @@ namespace DeterministicFiniteAutomaton {
         ASSERT(invariant());
         return dState;
       }
-      void setDState(State *aDState) {
-        ASSERT(allocator);
-        ASSERT(aDState);
-        dState = allocator->clone(aDState);
-        iterator = allocator->getNewIteratorOn(dState);
-        ASSERT(invariant());
-      }
+//      void setDState(State *aDState) {
+//        ASSERT(allocator);
+//        ASSERT(aDState);
+//        dState = allocator->clone(aDState);
+//        iterator = allocator->getNewIteratorOn(dState);
+//        ASSERT(invariant());
+//      }
       void clearNFAState(NFA::State *nfaState) {
         ASSERT(allocator);
         ASSERT(nfaState);

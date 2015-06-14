@@ -53,37 +53,6 @@ go_bandit([](){
       AssertThat(automataState.dState, Is().Not().EqualTo(dState));
     });
 
-    it("Initialize an AutomataState and update it", [&](){
-      Classifier *classifier = new Classifier();
-      NFA *nfa = new NFA(classifier);
-      NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfaBuilder->compileRegularExpressionForTokenId("start", "simple", 1);
-      nfaBuilder->compileRegularExpressionForTokenId("other", "otherSimple", 1);
-      DFA *dfa = new DFA(nfa);
-      StateAllocator *allocator = dfa->getStateAllocator();
-      Utf8Chars *someChars = new Utf8Chars("some characters");
-      NFA::StartStateId startStateId = nfa->findStartStateId("start");
-      State *dState = dfa->getDFAStartState(startStateId);
-      AutomataState automataState;
-      automataState.initialize(dfa, someChars, startStateId);
-      AssertThat(automataState.dfa, Equals(dfa));
-      AssertThat(automataState.allocator, Equals(allocator));
-      AssertThat(automataState.token,   Is().Not().EqualTo((void*)0));
-      AssertThat(automataState.stream,  Is().Not().EqualTo((void*)0));
-      AssertThat(automataState.iterator, Is().Not().EqualTo((void*)0));
-      AssertThat(automataState.dState,  Is().Not().EqualTo(dState));
-      AssertThat(automataState.allocator, Equals(allocator));
-      State *otherDState = dfa->getDFAStartState("other");
-      automataState.update(otherDState, "TODO");
-      AssertThat(automataState.token,  Is().Not().EqualTo((void*)0));
-      AssertThat(automataState.stream, Is().Not().EqualTo((void*)0));
-      AssertThat(automataState.iterator, Is().Not().EqualTo((void*)0));
-      AssertThat(automataState.dState, Is().Not().EqualTo((void*)0));
-      AssertThat(automataState.dState, Is().Not().EqualTo(dState));
-      AssertThat(automataState.dState, Is().Not().EqualTo(otherDState));
-      AssertThat(automataState.allocator, Equals(allocator));
-    });
-
     it("CopyFrom an AutomataState", [&](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);

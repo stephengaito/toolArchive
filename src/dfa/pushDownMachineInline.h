@@ -1,31 +1,6 @@
 #ifndef PUSH_DOWN_MACHINE_INLINE_H
 #define PUSH_DOWN_MACHINE_INLINE_H
 
-      /// \brief Push the current automata state on to the top
-      /// of the push down automata's state stack.
-      void push(PDMTracer *pdmTracer,
-                State *aDState,
-                bool cloneToken = false) {
-        if (pdmTracer) pdmTracer->push(
-          (cloneToken ? "clone Token / full stream" : "new Token / sub stream"));
-        stack.pushItem(curState);
-        curState.update(aDState, cloneToken, false); // DO NOT CLEAR OLD STATE
-      }
-
-      /// \brief Push the current automata state on to the top
-      /// of the push down automata's state stack.
-      void pushCloneToken(PDMTracer *pdmTracer,
-                          State *aDState) {
-        push(pdmTracer, aDState, true); // deepClone the token
-      }
-
-      /// \brief Push the current automata state on to the top
-      /// of the push down automata's state stack.
-      void pushNewToken(PDMTracer *pdmTracer,
-                        State *aDState) {
-        push(pdmTracer, aDState, false); // create a new token
-      }
-
       /// \brief Swap the top two elements of the AutomataState stack.
       ///
       /// Do nothing if there are only one item or less on the stack.
@@ -66,22 +41,27 @@
         ASSERT(nfaState);
         // we need to try this path
         //
-        // mark the curState as the backTrack state
+        // setup the backtrack state...
         curState.setStateType(AutomataState::ASBackTrack);
-        //
         // clear this NFA::State out of the backTrack DFA state
         curState.clearNFAState(nfaState);
-        // push current autoamta state to clean up if this path fails.
-        pushCloneToken(pdmTracer,
-             dfa->getDFAStateFromNFAState(nfaState));
+        if (pdmTracer) pdmTracer->push("TODO");
+        stack.pushItem(curState);
+
+        // setup the call continue state...
+        curState.setStateType(AutomataState::ASContinue);
+        curState.setDState(dfa->getDFAStateFromNFAState(nfaState));
+        curState.cloneSubStream(false);
+        curState.cloneToken(true);
+        if (pdmTracer) pdmTracer->push("TODO");
+        stack.pushItem(curState);
+
         // now set up the subDFA state
-        curState.setStateType(AutomataState::ASCall);
-        NFA::State *reStartNFAState =
-          nfa->getStartState(nfaState->matchData.r);
-        ASSERT(reStartNFAState);
-        pushNewToken(pdmTracer,
-             dfa->getDFAStartState(nfaState->matchData.r));
-        if (pdmTracer) pdmTracer->restart(nfaState);
+        curState.setStateType(AutomataState::ASRestart);
+        curState.setStartStateId(nfaState->matchData.r);
+        curState.cloneSubStream(true);
+        curState.cloneToken(false);
+        if (pdmTracer) pdmTracer->restart();
       }
 
 #endif

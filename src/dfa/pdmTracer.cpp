@@ -115,13 +115,10 @@ void PDMTracer::checkForRestart(size_t indent) {
 }
 
 /// \brief Trace the use of a restart state transition.
-void PDMTracer::restart(NFA::State *nfaState, size_t indent) {
+void PDMTracer::restart(size_t indent) {
   if (!traceFile || !trace(PDMRestarts)) return;
-  fprintf(traceFile, "%sreStart", indents[indent]);
-  if (nfaState->matchType == NFA::ReStart) {
-    NFA::State *reStartState = pdm->nfa->getStartState(nfaState->matchData.r);
-    fprintf(traceFile, "{%s} ", reStartState->message);
-  }
+  fprintf(traceFile, "%sreStart{%s} ", indents[indent],
+          pdm->curState.getStartStateMessage());
   reportStreamPrefix();
   reportStreamPostfix();
   fprintf(traceFile, "\n");
