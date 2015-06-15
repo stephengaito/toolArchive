@@ -5,24 +5,35 @@
 
 namespace DeterministicFiniteAutomaton {
 
-  /// \brief The PushDownAutomata's state.
+  /// \brief The PushDownMachine's state.
   class AutomataState {
     public:
 
+      /// \brief The type of the current AutomataState.
       enum AutomataStateType {
-        ASInvalid=0, ASBackTrack=1, ASContinue=2, ASRestart=3
+        ASInvalid=0,
+        ASBackTrack=1,
+        ASContinue=2,
+        ASRestart=3
       };
 
+      /// \brief An invariant which should ALWAYS be true for any
+      /// instance of a AutomataState class.
+      ///
+      /// Throws an AssertionFailure with a brief description of any
+      /// inconsistencies discovered.
       bool invariant(void) const {
         if (dfa == NULL) {
-          if (allocator != NULL) throw AssertionFailure("allocator not NULL when dfa is NULL");
+          if (allocator != NULL)
+            throw AssertionFailure("allocator not NULL when dfa is NULL");
         }
         if (allocator  == NULL) {
           if (dState   != NULL) throw AssertionFailure("dstate not NULL");
           if (iterator != NULL) throw AssertionFailure("iterator not NULL");
         }
         if (dState != NULL) {
-          if (iterator == NULL) throw AssertionFailure("iterator should not be NULL");
+          if (iterator == NULL)
+            throw AssertionFailure("iterator should not be NULL");
           if (iterator->origDState != dState)
             throw AssertionFailure("iterator on wrong dState");
         }
@@ -33,6 +44,7 @@ namespace DeterministicFiniteAutomaton {
         return true;
       }
 
+      /// \brief Create an empty AutomataState.
       AutomataState(void) {
         automataStateType = ASInvalid;
         startStateId      = 0;
@@ -44,9 +56,13 @@ namespace DeterministicFiniteAutomaton {
         ASSERT(invariant());
       }
 
+      /// \brief Initialize an existing AutomataState to the start
+      /// state, aStartStateId, over the DFA, aDFA, running over the
+      /// stream, aStream, of UTF8 characters.
       void initialize(DFA               *aDFA,
                       Utf8Chars         *aStream,
                       NFA::StartStateId  aStartStateId) {
+        // TODO: should any old state be deleted?
         dfa = aDFA;
         ASSERT(dfa);
         allocator = dfa->getStateAllocator();
@@ -59,6 +75,7 @@ namespace DeterministicFiniteAutomaton {
         ASSERT(invariant());
       }
 
+      /// \brief Set the AutomataState to the start state, aStartStateId.
       void setStartStateId(NFA::StartStateId aStartStateId) {
         startStateId = aStartStateId;
         ASSERT(dfa);
@@ -66,6 +83,8 @@ namespace DeterministicFiniteAutomaton {
         ASSERT(invariant());
       }
 
+      /// \brief Set the AutomataState to the the DFA State provided,
+      /// clearing the old state if clearOldState is true.
       void setDState(State *aDState, bool clearOldState = false) {
         ASSERT(allocator);
         if (clearOldState && dState)  allocator->unallocateState(dState);
@@ -76,6 +95,10 @@ namespace DeterministicFiniteAutomaton {
         ASSERT(invariant());
       }
 
+      /// \brief Clone the stream. If subStream is true then the cloned
+      /// stream will only read from the parent stream's current position.
+      ///
+      /// Clear the old state if clearOldState is true.
       void cloneSubStream(bool subStream, bool clearOldState = false) {
         Utf8Chars *oldStream = stream;
         if (stream) {
@@ -86,6 +109,10 @@ namespace DeterministicFiniteAutomaton {
         ASSERT(invariant());
       }
 
+      /// \brief Clone the token. Simply create a new token if
+      /// shouldCLoneToken is false.
+      ///
+      /// Clear the old state if clearOldState is true.
       void cloneToken(bool shouldCloneToken, bool clearOldState = false) {
         Token *oldToken = token;
         if (shouldCloneToken) {
@@ -98,6 +125,13 @@ namespace DeterministicFiniteAutomaton {
         ASSERT(invariant());
       }
 
+      /// \brief Copy the current AutomataState's state from the other
+      /// AutomataState's state.
+      ///
+      /// The current AutomataState's stream position will kept if
+      /// keepStreamPosition is true.
+      ///
+      /// Clear the old state if clearOldState is true.
       void copyFrom(const AutomataState &other,
                     bool keepStreamPosition = false,
                     bool clearOldState = true) {
@@ -131,6 +165,7 @@ namespace DeterministicFiniteAutomaton {
         ASSERT(invariant());
       }
 
+      /// \brief Clear the AutomataState's state.
       void clear(void) {
         ASSERT(invariant());
         if (iterator) delete iterator;
@@ -145,16 +180,19 @@ namespace DeterministicFiniteAutomaton {
         dfa       = NULL; // we do not own the DFA
       }
 
+      /// \brief Get DFA state iterator associated with this AutomataState.
       NFAStateIterator *getIterator(void) {
         ASSERT(invariant());
         return iterator;
       }
 
+      /// \brief Get the stream associated with this AutomataState.
       Utf8Chars *getStream(void) {
         ASSERT(invariant());
         return stream;
       }
 
+      /// \brief Explicitly set the AutomataState's state type.
       void setStateType(AutomataStateType stateType) {
         automataStateType = stateType;
       }
@@ -162,6 +200,8 @@ namespace DeterministicFiniteAutomaton {
         return automataStateType;
       }
 
+      /// \brief Return a textural description (for use by the
+      /// PDMTracer) corresponding to the stateType provided.
       static const char *getStateTypeMessage(AutomataStateType stateType) {
         switch(stateType) {
         case ASBackTrack:
@@ -176,11 +216,15 @@ namespace DeterministicFiniteAutomaton {
         ASSERT_MESSAGE(false, "should never reach here");
       }
 
+      /// \brief Return a textural description (for use by the
+      /// PDMTracer) of this AutomataState's state type.
       const char *getStateTypeMessage(void) {
         ASSERT(invariant());
         return getStateTypeMessage(automataStateType);
       }
 
+      /// \brief Get the textural name/description of this
+      /// AutomataState's start state.
       const char *getStartStateMessage(void) {
         ASSERT(dfa);
         NFA *nfa = dfa->getNFA();
@@ -190,11 +234,14 @@ namespace DeterministicFiniteAutomaton {
         return nfaState->message;
       }
 
+      /// \brief Ge the DFA State associated with this AutomataState.
       State *getDState(void) {
         ASSERT(invariant());
         return dState;
       }
 
+      /// \brief Clear the NFA state out of this AutomataState's DFA
+      /// State.
       void clearNFAState(NFA::State *nfaState) {
         ASSERT(allocator);
         ASSERT(nfaState);
@@ -202,6 +249,9 @@ namespace DeterministicFiniteAutomaton {
         allocator->clearNFAState(dState, nfaState);
         ASSERT(invariant());
       }
+
+      /// \brief Clear all NFA states which have the same ReStart
+      /// stateStateId out of this AutomataState's DFA State.
       void clearNFAStatesWithSameRestartState(NFA::StartStateId aStartStateId) {
         NFAStateIterator iterator = allocator->newIteratorOn(dState);
         while (NFA::State *nfaState = iterator.nextState()) {
@@ -212,6 +262,8 @@ namespace DeterministicFiniteAutomaton {
         }
       }
 
+      /// \brief Return the first NFA::State which matches the
+      /// tokenStates provided.
       NFA::State *stateMatchesToken(State *tokenStates) {
         ASSERT(allocator);
         ASSERT(tokenStates);
@@ -220,12 +272,15 @@ namespace DeterministicFiniteAutomaton {
         return allocator->stateMatchesToken(dState, tokenStates);
       }
 
+      /// \brief Explicitly set the TokenId of this AutomataState's
+      /// token.
       void setTokenId(Token::TokenId tokenId) {
         ASSERT(token);
         token->setId(tokenId);
         ASSERT(invariant());
       }
 
+      /// \brief Explicitly set the text of this AutomataState's token.
       void setTokenText(void) {
         ASSERT(token);
         ASSERT(stream);
@@ -233,6 +288,7 @@ namespace DeterministicFiniteAutomaton {
         ASSERT(invariant());
       }
 
+      /// \brief Add a child token to this AutomataState's token.
       void addChildToken(Token *childToken) {
         ASSERT(childToken->invariant());
         ASSERT(token);
@@ -241,6 +297,9 @@ namespace DeterministicFiniteAutomaton {
         ASSERT(invariant());
       }
 
+      /// \brief Remove and return this AutomataState's token.
+      ///
+      /// On return this AutomataState will have a new token instance.
       Token *releaseToken(void) {
         ASSERT(invariant());
         Token *oldToken = token;
@@ -251,6 +310,7 @@ namespace DeterministicFiniteAutomaton {
 
     protected:
 
+      /// \brief Copy the other AutomataState to this one.
       void operator=(const AutomataState &other) {
         ASSERT(other.invariant());
         automataStateType = other.automataStateType;
@@ -264,13 +324,16 @@ namespace DeterministicFiniteAutomaton {
         ASSERT(invariant());
       }
 
+      /// \brief The type of AutomataState.
       AutomataStateType automataStateType;
 
+      /// \brief The (original) state state id for this AutomataState.
       NFA::StartStateId startStateId;
 
-      /// \brief The allocator associated with this AutomataState.
+      /// \brief The DFA associated with this AutomataState.
       DFA *dfa;
 
+      /// \brief The allocator associated with this AutomataState.
       StateAllocator *allocator;
 
       /// \brief A copy of the current DFA::State.
@@ -297,6 +360,7 @@ namespace DeterministicFiniteAutomaton {
 
       friend class PDMTracer;
       friend class VarArray<AutomataState>;
+
   }; // class AutomataState
 };  // namespace DeterministicFiniteAutomaton
 

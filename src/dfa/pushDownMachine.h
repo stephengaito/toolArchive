@@ -1,7 +1,7 @@
 #ifndef PUSH_DOWN_MACHINE_H
 #define PUSH_DOWN_MACHINE_H
 
-#include "dfa/automataStack.h"
+#include "dfa/automataState.h"
 
 namespace DeterministicFiniteAutomaton {
 
@@ -12,6 +12,12 @@ namespace DeterministicFiniteAutomaton {
   class PushDownMachine {
 
     public:
+
+      /// \brief An invariant which should ALWAYS be true for any
+      /// instance of a PushDownMachine class.
+      ///
+      /// Throws an AssertionFailure with a brief description of any
+      /// inconsistencies discovered.
       bool invariant(void) const {
         return curState.invariant();
       }
@@ -24,8 +30,14 @@ namespace DeterministicFiniteAutomaton {
         ASSERT(invariant());
       }
 
-      /// \brief Run the PushDownAutomata from any the given start
+      /// \brief Run the PushDownAutomata from the given start
       /// state using the Utf8Chars stream provided.
+      ///
+      /// If PDMTracer is not NULL then provide a detailed tracing of
+      /// this PushDownMachine's state transitions.
+      ///
+      /// If paritalOk is true then it is acceptible to have unread
+      /// stream when a complete match has been recognized.
       Token *runFromUsing(const char *startStateName,
                           Utf8Chars *charStream,
                           PDMTracer *pdmTracer = NULL,
@@ -34,8 +46,14 @@ namespace DeterministicFiniteAutomaton {
                             charStream, pdmTracer, partialOk);
       }
 
-      /// \brief Run the PushDownAutomata from any the given start
+      /// \brief Run the PushDownAutomata from the given start
       /// state using the Utf8Chars stream provided.
+      ///
+      /// If PDMTracer is not NULL then provide a detailed tracing of
+      /// this PushDownMachine's state transitions.
+      ///
+      /// If paritalOk is true then it is acceptible to have unread
+      /// stream when a complete match has been recognized.
       Token *runFromUsing(NFA::StartStateId startStateId,
                           Utf8Chars *charStream,
                           PDMTracer *pdmTracer = NULL,
@@ -91,6 +109,31 @@ namespace DeterministicFiniteAutomaton {
 
       /// \brief The current state of this PushDownAutomata.
       AutomataState curState;
+
+      /// \brief AutomataStack class provides the VarArray
+      /// implementation of the PushDownMachine's AutoamataState stack.
+      ///
+      /// It primary purpose is to provide explicit invariant checking.
+      class AutomataStack : public VarArray<AutomataState> {
+
+        public:
+
+          /// \brief An invariant which should ALWAYS be true for any
+          /// instance of a AutomataStack class.
+          ///
+          /// Throws an AssertionFailure with a brief description of any
+          /// inconsistencies discovered.
+          bool invariant(void) const {
+            if (!VarArray<AutomataState>::invariant())
+              throw AssertionFailure("AutomataState varArray failed invariant");
+
+            for (size_t i = 0; i < numItems; i++) {
+              if (!itemArray[i].invariant())
+                throw AssertionFailure("AutomataState entry failed invariant");
+            }
+            return true;
+          }
+      };
 
       /// \brief The push down stack for this PushDownAutomata.
       AutomataStack stack;

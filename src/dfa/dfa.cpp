@@ -1,23 +1,3 @@
-/*
- * Regular expression implementation.
- * Supports only ( | ) * + ?.  No escapes.
- * Compiles to NFA and then simulates NFA
- * using Thompson's algorithm.
- * Caches steps of Thompson's algorithm to
- * build DFA on the fly, as in Aho's egrep.
- *
- * See also http://swtch.com/~rsc/regexp/ and
- * Thompson, Ken.  Regular Expression Search Algorithm,
- * Communications of the ACM 11(6) (June 1968), pp. 419-422.
- *
- * Copyright (c) 2007 Russ Cox.
- *
- * Extensive modifications for use as a utf8 parser compiled by clang
- * are
- *   Copyright (c) 2015 Stephen Gaito
- *
- * Can be distributed under the MIT license, see bottom of file.
- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -55,7 +35,6 @@ DFA::~DFA(void) {
   allocator       = NULL;
 }
 
-/* Add nfaState to dfaState, following unlabeled arrows. */
 void DFA::addNFAStateToDFAState(State *dfaState, NFA::State *nfaState) {
   if (nfaState == NULL) return;
   allocator->setNFAState(dfaState, nfaState);
@@ -73,8 +52,6 @@ void DFA::addNFAStateToDFAState(State *dfaState, NFA::State *nfaState) {
   }
 }
 
-/* Compute initial state list */
-
 State *DFA::getDFAStartState(NFA::StartStateId startStateId) {
   if (numStartStates <= startStateId) return NULL;
   if (!startState[startStateId]) {
@@ -87,11 +64,6 @@ State *DFA::getDFAStartState(NFA::StartStateId startStateId) {
   return startState[startStateId];
 }
 
-/*
- * Step the NFA from the states in clist
- * past the character c,
- * to create next NFA state set nlist.
- */
 State *DFA::computeNextDFAState(State *curDFAState,
                                 utf8Char_t c,
                                 Classifier::classSet_t classificationSet) {
@@ -181,50 +153,10 @@ State *DFA::computeNextDFAState(State *curDFAState,
 State *DFA::getNextDFAState(State *curDFAState,
                             utf8Char_t curChar) {
   State *nextDFAState = NULL;
-
-  // try to find an already computed nextDFAState using the character
-//  State **tryGetDFAState =
-//    nextStateMapping->tryGetNextStateByCharacter(curDFAState, curChar);
-//  if (tryGetDFAState && *tryGetDFAState) {
-//    return *tryGetDFAState;
-//  }
-
   // try to find an already computed nextDFAState using the more general
   // character classification.
   Classifier::classSet_t classificationSet =
     nfa->getClassifier()->getClassSet(curChar);
-//  tryGetDFAState =
-//    nextStateMapping->tryGetNextStateByClass(curDFAState,
-//                                             classificationSet);
-//  if (tryGetDFAState && *tryGetDFAState) {
-//      return *tryGetDFAState;
-//  }
-
   // now explicitly compute a new nextDFAState
   return computeNextDFAState(curDFAState, curChar, classificationSet);
 }
-
-/*
- * Permission is hereby granted, free of charge, to any person
- * obtaining a copy of this software and associated
- * documentation files (the "Software"), to deal in the
- * Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute,
- * sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall
- * be included in all copies or substantial portions of the
- * Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
- * KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
- * WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS
- * OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
- * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
- * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
- * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-

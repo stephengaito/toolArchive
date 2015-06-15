@@ -7,6 +7,9 @@ namespace DeterministicFiniteAutomaton {
 
   /// \brief The NextStateMapping class is used to implement the next state
   /// mapping which is the heart of the DFA interpreter for a given NFA.
+  ///
+  /// The NextStateMapping class ues the [Hat-Trie
+  /// library](https://github.com/dcjones/hat-trie).
   class NextStateMapping {
     public:
 

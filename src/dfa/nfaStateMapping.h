@@ -16,6 +16,9 @@ namespace DeterministicFiniteAutomaton {
   /// \brief The NFAStateMapping class is used to build an invertible
   /// mapping from the NFA::State(s) of a given NFA to the DFAState(s)
   /// of a DFA which is interpreting the NFA.
+  ///
+  /// The NFAStateMapping class uses the [Hat-Trie
+  /// library](https://github.com/dcjones/hat-trie).
   class NFAStateMapping {
     public:
 

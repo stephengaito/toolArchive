@@ -4,7 +4,7 @@
 #include "dfa/nextStateMapping.h"
 
 /// \brief The DFA namespace collects the various parts of the DFA
-/// interpretor into one logical collection.
+/// interpreter into one logical collection.
 namespace DeterministicFiniteAutomaton {
 
   /// \brief The DFA class is used to interpret a given NFA.
@@ -26,6 +26,10 @@ namespace DeterministicFiniteAutomaton {
   /// into a DFA on the fly. Essentially the next DFA::State is a set of
   /// NFA::States which could be successor states of the current set of
   /// NFA::States represented as the current DFA::State.
+  ///
+  /// The ideas required to do this compilation on the fly have been
+  /// inspired by [Russ Cox's implementation of Regular
+  /// Expressions](https://swtch.com/~rsc/regexp/)
   class DFA {
     public:
 

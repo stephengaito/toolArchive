@@ -43,7 +43,7 @@ namespace DeterministicFiniteAutomaton {
 
     protected:
 
-      /// \brief ALlow a StateAllocator direct access to the protected
+      /// \brief Allow a StateAllocator direct access to the protected
       /// constructor method of an NFAStateIterator.
       friend class StateAllocator;
 
@@ -85,7 +85,10 @@ namespace DeterministicFiniteAutomaton {
       /// bit set.
       size_t  curBit;
 
+      /// \brief The original DFA State on which this iterator was
+      /// created.
       State *origDState;
+
       friend class AutomataState;
       friend class PDMTracer;
   };

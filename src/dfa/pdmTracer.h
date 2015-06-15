@@ -20,6 +20,9 @@ namespace DeterministicFiniteAutomaton {
 
     public:
 
+      /// \brief An enumeration of the known TraceConditions. This
+      /// enumeration is used to selectively turn on/off specific trace
+      /// messages.
       enum TraceConditions {
         All=~0L,
         Messages=1,
@@ -49,7 +52,7 @@ namespace DeterministicFiniteAutomaton {
         Transitions=(PDMErrorReturn|PDMBackTrack|PDMFailedBackTrack|PDMNextDFAState|PDMFailedWithStream|PDMDone|PDMMatch)
       };
 
-      /// \brief Create a new PushDownMachine instance.
+      /// \brief Create a new PDMTracer instance.
       PDMTracer(const char *aMessage, FILE *aTraceFile = NULL) {
         pdm        = NULL;
         message    = aMessage;
@@ -64,14 +67,20 @@ namespace DeterministicFiniteAutomaton {
         traceFile = NULL; // we do not own the FILE
       }
 
+      /// \brief Set one or more trace conditions (see TraceConditions
+      /// above).
       void setCondition(uint64_t someConditions) {
         conditions |= someConditions;
       }
 
+      /// \brief Clear one or more trace conditions (see TraceConditions
+      /// above).
       void clearCondition(uint64_t someConditions) {
         conditions &= ~someConditions;
       }
 
+      /// \brief Return true if the provided conditions match the
+      /// current conditions for this tracer.
       bool trace(uint64_t someConditions) {
         return (conditions & someConditions);
       }
@@ -82,28 +91,67 @@ namespace DeterministicFiniteAutomaton {
         if (traceFile && conditions) fprintf(traceFile, "PDMTracer: %s\n", message);
       }
 
+      /// \brief Report the PushDownMachine's current state.
       void reportState(size_t indent = 0);
+
+      /// \brief Report the PushDownMachine's current stack.
       void reportAutomataStack(size_t indent = 0);
+
+      /// \brief Report the NFA::State.
       void reportNFAState(NFA::State *nfaState, size_t indent = 0);
+
+      /// \brief Report the DFA state (and all NFA::States in the bitset).
       void reportDFAState(size_t indent = 0);
+
+      /// \brief Report the character provided.
       void reportChar(utf8Char_t curChar, size_t indent = 0);
+
+      /// \brief Report the current token.
       void reportTokens(size_t indent = 0);
+
+      /// \brief Report the string that *has* *been* read.
       void reportStreamPrefix();
+
+      /// \brief Report the string that has *not* been read yet.
       void reportStreamPostfix();
-//      void swap(size_t indent = 0);
+
+      /// \brief Report a push.
       void push(const char *message, size_t indent = 0);
+
+      /// \brief Report a pop.
       void pop(const char *message0,
                const char *message1 = "",
                size_t indent = 0);
+
+      /// \brief Report that the PushDownMachine is checking for a
+      /// restart state.
       void checkForRestart(size_t indent = 0);
+
       /// \brief Trace the use of a restart state transition.
       void restart(size_t indent = 0);
+
+      /// \brief Report that a match has been found.
       void match(NFA::State *nfaState, size_t indent = 0);
+
+      /// \brief Report the successfull recognition of a stream.
       void done(size_t indent = 0);
+
+      /// \brief Report the recognition failure with some stream still
+      /// unread.
       void failedWithStream(size_t indent = 0);
+
+      /// \brief Report the transition to a new DFA state.
       void nextDFAState(size_t indent = 0);
+
+      /// \brief Report the recognition failure with no more
+      /// backtracking avaiable.
       void failedBacktrack(size_t indent = 0);
+
+      /// \brief Report that the PushDownMachine is backtracking.
       void backtrack(size_t indent = 0);
+
+      /// \brief Report that the PushDownMachine has failed by reaching
+      /// code which should not have been reached.
       void errorReturn(size_t indent = 0);
 
     protected:
