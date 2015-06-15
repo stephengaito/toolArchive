@@ -74,17 +74,17 @@ go_bandit([](){
       AssertThat(token->tokens.numItems, Equals(1));
       AssertThat(token->tokens.arraySize, Is().Not().EqualTo(0));
       AssertThat(token->tokens.itemArray, Is().Not().EqualTo((void*)0));
-      AssertThat(token->tokens.itemArray[0].tokenId, Equals(2));
-      AssertThat(token->tokens.itemArray[0].textStart, Equals((char*)childText));
-      AssertThat(token->tokens.itemArray[0].textLength, Equals(strlen(childText)));
-      AssertThat(token->tokens.itemArray[0].tokens.numItems, Equals(0));
-      AssertThat(token->tokens.itemArray[0].tokens.arraySize, Equals(0));
-      AssertThat(token->tokens.itemArray[0].tokens.itemArray, Equals((void*)0));
+      AssertThat(token->tokens.itemArray[0]->tokenId, Equals(2));
+      AssertThat(token->tokens.itemArray[0]->textStart, Equals((char*)childText));
+      AssertThat(token->tokens.itemArray[0]->textLength, Equals(strlen(childText)));
+      AssertThat(token->tokens.itemArray[0]->tokens.numItems, Equals(0));
+      AssertThat(token->tokens.itemArray[0]->tokens.arraySize, Equals(0));
+      AssertThat(token->tokens.itemArray[0]->tokens.itemArray, Equals((void*)0));
       //
       // now test copyFrom
       //
       Token tokenCopy;
-      tokenCopy.deepCopyFrom(*token);
+      tokenCopy = *token;
       AssertThat(tokenCopy.tokenId, Equals(token->tokenId));
       AssertThat(tokenCopy.textStart, Equals((char*)token->textStart));
       AssertThat(tokenCopy.textLength, Equals(token->textLength));
@@ -92,16 +92,16 @@ go_bandit([](){
       AssertThat(tokenCopy.tokens.numItems, Equals(token->tokens.numItems));
       AssertThat(tokenCopy.tokens.arraySize, Equals(token->tokens.arraySize));
       AssertThat(tokenCopy.tokens.itemArray, Is().Not().EqualTo(token->tokens.itemArray));
-      AssertThat(tokenCopy.tokens.itemArray[0].tokenId, Equals(2));
-      AssertThat(tokenCopy.tokens.itemArray[0].textStart, Equals((char*)childText));
-      AssertThat(tokenCopy.tokens.itemArray[0].textLength, Equals(strlen(childText)));
-      AssertThat(tokenCopy.tokens.itemArray[0].tokens.numItems, Equals(0));
-      AssertThat(tokenCopy.tokens.itemArray[0].tokens.arraySize, Equals(0));
-      AssertThat(tokenCopy.tokens.itemArray[0].tokens.itemArray, Equals((void*)0));
+      AssertThat(tokenCopy.tokens.itemArray[0]->tokenId, Equals(2));
+      AssertThat(tokenCopy.tokens.itemArray[0]->textStart, Equals((char*)childText));
+      AssertThat(tokenCopy.tokens.itemArray[0]->textLength, Equals(strlen(childText)));
+      AssertThat(tokenCopy.tokens.itemArray[0]->tokens.numItems, Equals(0));
+      AssertThat(tokenCopy.tokens.itemArray[0]->tokens.arraySize, Equals(0));
+      AssertThat(tokenCopy.tokens.itemArray[0]->tokens.itemArray, Equals((void*)0));
       //
       // now test clone
       //
-      Token *tokenClone = token->deepClone();
+      Token *tokenClone = token->clone();
       AssertThat(tokenClone->tokenId, Equals(token->tokenId));
       AssertThat(tokenClone->textStart, Equals((char*)token->textStart));
       AssertThat(tokenClone->textLength, Equals(token->textLength));
@@ -109,18 +109,66 @@ go_bandit([](){
       AssertThat(tokenClone->tokens.numItems, Equals(token->tokens.numItems));
       AssertThat(tokenClone->tokens.arraySize, Equals(token->tokens.arraySize));
       AssertThat(tokenClone->tokens.itemArray, Is().Not().EqualTo(token->tokens.itemArray));
-      AssertThat(tokenClone->tokens.itemArray[0].tokenId, Equals(2));
-      AssertThat(tokenClone->tokens.itemArray[0].textStart, Equals((char*)childText));
-      AssertThat(tokenClone->tokens.itemArray[0].textLength, Equals(strlen(childText)));
-      AssertThat(tokenClone->tokens.itemArray[0].tokens.numItems, Equals(0));
-      AssertThat(tokenClone->tokens.itemArray[0].tokens.arraySize, Equals(0));
-      AssertThat(tokenClone->tokens.itemArray[0].tokens.itemArray, Equals((void*)0));
+      AssertThat(tokenClone->tokens.itemArray[0]->tokenId, Equals(2));
+      AssertThat(tokenClone->tokens.itemArray[0]->textStart, Equals((char*)childText));
+      AssertThat(tokenClone->tokens.itemArray[0]->textLength, Equals(strlen(childText)));
+      AssertThat(tokenClone->tokens.itemArray[0]->tokens.numItems, Equals(0));
+      AssertThat(tokenClone->tokens.itemArray[0]->tokens.arraySize, Equals(0));
+      AssertThat(tokenClone->tokens.itemArray[0]->tokens.itemArray, Equals((void*)0));
 
       delete tokenClone;
       tokenCopy.~Token();
       delete childToken;
       delete token;
     });
+
+    it("should be able to add deep collections of child tokens", [](){
+      Token *token0 = new Token(1, "0Token");
+      Token *token1 = new Token(2, "1Token");
+      Token *token2 = new Token(3, "2Token");
+      Token *token3 = new Token(4, "3Token");
+      Token *token4 = new Token(5, "4Token");
+      Token *token5 = new Token(6, "5Token");
+      Token *token6 = new Token(7, "6Token");
+      token5->addChildToken(token6);
+      token4->addChildToken(token5);
+      token3->addChildToken(token4);
+      token2->addChildToken(token3);
+      token1->addChildToken(token2);
+      token0->addChildToken(token1);
+      AssertThat(token0->tokenId, Equals(1));
+      AssertThat(token0->tokens.numItems, Equals(1));
+      //
+      Token *childToken = token0->tokens.itemArray[0];
+      AssertThat(childToken->tokenId, Equals(token1->tokenId));
+      AssertThat(childToken->textStart, Equals(token1->textStart));
+      AssertThat(childToken->tokens.numItems, Equals(1));
+      //
+      childToken = childToken->tokens.itemArray[0];
+      AssertThat(childToken->tokenId, Equals(token2->tokenId));
+      AssertThat(childToken->textStart, Equals(token2->textStart));
+      AssertThat(childToken->tokens.numItems, Equals(1));
+      //
+      childToken = childToken->tokens.itemArray[0];
+      AssertThat(childToken->tokenId, Equals(token3->tokenId));
+      AssertThat(childToken->textStart, Equals(token3->textStart));
+      AssertThat(childToken->tokens.numItems, Equals(1));
+      //
+      childToken = childToken->tokens.itemArray[0];
+      AssertThat(childToken->tokenId, Equals(token4->tokenId));
+      AssertThat(childToken->textStart, Equals(token4->textStart));
+      AssertThat(childToken->tokens.numItems, Equals(1));
+      //
+      childToken = childToken->tokens.itemArray[0];
+      AssertThat(childToken->tokenId, Equals(token5->tokenId));
+      AssertThat(childToken->textStart, Equals(token5->textStart));
+      AssertThat(childToken->tokens.numItems, Equals(1));
+      //
+      childToken = childToken->tokens.itemArray[0];
+      AssertThat(childToken->tokenId, Equals(token6->tokenId));
+      AssertThat(childToken->textStart, Equals(token6->textStart));
+      AssertThat(childToken->tokens.numItems, Equals(0));
+   });
 
   }); // describe ParseTrees
 

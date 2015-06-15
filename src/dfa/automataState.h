@@ -89,7 +89,7 @@ namespace DeterministicFiniteAutomaton {
       void cloneToken(bool shouldCloneToken, bool clearOldState = false) {
         Token *oldToken = token;
         if (shouldCloneToken) {
-          if (token) token = token->deepClone();
+          if (token) token = token->clone();
           else token = new Token();
         } else {
           token = new Token();

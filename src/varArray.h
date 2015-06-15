@@ -41,45 +41,6 @@ class VarArray {
       arraySize = 0;
     }
 
-    void shallowCopyFrom(const VarArray &other) {
-      ASSERT(other.invariant());
-      numItems  = other.numItems;
-      arraySize = other.arraySize;
-      if (itemArray) free(itemArray);
-      itemArray = (ItemT*)calloc(arraySize, sizeof(ItemT));
-      if (itemArray && other.itemArray) {
-        memcpy(itemArray, other.itemArray, arraySize*sizeof(ItemT));
-      }
-      ASSERT(invariant());
-    }
-
-    VarArray *shallowClone(void) {
-      VarArray *result  = new VarArray();
-      result->shallowCopyFrom(this);
-      return result;
-    }
-
-    void deepCopyFrom(const VarArray &other) {
-      ASSERT(other.invariant());
-      numItems  = other.numItems;
-      arraySize = other.arraySize;
-      if (itemArray) free(itemArray);
-      itemArray = NULL;
-      if (arraySize) {
-        itemArray = (ItemT*)calloc(arraySize, sizeof(ItemT));
-        for (size_t i = 0; i < numItems; i++) {
-          itemArray[i].deepCopyFrom(other.itemArray[i]);
-        }
-      }
-      ASSERT(invariant());
-    }
-
-    VarArray *deepClone(void) {
-      VarArray *result  = new VarArray();
-      result->deepCopyFrom(this);
-      return result;
-    }
-
     /// \brief Return the current number of items in the array.
     size_t getNumItems(void) const {
       return numItems;
@@ -145,14 +106,6 @@ class VarArray {
       memcpy(buffer, itemArray, bufferSize);
     }
 
-    void swapTopTwoItems(void) {
-      ASSERT(invariant());
-      if (numItems < 2) return;
-      ItemT tempItem        = itemArray[numItems-1];
-      itemArray[numItems-1] = itemArray[numItems-2];
-      itemArray[numItems-2] = tempItem;
-    }
-
     /// \brief Remove all items from this array.
     void clearItems(void) {
       numItems = 0;
@@ -160,6 +113,18 @@ class VarArray {
     }
 
   protected:
+
+    void operator=(const VarArray &other) {
+      ASSERT(other.invariant());
+      numItems  = 0;
+      arraySize = 0;
+      if (itemArray) free(itemArray);
+      itemArray = NULL;
+      for (size_t i = 0; i < other.numItems; i++) {
+        pushItem(other.itemArray[i]);
+      }
+      ASSERT(invariant());
+    }
 
     /// \brief The current number of items in the array.
     size_t numItems;

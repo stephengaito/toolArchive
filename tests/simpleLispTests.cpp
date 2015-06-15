@@ -41,9 +41,9 @@ go_bandit([](){
       AssertThat(aToken->textStart, Equals(cString));
       AssertThat(aToken->textLength,
         Equals(someChars->getNumberOfBytesToRead()));
-      AssertThat(aToken->tokens.itemArray[0].tokenId, Equals(SimpleLisp::NonWhiteSpace));
-      AssertThat(aToken->tokens.itemArray[0].textStart[0], Equals('h'));
-      AssertThat(aToken->tokens.itemArray[0].tokens.numItems, Equals(0));
+      AssertThat(aToken->tokens.itemArray[0]->tokenId, Equals(SimpleLisp::NonWhiteSpace));
+      AssertThat(aToken->tokens.itemArray[0]->textStart[0], Equals('h'));
+      AssertThat(aToken->tokens.itemArray[0]->tokens.numItems, Equals(0));
     });
 
     it("Create a SimpleLisp parser and tokenize '(hello, there)'", [](){
@@ -66,12 +66,18 @@ go_bandit([](){
       AssertThat(aToken->textStart, Equals(cString));
       AssertThat(aToken->textLength,
         Equals(someChars->getNumberOfBytesToRead()));
-      AssertThat(aToken->tokens.itemArray[0].tokenId, Equals(SimpleLisp::Expression));
-      AssertThat(aToken->tokens.itemArray[0].textStart[0], Equals('h'));
-      AssertThat(aToken->tokens.itemArray[0].tokens.numItems, Equals(0));
-      AssertThat(aToken->tokens.itemArray[1].tokenId, Equals(SimpleLisp::Expression));
-      AssertThat(aToken->tokens.itemArray[1].textStart[0], Equals('t'));
-      AssertThat(aToken->tokens.itemArray[1].tokens.numItems, Equals(0));
+      Token *childToken = aToken->tokens.itemArray[0];
+      AssertThat(childToken->ASSERT_EQUALS(SimpleLisp::Expression, "hello"), Is().True());
+      AssertThat(childToken->tokens.numItems, Equals(1));
+      childToken = childToken->tokens.itemArray[0];
+      AssertThat(childToken->ASSERT_EQUALS(SimpleLisp::NonWhiteSpace, "hello"), Is().True());
+      AssertThat(childToken->tokens.numItems, Equals(0));
+      childToken = aToken->tokens.itemArray[1];
+      AssertThat(childToken->ASSERT_EQUALS(SimpleLisp::Expression, "there"), Is().True());
+      AssertThat(childToken->tokens.numItems, Equals(1));
+      childToken = childToken->tokens.itemArray[0];
+      AssertThat(childToken->ASSERT_EQUALS(SimpleLisp::NonWhiteSpace, "there"), Is().True());
+      AssertThat(childToken->tokens.numItems, Equals(0));
     });
 
     it("Create a SimpleLisp parser and tokenize a complex multi-level expression", [](){
@@ -85,21 +91,71 @@ go_bandit([](){
                               PDMTracer::PDMStack |
                               PDMTracer::SimpleState |
                               PDMTracer::Transitions);
-      Token *aToken = sLisp->parse(someChars, pdmTracer);
-//      Token *aToken = sLisp->parse(someChars, NULL);
+//      Token *aToken = sLisp->parse(someChars, pdmTracer);
+      Token *aToken = sLisp->parse(someChars, NULL);
       AssertThat(aToken, Is().Not().EqualTo((void*)0));
-      aToken->printOn(stdout);
+//      aToken->printOn(stdout);
       AssertThat(aToken->tokenId, Equals(SimpleLisp::Expression));
       AssertThat(aToken->tokens.getNumItems(), Equals(2));
       AssertThat(aToken->textStart, Equals(cString));
       AssertThat(aToken->textLength,
         Equals(someChars->getNumberOfBytesToRead()));
-      AssertThat(aToken->tokens.itemArray[0].tokenId, Equals(SimpleLisp::Expression));
-      AssertThat(aToken->tokens.itemArray[0].textStart[0], Equals('h'));
-      AssertThat(aToken->tokens.itemArray[0].tokens.numItems, Equals(0));
-      AssertThat(aToken->tokens.itemArray[1].tokenId, Equals(SimpleLisp::Expression));
-      AssertThat(aToken->tokens.itemArray[1].textStart[0], Equals('t'));
-      AssertThat(aToken->tokens.itemArray[1].tokens.numItems, Equals(0));
+      Token *childToken = aToken->tokens.itemArray[0];
+      AssertThat(childToken->ASSERT_EQUALS(SimpleLisp::Expression, "(hello, there)"), Is().True());
+      AssertThat(childToken->tokens.numItems, Equals(2));
+      childToken = childToken->tokens.itemArray[0];
+      AssertThat(childToken->ASSERT_EQUALS(SimpleLisp::Expression, "hello"), Is().True());
+      AssertThat(childToken->tokens.numItems, Equals(1));
+      childToken = childToken->tokens.itemArray[0];
+      AssertThat(childToken->ASSERT_EQUALS(SimpleLisp::NonWhiteSpace, "hello"), Is().True());
+      AssertThat(childToken->tokens.numItems, Equals(0));
+      childToken = aToken->tokens.itemArray[0];
+      childToken = childToken->tokens.itemArray[1];
+      AssertThat(childToken->ASSERT_EQUALS(SimpleLisp::Expression, "there"), Is().True());
+      AssertThat(childToken->tokens.numItems, Equals(1));
+      childToken = childToken->tokens.itemArray[0];
+      AssertThat(childToken->ASSERT_EQUALS(SimpleLisp::NonWhiteSpace, "there"), Is().True());
+      AssertThat(childToken->tokens.numItems, Equals(0));
+      //
+      childToken = aToken->tokens.itemArray[1];
+      AssertThat(childToken->ASSERT_EQUALS(SimpleLisp::Expression, "(this, (is, (a, (test))))"), Is().True());
+      AssertThat(childToken->tokens.numItems, Equals(2));
+      Token *childToken0 = childToken->tokens.itemArray[0];
+      AssertThat(childToken0->ASSERT_EQUALS(SimpleLisp::Expression, "this"), Is().True());
+      AssertThat(childToken0->tokens.numItems, Equals(1));
+      childToken0 = childToken0->tokens.itemArray[0];
+      AssertThat(childToken0->ASSERT_EQUALS(SimpleLisp::NonWhiteSpace, "this"), Is().True());
+      AssertThat(childToken0->tokens.numItems, Equals(0));
+      //
+      childToken = childToken->tokens.itemArray[1];
+      AssertThat(childToken->ASSERT_EQUALS(SimpleLisp::Expression, "(is, (a, (test)))"), Is().True());
+      AssertThat(childToken->tokens.numItems, Equals(2));
+      childToken0 = childToken->tokens.itemArray[0];
+      AssertThat(childToken0->ASSERT_EQUALS(SimpleLisp::Expression, "is"), Is().True());
+      AssertThat(childToken0->tokens.numItems, Equals(1));
+      childToken0 = childToken0->tokens.itemArray[0];
+      AssertThat(childToken0->ASSERT_EQUALS(SimpleLisp::NonWhiteSpace, "is"), Is().True());
+      AssertThat(childToken0->tokens.numItems, Equals(0));
+      //
+      childToken = childToken->tokens.itemArray[1];
+      AssertThat(childToken->ASSERT_EQUALS(SimpleLisp::Expression, "(a, (test))"), Is().True());
+      AssertThat(childToken->tokens.numItems, Equals(2));
+      childToken0 = childToken->tokens.itemArray[0];
+      AssertThat(childToken0->ASSERT_EQUALS(SimpleLisp::Expression, "a"), Is().True());
+      AssertThat(childToken0->tokens.numItems, Equals(1));
+      childToken0 = childToken0->tokens.itemArray[0];
+      AssertThat(childToken0->ASSERT_EQUALS(SimpleLisp::NonWhiteSpace, "a"), Is().True());
+      AssertThat(childToken0->tokens.numItems, Equals(0));
+      //
+      childToken = childToken->tokens.itemArray[1];
+      AssertThat(childToken->ASSERT_EQUALS(SimpleLisp::Expression, "(test)"), Is().True());
+      AssertThat(childToken->tokens.numItems, Equals(1));
+      childToken0 = childToken->tokens.itemArray[0];
+      AssertThat(childToken0->ASSERT_EQUALS(SimpleLisp::Expression, "test"), Is().True());
+      AssertThat(childToken0->tokens.numItems, Equals(1));
+      childToken0 = childToken0->tokens.itemArray[0];
+      AssertThat(childToken0->ASSERT_EQUALS(SimpleLisp::NonWhiteSpace, "test"), Is().True());
+      AssertThat(childToken0->tokens.numItems, Equals(0));
     });
 
   }); // describe parser

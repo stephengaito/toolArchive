@@ -179,7 +179,8 @@ bool Utf8Chars::containsUtf8Char(utf8Char_t expectedUtf8Char) {
 // [UTF-8::Description](http://en.wikipedia.org/wiki/UTF-8#Description)
 //
 bool Utf8Chars::validUtf8Chars(const char *textStart, size_t textLength) {
-  if ((textStart==NULL) && (0 < textLength)) return false;
+  if ((textStart==NULL) && (0 < textLength))
+    FalseOrAssertionFailure("NULL text but non-zero text length");
   return validUtf8Chars(textStart, textStart+textLength);
 }
 
@@ -188,69 +189,102 @@ bool Utf8Chars::validUtf8Chars(const char *textStart, size_t textLength) {
 //
 bool Utf8Chars::validUtf8Chars(const char *textStart, const char *textEnd) {
   if ((textStart==NULL) && (textEnd==NULL)) return true;
-  if ((textStart==NULL) && (textEnd!=NULL)) return false;
-  if ((textEnd==NULL) && (textStart!=NULL)) return false;
-  if (textEnd < textStart) return false;
+  if ((textStart==NULL) && (textEnd!=NULL))
+    FalseOrAssertionFailure("NULL text but non-NULL text end");
+  if ((textEnd==NULL) && (textStart!=NULL))
+    FalseOrAssertionFailure("NULL text end but non-NULL text");
+  if (textEnd < textStart)
+    FalseOrAssertionFailure("text end before text start");
   for ( ; textStart < textEnd; textStart++) {
     if (((*textStart)&0x80)==0x00) continue;
     if (((*textStart)&0xE0)==0xC0) {
       textStart++;
-      if (textEnd <= textStart)    return false;
-      if (((*textStart)&0xC0)!=0x80) return false;
+      if (textEnd <= textStart)
+        FalseOrAssertionFailure("no byte 2 in 2 byte char");
+      if (((*textStart)&0xC0)!=0x80)
+        FalseOrAssertionFailure("corrupted byte 2 in 2 byte char");
       continue;
     }
     if (((*textStart)&0xF0)==0xE0) {
       textStart++;
-      if (textEnd <= textStart)    return false;
-      if (((*textStart)&0xC0)!=0x80) return false;
+      if (textEnd <= textStart)
+        FalseOrAssertionFailure("no byte 2 in 3 byte char");
+      if (((*textStart)&0xC0)!=0x80)
+        FalseOrAssertionFailure("corrupted byte 2 in 3 byte char");
       textStart++;
-      if (textEnd <= textStart)    return false;
-      if (((*textStart)&0xC0)!=0x80) return false;
+      if (textEnd <= textStart)
+        FalseOrAssertionFailure("no byte 3 in 3 byte char");
+      if (((*textStart)&0xC0)!=0x80)
+        FalseOrAssertionFailure("corrupted byte 3 in 3 byte char");
       continue;
     }
     if (((*textStart)&0xF8)==0xF0) {
       textStart++;
-      if (textEnd <= textStart)    return false;
-      if (((*textStart)&0xC0)!=0x80) return false;
+      if (textEnd <= textStart)
+        FalseOrAssertionFailure("no byte 2 in 4 byte char");
+      if (((*textStart)&0xC0)!=0x80)
+        FalseOrAssertionFailure("corrupted byte 2 in 4 byte char");
       textStart++;
-      if (textEnd <= textStart)    return false;
-      if (((*textStart)&0xC0)!=0x80) return false;
+      if (textEnd <= textStart)
+        FalseOrAssertionFailure("no byte 3 in 4 byte char");
+      if (((*textStart)&0xC0)!=0x80)
+        FalseOrAssertionFailure("corrupted byte 3 in 4 byte char");
       textStart++;
-      if (textEnd <= textStart)    return false;
-      if (((*textStart)&0xC0)!=0x80) return false;
+      if (textEnd <= textStart)
+        FalseOrAssertionFailure("no byte 4 in 4 byte char");
+      if (((*textStart)&0xC0)!=0x80)
+        FalseOrAssertionFailure("corrupted byte 4 in 4 byte char");
       continue;
     }
     if (((*textStart)&0xFC)==0xF8) {
       textStart++;
-      if (textEnd <= textStart)    return false;
-      if (((*textStart)&0xC0)!=0x80) return false;
+      if (textEnd <= textStart)
+        FalseOrAssertionFailure("no byte 2 in 5 byte char");
+      if (((*textStart)&0xC0)!=0x80)
+        FalseOrAssertionFailure("corrupted byte 2 in 5 byte char");
       textStart++;
-      if (textEnd <= textStart)    return false;
-      if (((*textStart)&0xC0)!=0x80) return false;
+      if (textEnd <= textStart)
+        FalseOrAssertionFailure("no byte 3 in 5 byte char");
+      if (((*textStart)&0xC0)!=0x80)
+        FalseOrAssertionFailure("corrupted byte 3 in 5 byte char");
       textStart++;
-      if (textEnd <= textStart)    return false;
-      if (((*textStart)&0xC0)!=0x80) return false;
+      if (textEnd <= textStart)
+        FalseOrAssertionFailure("no byte 4 in 5 byte char");
+      if (((*textStart)&0xC0)!=0x80)
+        FalseOrAssertionFailure("corrupted byte 4 in 5 byte char");
       textStart++;
-      if (textEnd <= textStart)    return false;
-      if (((*textStart)&0xC0)!=0x80) return false;
+      if (textEnd <= textStart)
+        FalseOrAssertionFailure("no byte 5 in 5 byte char");
+      if (((*textStart)&0xC0)!=0x80)
+        FalseOrAssertionFailure("corrupted byte 5 in 5 byte char");
       continue;
     }
     if (((*textStart)&0xFE)==0xFC) {
       textStart++;
-      if (textEnd <= textStart)    return false;
-      if (((*textStart)&0xC0)!=0x80) return false;
+      if (textEnd <= textStart)
+        FalseOrAssertionFailure("no byte 2 in 6 byte char");
+      if (((*textStart)&0xC0)!=0x80)
+        FalseOrAssertionFailure("corrupted byte 2 in 6 byte char");
       textStart++;
-      if (textEnd <= textStart)    return false;
-      if (((*textStart)&0xC0)!=0x80) return false;
+      if (textEnd <= textStart)
+        FalseOrAssertionFailure("no byte 3 in 6 byte char");
+      if (((*textStart)&0xC0)!=0x80)
+        FalseOrAssertionFailure("corrupted byte 3 in 6 byte char");
       textStart++;
-      if (textEnd <= textStart)    return false;
-      if (((*textStart)&0xC0)!=0x80) return false;
+      if (textEnd <= textStart)
+        FalseOrAssertionFailure("no byte 4 in 6 byte char");
+      if (((*textStart)&0xC0)!=0x80)
+        FalseOrAssertionFailure("corrupted byte 4 in 6 byte char");
       textStart++;
-      if (textEnd <= textStart)    return false;
-      if (((*textStart)&0xC0)!=0x80) return false;
+      if (textEnd <= textStart)
+        FalseOrAssertionFailure("no byte 5 in 6 byte char");
+      if (((*textStart)&0xC0)!=0x80)
+        FalseOrAssertionFailure("corrupted byte 5 in 6 byte char");
       textStart++;
-      if (textEnd <= textStart)    return false;
-      if (((*textStart)&0xC0)!=0x80) return false;
+      if (textEnd <= textStart)
+        FalseOrAssertionFailure("no byte 6 in 6 byte char");
+      if (((*textStart)&0xC0)!=0x80)
+        FalseOrAssertionFailure("corrupted byte 6 in 6 byte char");
       continue;
     }
   }

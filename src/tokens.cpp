@@ -34,8 +34,8 @@ void Token::printOn(FILE *outFile, size_t indent) {
           indents[indent], tokenId,
           tokens.getNumItems(), text);
   free((void*)text);
-  Token nullToken;
+//  Token nullToken;
   for (size_t i = 0; i < tokens.getNumItems(); i++) {
-    tokens.getItem(i, nullToken).printOn(outFile, indent+1);
+    tokens.getItem(i, NULL /*nullToken*/)->printOn(outFile, indent+1);
   }
 }

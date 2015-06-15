@@ -13,6 +13,9 @@
 /// *should* be owned by and hence destroyed/freed by the
 /// StreamRegistry associated with this forest of Parse Trees. To do
 /// this each backing stream should be added to the ParseTrees instance.
+///
+/// **TODO make TokenArray back into VarArray<Token> rather than the less
+/// cache aware (less localized) VarArray<Token*>.**
 class Token {
   public:
 
@@ -28,6 +31,13 @@ class Token {
       if (!Utf8Chars::validUtf8Chars(textStart, textLength))
         throw AssertionFailure("token text not valid UTF8");
       return true;
+    }
+
+    Token(TokenId aTokenId, const char *someText) {
+      tokenId    = aTokenId;
+      textStart  = someText;
+      textLength = strlen(someText);
+      ASSERT(invariant());
     }
 
     Token(void) : tokens() {
@@ -52,32 +62,9 @@ class Token {
       tokens.~TokenArray();
      }
 
-//    void shallowCopyFrom(const Token &other) {
-//      tokenId    = other.tokenId;
-//      textStart  = other.textStart;
-//      textLength = other.textLength;
-//      tokens.shallowCopyFrom(other.tokens);
-//    }
-
-//    Token *shallowClone(void) {
-//      Token *token = new Token();
-//      token->shallowCopyFrom(*this);
-//      return token;
-//    }
-
-    void deepCopyFrom(const Token &other) {
-      ASSERT(other.invariant());
-      Token nullToken;
-      tokenId    = other.tokenId;
-      textStart  = other.textStart;
-      textLength = other.textLength;
-      tokens.deepCopyFrom(other.tokens);
-      ASSERT(invariant());
-    }
-
-    Token *deepClone(void) {
+    Token *clone(void) {
       Token *token = new Token();
-      token->deepCopyFrom(*this);
+      token->copyFrom(this);
       return token;
     }
 
@@ -93,7 +80,7 @@ class Token {
 
     void addChildToken(Token *childToken) {
       ASSERT(childToken->invariant());
-      tokens.pushItem(*childToken);
+      tokens.pushItem(childToken);
       ASSERT(invariant());
     }
 
@@ -111,7 +98,36 @@ class Token {
 
     void printOn(FILE *outFile, size_t indent = 0);
 
+#define ASSERT_EQUALS(tokenId, someChars) assertEquals(tokenId, someChars, __FILE__, __LINE__)
+
+    bool assertEquals(TokenId aTokenId,
+                      const char *someChars,
+                      const char *filename,
+                      const unsigned int linenumber) {
+      if (tokenId != aTokenId)
+        throw AssertionFailure("incorrect tokenId", filename, linenumber);
+      if (textLength != strlen(someChars))
+        throw AssertionFailure("incorrect text length", filename, linenumber);
+      if (strncmp(textStart, someChars, textLength) != 0)
+        throw AssertionFailure("incorrect text", filename, linenumber);
+      return true;
+    }
+
+    bool hasChildren(size_t numChildren) {
+      if (tokens.getNumItems() != numChildren) return false;
+      return true;
+    }
+
   protected:
+
+    void copyFrom(const Token *other) {
+      ASSERT(other->invariant());
+      tokenId    = other->tokenId;
+      textStart  = other->textStart;
+      textLength = other->textLength;
+      tokens     = other->tokens;
+      ASSERT(invariant());
+    }
 
     void operator=(const Token &other) {
       ASSERT(other.invariant());
@@ -131,28 +147,18 @@ class Token {
     /// \brief The length of text from which this token was parsed.
     size_t      textLength;
 
-    class TokenArray : public VarArray<Token> {
+    class TokenArray : public VarArray<Token*> {
       public:
        bool invariant(void) const {
-         if (!VarArray<Token>::invariant()) return false;
+         if (!VarArray<Token*>::invariant())
+           throw AssertionFailure("TokenArray VarArray invariant failed");
 
          for (size_t i = 0 ; i < numItems; i++) {
-           if (!itemArray[i].invariant()) return false;
+           if (!itemArray[i]->invariant())
+             throw AssertionFailure("Token failed invariant");
          }
          return true;
        }
-
-      void operator=(const TokenArray &other) {
-        ASSERT(other.invariant());
-        numItems  = 0;
-        arraySize = 0;
-        if (itemArray) free(itemArray);
-        itemArray = NULL;
-        for (size_t i = 0; i < numItems; i++) {
-          pushItem(other.itemArray[i]);
-        }
-        ASSERT(invariant());
-      }
     };
 
     /// \brief The number of child tokens which make up this token.

@@ -19,6 +19,7 @@
 // SO REMOVE ALL ASSERTS
 #define ASSERT(cond)
 #define ASSERT_MESSAGE(cond, message)
+#define FalseOrAssertionFailure(message) return false
 //////////////////////////////////////////////////////////////////////////////
 
 #else // DEBUG defined
@@ -55,6 +56,12 @@ struct AssertionFailure : bandit::detail::assertion_exception {
   /// \brief Construct a new instance of AssertionFailure.
   AssertionFailure(const std::string& message) :
     bandit::detail::assertion_exception(message) {};
+
+  /// \brief Construct a new instance of AssertionFailure.
+  AssertionFailure(const std::string& message,
+                   const std::string& filename,
+                   const unsigned int linenumber) :
+    bandit::detail::assertion_exception(message, filename, linenumber) {};
 
   /// \brief Add the recent function call information from the call
   /// stack and then rethrow the exception.
@@ -110,6 +117,7 @@ struct AssertionFailure : bandit::detail::assertion_exception {
     AssertionFailure::addStackTrace(af, __FILE__, __LINE__);		 \
   }
 
+#define FalseOrAssertionFailure(message) throw AssertionFailure(message)
 #endif // DEBUG defined
 
 #endif // ASSERTIONS_H not defined
