@@ -10,7 +10,7 @@ SimpleLisp::SimpleLisp(void) {
   parser->addCharacterClass("normal", ~(whiteSpaceClass | controlClass));
 
   parser->addRuleIgnoreToken("whiteSpace", "[whiteSpace]+", WhiteSpace);
-  parser->addRule("normal", "[normal]+", NonWhiteSpace);
+  parser->addRule("normal", "[normal]+", Normal);
   parser->addRule("expression",
     "{whiteSpace}?\\({expression}({whiteSpace}?,{whiteSpace}?{expression})*\\){whiteSpace}?", Expression);
   parser->addRule("expression", "{whiteSpace}?{normal}{whiteSpace}?", Expression);

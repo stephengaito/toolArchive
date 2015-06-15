@@ -1,6 +1,19 @@
 /*
  * Regular expression implementation.
- * Supports only ( | ) * + ?.  No escapes.
+ * Supports only ( | ) * + ?, as well as the local extensions:
+ *
+ *> [] to specify a UTF8 character class (negeated if the class name is
+ *> prepended with an '!'.
+ *>
+ *> {} to specify the name of a rule to restart recognition in a push
+ *> down machine.
+ *>
+ *> \ (or "\\" inside double quotes) are used to escape the next
+ *> character.
+ *
+ * Any other character (including ' ' spaces) are assumed to be part of
+ * the regular expression to be recognized.
+ *
  * Compiles to NFA and then simulates NFA
  * using Thompson's algorithm.
  * Caches steps of Thompson's algorithm to
@@ -12,7 +25,7 @@
  *
  * Copyright (c) 2007 Russ Cox.
  *
- * Extensive modifications for use as a utf8 lexer compiled by clang
+ * Extensive modifications for use as a utf8 parser compiled by clang
  * are
  *   Copyright (c) 2015 Stephen Gaito
  *
@@ -25,28 +38,20 @@
 
 #include "nfaBuilder.h"
 
-/*
- * Convert infix regexp re to postfix notation.
- * Insert . as explicit concatenation operator.
- * Cheesy parser, return static buffer.
- */
 void NFABuilder::compileRegularExpressionForTokenId(
   const char *startStateName,
   const char *aUtf8RegExp,
   Token::TokenId aTokenId,
   bool ignoreToken)
-  throw (LexerException) {
+  throw (ParserException) {
 
   // wrap the ignoreToken boolean into the lowest order bit of
   // aTokenId for subsequent retrieval
   Token::TokenId maxTokenId = (~0L)>>1;
-  if (maxTokenId < aTokenId) throw LexerException("TokenId too large");
-//  aTokenId <<= 1;
-//  if (ignoreToken) aTokenId |= 1;
+  if (maxTokenId < aTokenId) throw ParserException("TokenId too large");
 
   nfa->registerStartState(startStateName);
   size_t reLen = strlen(aUtf8RegExp);
-  //TODO: we might want to preAddStates(reLen);
   Utf8Chars *re = new Utf8Chars(aUtf8RegExp);
   int nalt, natom;
   struct {
@@ -84,13 +89,13 @@ void NFABuilder::compileRegularExpressionForTokenId(
         break;
       case '|':
         if (natom == 0)
-          throw LexerException("no previous atom found in alternation");
+          throw ParserException("no previous atom found in alternation");
         while (--natom > 0) concatenate();
         nalt++;
         break;
       case ')':
-        if (p == paren) throw LexerException("mismatched parentheses");
-        if (natom == 0) throw LexerException("no previous atom found before closing paranthesis");
+        if (p == paren) throw ParserException("mismatched parentheses");
+        if (natom == 0) throw ParserException("no previous atom found before closing paranthesis");
         while (--natom > 0) concatenate();
         for (; nalt > 0; nalt--) alternate();
         --p;
@@ -99,15 +104,15 @@ void NFABuilder::compileRegularExpressionForTokenId(
         natom++;
         break;
       case '*':
-        if (natom == 0) throw LexerException("no previous atom found for zero or more");
+        if (natom == 0) throw ParserException("no previous atom found for zero or more");
         zeroOrMore();
         break;
       case '+':
-        if (natom == 0) throw LexerException("no previous atom found for one or more");
+        if (natom == 0) throw ParserException("no previous atom found for one or more");
         oneOrMore();
         break;
       case '?':
-        if (natom == 0) throw LexerException("no previous atom found for zero or one");
+        if (natom == 0) throw ParserException("no previous atom found for zero or one");
         zeroOrOne();
         break;
       case '[':
@@ -126,7 +131,7 @@ void NFABuilder::compileRegularExpressionForTokenId(
           className++;
         }
         // find the class set for this className
-        if (className[0] == 0) throw LexerException("mallformed classification specifier");
+        if (className[0] == 0) throw ParserException("mallformed classification specifier");
         classSet = nfa->findClassSet(className);
         // negate the class if needed
         if (classNegated) {
@@ -151,9 +156,9 @@ void NFABuilder::compileRegularExpressionForTokenId(
           if (reStartStateName[i] == 0) break;
         }
         // find the reStartId for this reStartStateName
-        if (reStartStateName[0] == 0) throw LexerException("mallformed reStart name");
+        if (reStartStateName[0] == 0) throw ParserException("mallformed reStart name");
         reStartStateId = nfa->findStartStateId(reStartStateName);
-        if (reStartStateId == -1L) throw LexerException("unregistered reStartStateId");
+        if (reStartStateId == -1L) throw ParserException("unregistered reStartStateId");
         // now repeat the natom manipulate done for checkCharacter
         if (natom > 1) {
           --natom;
@@ -176,10 +181,10 @@ void NFABuilder::compileRegularExpressionForTokenId(
       }
       curChar = re->nextUtf8Char();
     }
-  if (p != paren) throw LexerException("mismatched parentheses");
+  if (p != paren) throw ParserException("mismatched parentheses");
   while (--natom > 0) concatenate();
   for (; nalt > 0; nalt--) alternate();
-  if (!stack.getNumItems()) throw LexerException("empty regular expression - nothing to match");
+  if (!stack.getNumItems()) throw ParserException("empty regular expression - nothing to match");
   baseSplitState->out = match(aTokenId, startStateName, ignoreToken);
   nfa->appendNFAToStartState(startStateName, baseSplitState);
 }

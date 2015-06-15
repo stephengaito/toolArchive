@@ -1,30 +1,38 @@
 #ifndef TOKENS_H
 #define TOKENS_H
 
-#include "hat-trie.h"
+#include <hat-trie.h>
 #include "blockAllocator.h"
 #include "streamRegistry.h"
 #include "varArray.h"
 
-/// \brief A forest of Parse Trees over a collection of UTF8
-/// characters.
+/// \brief A Token which can contain a subTree of child tokens over a
+/// collection of UTF8 characters.
 ///
 /// *NOTE:* All of the UTF8 character streams which back these tokens
-/// *should* be owned by and hence destroyed/freed by the
-/// StreamRegistry associated with this forest of Parse Trees. To do
-/// this each backing stream should be added to the ParseTrees instance.
+/// *should* be owned by and hence destroyed/freed by the same
+/// StreamRegistry. To do this each backing stream should be added to the
+/// StreamRegistry instance.
 ///
-/// **TODO make TokenArray back into VarArray<Token> rather than the less
-/// cache aware (less localized) VarArray<Token*>.**
+/// **TODO make TokenArray back into VarArray<Token> rather than the
+/// less cache aware (less localized) VarArray<Token*>.**
 class Token {
   public:
 
-    /// \brief The token id for the parser.
+    /// \brief The token id for the token.
     typedef value_t TokenId;
 
     /// \brief The token id wrapped with the ignore bit.
+    ///
+    /// This WrappedTokenId is used by the NFA::State to reduce storage
+    /// requirements.
     typedef value_t WrappedTokenId;
 
+    /// \brief An invariant which should ALWAYS be true for any
+    /// instance of a Token class.
+    ///
+    /// Throws an AssertionFailure with a brief description of any
+    /// inconsistencies discovered.
     bool invariant(void) const {
       if (!tokens.invariant())
         throw AssertionFailure("child tokens failed invariant");
@@ -33,6 +41,8 @@ class Token {
       return true;
     }
 
+    /// \brief Construct a childless token with the TokenId and text
+    /// provided.
     Token(TokenId aTokenId, const char *someText) {
       tokenId    = aTokenId;
       textStart  = someText;
@@ -40,6 +50,7 @@ class Token {
       ASSERT(invariant());
     }
 
+    /// \brief Construct a childless token with no token it or text.
     Token(void) : tokens() {
       tokenId    = 0;
       textStart  = NULL;
@@ -47,13 +58,7 @@ class Token {
       ASSERT(invariant());
     }
 
-    /// \brief Destroy the forest of ParseTrees.
-    ///
-    /// *NOTE:* All UTF8 character streams added to this ParseTrees
-    /// instance will be destroyed as well.  Which means, in turn,
-    /// all of the C-strings associated with each Utf8Chars instance
-    /// will potentially be freed as well (depending upon the explicit
-    /// ownership registered with each Utf8Chars instance).
+    /// \brief Destroy the token and all of its subtrees of child tokens.
     ~Token(void) {
       ASSERT(invariant());
       tokenId    = 0;
@@ -62,44 +67,56 @@ class Token {
       tokens.~TokenArray();
      }
 
+    /// \brief Clone the token (providing a *deep* copy of all subtrees
+    /// of child tokens).
     Token *clone(void) {
       Token *token = new Token();
       token->copyFrom(this);
       return token;
     }
 
+    /// \brief Set the text of this token.
     void setText(const char *aTextStart, size_t aTextLength) {
       textStart  = aTextStart;
       textLength = aTextLength;
       ASSERT(invariant());
     }
 
+    /// \brief Set the token id of this token.
     void setId(TokenId aTokenId) {
       tokenId = aTokenId;
     }
 
+    /// \brief Add a Child token (making a *deep* copy of all of the
+    /// child token's subtrees of subchild tokens).
     void addChildToken(Token *childToken) {
       ASSERT(childToken->invariant());
       tokens.pushItem(childToken);
       ASSERT(invariant());
     }
 
+    /// \brief Wrap the ignoreToken flag into the TokenId provided.
     static WrappedTokenId wrapTokenId(TokenId aTokenId, bool ignoreToken) {
       return (( aTokenId << 1 ) | ( ignoreToken ? 0x1 : 0x0));
     }
 
+    /// \brief UnWrap the ignoreToken flag from the WrappedTokenId provided.
     static bool ignoreToken(WrappedTokenId wrappedId) {
       return wrappedId & 0x1;
     }
 
+    /// \brief UnWrap the TokenId from the WrappedTokenId provided.
     static TokenId unWrapTokenId(WrappedTokenId wrappedId) {
       return wrappedId >> 1;
     }
 
+    /// \brief Print the token on the FILE* provided.
     void printOn(FILE *outFile, size_t indent = 0);
 
 #define ASSERT_EQUALS(tokenId, someChars) assertEquals(tokenId, someChars, __FILE__, __LINE__)
 
+    /// \brief A simple helper method used by the Bandit based test to
+    /// assert that a given token is has the TokenId and text provided.
     bool assertEquals(TokenId aTokenId,
                       const char *someChars,
                       const char *filename,
@@ -113,6 +130,7 @@ class Token {
       return true;
     }
 
+    /// \brief Returns true if the token has one or more child tokens.
     bool hasChildren(size_t numChildren) {
       if (tokens.getNumItems() != numChildren) return false;
       return true;
@@ -120,6 +138,7 @@ class Token {
 
   protected:
 
+    /// \brief Make a *deep* copy of the other token.
     void copyFrom(const Token *other) {
       ASSERT(other->invariant());
       tokenId    = other->tokenId;
@@ -129,6 +148,7 @@ class Token {
       ASSERT(invariant());
     }
 
+    /// \brief Make a *deep* copy of the other token.
     void operator=(const Token &other) {
       ASSERT(other.invariant());
       tokenId    = other.tokenId;
@@ -147,8 +167,16 @@ class Token {
     /// \brief The length of text from which this token was parsed.
     size_t      textLength;
 
+
+    /// \brief The TokenArray class holds the collection of child tokens.
     class TokenArray : public VarArray<Token*> {
       public:
+
+       /// \brief An invariant which should ALWAYS be true for any
+       /// instance of a TokenArray class.
+       ///
+       /// Throws an AssertionFailure with a brief description of any
+       /// inconsistencies discovered.
        bool invariant(void) const {
          if (!VarArray<Token*>::invariant())
            throw AssertionFailure("TokenArray VarArray invariant failed");

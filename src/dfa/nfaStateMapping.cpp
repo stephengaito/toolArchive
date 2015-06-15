@@ -12,7 +12,7 @@
  *
  * Copyright (c) 2007 Russ Cox.
  *
- * Extensive modifications for use as a utf8 lexer compiled by clang
+ * Extensive modifications for use as a utf8 parser compiled by clang
  * are
  *   Copyright (c) 2015 Stephen Gaito
  *
@@ -50,7 +50,7 @@ NFAStateMapping::~NFAStateMapping(void) {
 }
 
 NFAStateMapping::NFAStateNumber NFAStateMapping::getNFAStateNumber(NFA::State *nfaState)
-  throw (LexerException) {
+  throw (ParserException) {
   NFAStateNumber nfaStateNumber;
   nfaStateNumber.stateByte = 0;
   nfaStateNumber.stateBit  = 0;
@@ -64,10 +64,10 @@ NFAStateMapping::NFAStateNumber NFAStateMapping::getNFAStateNumber(NFA::State *n
   value_t *nfaStateIntPtr = hattrie_get(nfaStatePtr2int,
                                         nfaStatePtr,
                                         sizeof(NFA::State*));
-  if (!nfaStateIntPtr) throw LexerException("corrupted HAT-Trie nfaStatePtr2int");
+  if (!nfaStateIntPtr) throw ParserException("corrupted HAT-Trie nfaStatePtr2int");
   if (!*nfaStateIntPtr) {
     if (int2nfaStatePtrSize <= numKnownNFAStates) {
-      throw LexerException("could not getNFAStateNumber too few nfaStateInts");
+      throw ParserException("could not getNFAStateNumber too few nfaStateInts");
     }
     // this NFA::State needs to be added to our mapping
     int2nfaStatePtr[numKnownNFAStates] = nfaState;

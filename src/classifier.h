@@ -8,9 +8,13 @@
 ///
 /// Users can register new class names and associate with each class
 /// name a fixed class set.
+///
 /// A classification class set is a bit set of base classification
 /// indicators (one for each bit) which can be combined using any C/C++
 /// bitwise operation.
+///
+/// The Classifier class uses the [Hat-Trie
+/// library](https://github.com/dcjones/hat-trie).
 class Classifier {
 
   public:

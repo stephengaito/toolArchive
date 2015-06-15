@@ -41,7 +41,7 @@ go_bandit([](){
       AssertThat(aToken->textStart, Equals(cString));
       AssertThat(aToken->textLength,
         Equals(someChars->getNumberOfBytesToRead()));
-      AssertThat(aToken->tokens.itemArray[0]->tokenId, Equals(SimpleLisp::NonWhiteSpace));
+      AssertThat(aToken->tokens.itemArray[0]->tokenId, Equals(SimpleLisp::Normal));
       AssertThat(aToken->tokens.itemArray[0]->textStart[0], Equals('h'));
       AssertThat(aToken->tokens.itemArray[0]->tokens.numItems, Equals(0));
     });
@@ -70,13 +70,13 @@ go_bandit([](){
       AssertThat(childToken->ASSERT_EQUALS(SimpleLisp::Expression, "hello"), Is().True());
       AssertThat(childToken->tokens.numItems, Equals(1));
       childToken = childToken->tokens.itemArray[0];
-      AssertThat(childToken->ASSERT_EQUALS(SimpleLisp::NonWhiteSpace, "hello"), Is().True());
+      AssertThat(childToken->ASSERT_EQUALS(SimpleLisp::Normal, "hello"), Is().True());
       AssertThat(childToken->tokens.numItems, Equals(0));
       childToken = aToken->tokens.itemArray[1];
       AssertThat(childToken->ASSERT_EQUALS(SimpleLisp::Expression, "there"), Is().True());
       AssertThat(childToken->tokens.numItems, Equals(1));
       childToken = childToken->tokens.itemArray[0];
-      AssertThat(childToken->ASSERT_EQUALS(SimpleLisp::NonWhiteSpace, "there"), Is().True());
+      AssertThat(childToken->ASSERT_EQUALS(SimpleLisp::Normal, "there"), Is().True());
       AssertThat(childToken->tokens.numItems, Equals(0));
     });
 
@@ -107,14 +107,14 @@ go_bandit([](){
       AssertThat(childToken->ASSERT_EQUALS(SimpleLisp::Expression, "hello"), Is().True());
       AssertThat(childToken->tokens.numItems, Equals(1));
       childToken = childToken->tokens.itemArray[0];
-      AssertThat(childToken->ASSERT_EQUALS(SimpleLisp::NonWhiteSpace, "hello"), Is().True());
+      AssertThat(childToken->ASSERT_EQUALS(SimpleLisp::Normal, "hello"), Is().True());
       AssertThat(childToken->tokens.numItems, Equals(0));
       childToken = aToken->tokens.itemArray[0];
       childToken = childToken->tokens.itemArray[1];
       AssertThat(childToken->ASSERT_EQUALS(SimpleLisp::Expression, "there"), Is().True());
       AssertThat(childToken->tokens.numItems, Equals(1));
       childToken = childToken->tokens.itemArray[0];
-      AssertThat(childToken->ASSERT_EQUALS(SimpleLisp::NonWhiteSpace, "there"), Is().True());
+      AssertThat(childToken->ASSERT_EQUALS(SimpleLisp::Normal, "there"), Is().True());
       AssertThat(childToken->tokens.numItems, Equals(0));
       //
       childToken = aToken->tokens.itemArray[1];
@@ -124,7 +124,7 @@ go_bandit([](){
       AssertThat(childToken0->ASSERT_EQUALS(SimpleLisp::Expression, "this"), Is().True());
       AssertThat(childToken0->tokens.numItems, Equals(1));
       childToken0 = childToken0->tokens.itemArray[0];
-      AssertThat(childToken0->ASSERT_EQUALS(SimpleLisp::NonWhiteSpace, "this"), Is().True());
+      AssertThat(childToken0->ASSERT_EQUALS(SimpleLisp::Normal, "this"), Is().True());
       AssertThat(childToken0->tokens.numItems, Equals(0));
       //
       childToken = childToken->tokens.itemArray[1];
@@ -134,7 +134,7 @@ go_bandit([](){
       AssertThat(childToken0->ASSERT_EQUALS(SimpleLisp::Expression, "is"), Is().True());
       AssertThat(childToken0->tokens.numItems, Equals(1));
       childToken0 = childToken0->tokens.itemArray[0];
-      AssertThat(childToken0->ASSERT_EQUALS(SimpleLisp::NonWhiteSpace, "is"), Is().True());
+      AssertThat(childToken0->ASSERT_EQUALS(SimpleLisp::Normal, "is"), Is().True());
       AssertThat(childToken0->tokens.numItems, Equals(0));
       //
       childToken = childToken->tokens.itemArray[1];
@@ -144,7 +144,7 @@ go_bandit([](){
       AssertThat(childToken0->ASSERT_EQUALS(SimpleLisp::Expression, "a"), Is().True());
       AssertThat(childToken0->tokens.numItems, Equals(1));
       childToken0 = childToken0->tokens.itemArray[0];
-      AssertThat(childToken0->ASSERT_EQUALS(SimpleLisp::NonWhiteSpace, "a"), Is().True());
+      AssertThat(childToken0->ASSERT_EQUALS(SimpleLisp::Normal, "a"), Is().True());
       AssertThat(childToken0->tokens.numItems, Equals(0));
       //
       childToken = childToken->tokens.itemArray[1];
@@ -154,7 +154,7 @@ go_bandit([](){
       AssertThat(childToken0->ASSERT_EQUALS(SimpleLisp::Expression, "test"), Is().True());
       AssertThat(childToken0->tokens.numItems, Equals(1));
       childToken0 = childToken0->tokens.itemArray[0];
-      AssertThat(childToken0->ASSERT_EQUALS(SimpleLisp::NonWhiteSpace, "test"), Is().True());
+      AssertThat(childToken0->ASSERT_EQUALS(SimpleLisp::Normal, "test"), Is().True());
       AssertThat(childToken0->tokens.numItems, Equals(0));
     });
 

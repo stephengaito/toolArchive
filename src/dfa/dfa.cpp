@@ -12,7 +12,7 @@
  *
  * Copyright (c) 2007 Russ Cox.
  *
- * Extensive modifications for use as a utf8 lexer compiled by clang
+ * Extensive modifications for use as a utf8 parser compiled by clang
  * are
  *   Copyright (c) 2015 Stephen Gaito
  *

@@ -35,7 +35,7 @@ go_bandit([](){
   /// which has a complex end result, by walking over the resulting
   /// NFA structure. This leads to dense and fragile tests.
   ///
-  /// Since these NFAs will be used as part of a Lexer with multiple
+  /// Since these NFAs will be used as part of a Parser with multiple
   /// tokens to be recognized, the NFA start state(s) consist of
   /// what is essentially a linked list of NFA::Split states whose
   /// out pointer points to the (sub)NFA to recognize a given token
@@ -307,15 +307,15 @@ go_bandit([](){
     });
 
     /// We need to verify that empty regular expressions
-    /// are rejected by throwing a LexerException.
-    it("Empty regular expressions should throw lexer exceptions", [&](){
+    /// are rejected by throwing a ParserException.
+    it("Empty regular expressions should throw Parser exceptions", [&](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
       NFABuilder *nfaBuilder = new NFABuilder(nfa);
       try {
         nfaBuilder->compileRegularExpressionForTokenId("start", "\\", 1);
         AssertThat(false, Is().True());
-      } catch (LexerException& e) {
+      } catch (ParserException& e) {
         AssertThat(true, Is().True());
       }
       delete nfa;
@@ -323,15 +323,15 @@ go_bandit([](){
     });
 
     /// We need to verify the malformed regular expressions,
-    /// such as: /*/, throw LexerExpressions.
-    it("Malformed regular expressions throws lexer exception", [&](){
+    /// such as: /*/, throw ParserExpressions.
+    it("Malformed regular expressions throws Parser exception", [&](){
       Classifier *classifier = new Classifier();
       NFA *nfa = new NFA(classifier);
       NFABuilder *nfaBuilder = new NFABuilder(nfa);
       try {
         nfaBuilder->compileRegularExpressionForTokenId("start", "*", 1);
         AssertThat(false, Is().True());
-      } catch (LexerException& e) {
+      } catch (ParserException& e) {
         AssertThat(true, Is().True());
       }
       delete nfa;
@@ -373,7 +373,7 @@ go_bandit([](){
         AssertThat(nextState->matchData.t, Is().EqualTo(2)); // token:1 ignore:false
         AssertThat(nextState->out,  Is().EqualTo((NFA::State*)0));
         AssertThat(nextState->out1, Is().EqualTo((NFA::State*)0));
-      } catch (LexerException& e) {
+      } catch (ParserException& e) {
         AssertThat(false, Is().True());
       }
       delete nfa;

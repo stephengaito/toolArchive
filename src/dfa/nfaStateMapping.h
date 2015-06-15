@@ -46,7 +46,7 @@ namespace DeterministicFiniteAutomaton {
       /// This method is the inverse to the getNFAStateFor method.
       /// This method uses the nfaStatePtr2int mapping.
       NFAStateNumber getNFAStateNumber(NFA::State *nfaState)
-        throw (LexerException);
+        throw (ParserException);
 
       /// \brief Return the NFA::State represented by a given
       /// NFAStateNumber.
@@ -55,7 +55,7 @@ namespace DeterministicFiniteAutomaton {
       /// This method used the int2nfaStatePtr mapping.
       NFA::State *getNFAStateFor(size_t nfaStateNumber) {
         if (numKnownNFAStates <= nfaStateNumber) {
-          throw LexerException("invalid NFA state requested in NFAStateMapping");
+          throw ParserException("invalid NFA state requested in NFAStateMapping");
         }
         return int2nfaStatePtr[nfaStateNumber];
       }

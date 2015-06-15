@@ -6,17 +6,17 @@
 #include "classifier.h"
 #include "tokens.h"
 
-/// \brief LexerExceptions provide simple messages detailing why the
-/// Lexer can not proceed.
+/// \brief ParserExceptions provide simple messages detailing why the
+/// Parser can not proceed.
 ///
-/// LexerExceptions are thrown whenever a regular expression
+/// ParserExceptions are thrown whenever a regular expression
 /// is malformed, or the DFA state used to recognize a token is corrupted.
-class LexerException: public std::exception {
+class ParserException: public std::exception {
   public:
-    /// \brief Initialize a LexerException structure.
-    LexerException(const char* aMessage) { message = aMessage; };
+    /// \brief Initialize a ParserException structure.
+    ParserException(const char* aMessage) { message = aMessage; };
 
-    /// \brief The message associated with this LexerException
+    /// \brief The message associated with this ParserException
     /// instance.
     const char* message;
 };
@@ -27,14 +27,27 @@ class LexerException: public std::exception {
 /// (NFA) are used to recognize [Regular
 /// Expressions](http://en.wikipedia.org/wiki/Regular_expression).
 ///
-/// Since these NFAs will be used as part of a Lexer with multiple
-/// tokens to be recognized, our NFAs have a specific structure.
-/// The NFA start state(s) consist of what is essentially a linked list
-/// of NFA::Split states whose out pointer points to the (sub)NFA to
-/// recognize a given token and whose out1 pointer points to the next
-/// (sub)NFA/token in the linked list. Each (sub)NFA which recognizes a
-/// given token, will end with an NFA::Token state whose matchData
-/// stores the token ID associated with the recognized token.
+///  We have explicitly extended these NFAs and Regular expressions with
+/// the ability to restart recognition at different start states in the
+/// NFA. This turns the NFA into a [Push Down
+/// Machine](https://en.wikipedia.org/wiki/Pushdown_automaton) which is
+/// more powerful than a standard NFA.
+///
+/// Since these NFAs will be used as part of a Parser with multiple
+/// tokens, (or 'rules'), to be recognized, our NFAs have a specific
+/// structure. The NFA start state(s) consist of what is essentially a
+/// linked list of NFA::Split states whose out pointer points to the
+/// (sub)NFA to recognize a given token and whose out1 pointer points
+/// to the next (sub)NFA/token in the linked list. Each (sub)NFA which
+/// recognizes a given token, will end with an NFA::Token state whose
+/// matchData stores the token ID associated with the recognized token.
+///
+/// The internals of the NFA class have been heavily inspired by [Russ
+/// Cox's Regular Exprssion code](https://swtch.com/~rsc/regexp/). See the
+/// NFABuilder class for details and license.
+///
+/// This class uses the [Hat-Trie
+/// library](https://github.com/dcjones/hat-trie).
 class NFA {
 
   public:
@@ -81,7 +94,7 @@ class NFA {
         Token::TokenId  t;
         /// \brief The StartState ID associated to a given (recursive)
         /// push down state.
-        StartStateId r; // (re)startState
+        StartStateId r;
       } MatchData;
 
     /// \brief Every NFA is a graph of NFA::State stuctures which is
@@ -175,7 +188,7 @@ class NFA {
       if (!startStateId) return -1L;
       // internally *startStateId is 1-relative
       // so we convert it to 0-relative externally.
-      return *startStateId - 1; 
+      return *startStateId - 1;
     }
 
     /// \brief Get the named start state.

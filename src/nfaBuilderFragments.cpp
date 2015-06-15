@@ -1,6 +1,45 @@
+/*
+ * Regular expression implementation.
+ * Supports only ( | ) * + ?, as well as the local extensions:
+ *
+ *> [] to specify a UTF8 character class (negeated if the class name is
+ *> prepended with an '!'.
+ *>
+ *> {} to specify the name of a rule to restart recognition in a push
+ *> down machine.
+ *>
+ *> \ (or "\\" inside double quotes) are used to escape the next
+ *> character.
+ *
+ * Any other character (including ' ' spaces) are assumed to be part of
+ * the regular expression to be recognized.
+ *
+ * Compiles to NFA and then simulates NFA
+ * using Thompson's algorithm.
+ * Caches steps of Thompson's algorithm to
+ * build DFA on the fly, as in Aho's egrep.
+ *
+ * See also http://swtch.com/~rsc/regexp/ and
+ * Thompson, Ken.  Regular Expression Search Algorithm,
+ * Communications of the ACM 11(6) (June 1968), pp. 419-422.
+ *
+ * Copyright (c) 2007 Russ Cox.
+ *
+ * Extensive modifications for use as a utf8 parser compiled by clang
+ * are
+ *   Copyright (c) 2015 Stephen Gaito
+ *
+ * Can be distributed under the MIT license, see bottom of file.
+ */
 #include <stdio.h>
 
 #include "nfaBuilder.h"
+
+#define merge3(bufferName, str0, str1, str2)                  \
+  char bufferName[strlen(str0)+strlen(str1)+strlen(str2)+10]; \
+  strcpy(bufferName, (str0));                                 \
+  strcat(bufferName, (str1));                                 \
+  strcat(bufferName, (str2));
 
 NFABuilder::NFABuilder(NFA *anNFA) {
   nfa             = anNFA;
@@ -122,4 +161,28 @@ NFA::State *NFABuilder::match(Token::TokenId aTokenId,
     nfa->addState(NFA::Token, tokenData, NULL, NULL, message));
   return e.start;
 };
+
+/*
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software and associated
+ * documentation files (the "Software"), to deal in the
+ * Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall
+ * be included in all copies or substantial portions of the
+ * Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+ * KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+ * WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS
+ * OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+ * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 

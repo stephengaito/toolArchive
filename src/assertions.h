@@ -35,7 +35,7 @@
 #include <list>
 #include <deque>
 #include <stdexcept>
-#include "banditAssertionException.h"
+#include "bandit/assertion_exception.h"
 #endif
 
 #include <execinfo.h>
@@ -43,21 +43,33 @@
 #include <cxxabi.h>
 #define MAX_FRAMES 10
 
-/// \brief AssertionFailure class provides a convenient way to report
-/// more inforamtion than a simple failure of an assertion.
+/// \brief The AssertionFailure class provides a convenient way to
+/// report more information than the simple failure of an assertion.
 ///
 /// The AssertionFailure exception, when used inside of the provided
-/// ASSERT macro, adds recent call stack information using ideas
-/// suggested by Rafael Baptista's excellent blog article:
+/// ASSERT or ASSERT_MESSAGE macros, adds recent call stack information
+/// using ideas suggested by Rafael Baptista's excellent blog article:
 /// [Generate Stack Traces on Crash Portably in
 /// C++](http://oroboro.com/stack-trace-on-crash/)
+///
+/// The AsertionFailure class as well as the ASSERT/ASSERT_MESSAGE
+/// macros are only defined if the C/C++ macro DEBUG has been defined.
+///
+/// To use this assertion framework the bandit/assertion_exception.h
+/// file MUST be installed in either the system or local include
+/// directories. A copy of this file can be [download
+/// here](https://github.com/joakimkarlsson/bandit)
 struct AssertionFailure : bandit::detail::assertion_exception {
 
   /// \brief Construct a new instance of AssertionFailure.
   AssertionFailure(const std::string& message) :
     bandit::detail::assertion_exception(message) {};
 
-  /// \brief Construct a new instance of AssertionFailure.
+  /// \brief Construct a new instance of AssertionFailure which
+  /// explicitly contains file name and line number information.
+  ///
+  /// This can be used together with Bandit tests outside of the
+  /// Assertion framework.
   AssertionFailure(const std::string& message,
                    const std::string& filename,
                    const unsigned int linenumber) :
@@ -65,6 +77,9 @@ struct AssertionFailure : bandit::detail::assertion_exception {
 
   /// \brief Add the recent function call information from the call
   /// stack and then rethrow the exception.
+  ///
+  /// This method is typically, automatically, called by the ASSERT
+  /// and/or ASSERT_MESSAGE macros.
   static void addStackTrace(const AssertionFailure& af,
                             const std::string& filename,
                             const unsigned int linenumber) {
@@ -118,6 +133,7 @@ struct AssertionFailure : bandit::detail::assertion_exception {
   }
 
 #define FalseOrAssertionFailure(message) throw AssertionFailure(message)
+
 #endif // DEBUG defined
 
 #endif // ASSERTIONS_H not defined

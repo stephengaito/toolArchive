@@ -11,6 +11,11 @@
 class BlockAllocator {
   public:
 
+    /// \brief An invariant which should ALWAYS be true for any
+    /// instance of a BlockAllocator class.
+    ///
+    /// Throws an AssertionFailure with a brief description of any
+    /// inconsistencies discovered.
     bool invariant(void) const {
       if (endAllocationByte < curAllocationByte)
         throw AssertionFailure("incorrectly ordered allocation bytes");
@@ -62,16 +67,6 @@ class BlockAllocator {
       endAllocationByte = NULL;
     }
 
-  protected:
-    // \brief Add a new allocation block to this blockAllocator.
-    void addNewBlock(void) {
-      ASSERT(invariant());
-      curAllocationByte = (char*)calloc(blockSize, 1);
-      endAllocationByte = curAllocationByte + blockSize + 1;
-      blocks.pushItem(curAllocationByte);
-      ASSERT(invariant());
-    }
-
   public:
     /// \brief Allocate a new (sub)structure of the given size.
     char *allocateNewStructure(size_t structureSize) {
@@ -87,6 +82,15 @@ class BlockAllocator {
     }
 
   protected:
+
+    /// \brief Add a new allocation block to this blockAllocator.
+    void addNewBlock(void) {
+      ASSERT(invariant());
+      curAllocationByte = (char*)calloc(blockSize, 1);
+      endAllocationByte = curAllocationByte + blockSize + 1;
+      blocks.pushItem(curAllocationByte);
+      ASSERT(invariant());
+    }
 
     /// \brief The current block from which allocations are being made.
     char *curAllocationByte;

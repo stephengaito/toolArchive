@@ -5,7 +5,7 @@
 #include "varArray.h"
 
 /// \brief A registry/collection of UTF8 character streams to be used
-/// by a given forest of Parse Trees.
+/// by a given parser.
 ///
 /// A stream registry is used to provide a coherent life time for a
 /// collection of C-strings.

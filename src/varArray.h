@@ -17,6 +17,11 @@ template<class ItemT>
 class VarArray {
   public:
 
+    /// \brief An invariant which should ALWAYS be true for any
+    /// instance of a VarArray<ItemT> class.
+    ///
+    /// Throws an AssertionFailure with a brief description of any
+    /// inconsistencies discovered.
     bool invariant(void) const {
       return (numItems <= arraySize) && ((itemArray) || (arraySize==0));
     }
@@ -114,6 +119,8 @@ class VarArray {
 
   protected:
 
+    /// \brief Provide a *deep* copy of the other VarArray<ItemT>
+    /// instance.
     void operator=(const VarArray &other) {
       ASSERT(other.invariant());
       numItems  = 0;

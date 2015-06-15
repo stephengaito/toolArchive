@@ -10,7 +10,49 @@
 /// has yet to be defined output connections. Otherwise all NFA::State(s)
 /// are fully defined.
 ///
-/// NFABuilder::Frag structures are pushed and poped from a stack.
+/// NFABuilder::Frag structures are pushed and poped from a stack in
+/// the given NFABuilder instance.
+///
+
+/// The implementation of this NFABuilder class has heavily modified
+/// from code taken from Russ Cox's [Implementing Regular
+/// Expressions](https://swtch.com/~rsc/regexp/) page. His code was in
+/// turn inspired by the paper by Thompson, Ken.  Regular Expression
+/// Search Algorithm, Communications of the ACM 11(6) (June 1968), pp.
+/// 419-422.
+///
+/// This code is
+///
+///> Copyright (c) 2007 Russ Cox.
+///
+/// Extensive modifications for use as a utf8 parser compiled by clang
+/// are
+///
+///> Copyright (c) 2015 Stephen Gaito
+///
+/// This code can be distributed under the MIT license:
+///
+///> Permission is hereby granted, free of charge, to any person
+///> obtaining a copy of this software and associated
+///> documentation files (the "Software"), to deal in the
+///> Software without restriction, including without limitation
+///> the rights to use, copy, modify, merge, publish, distribute,
+///> sublicense, and/or sell copies of the Software, and to
+///> permit persons to whom the Software is furnished to do so,
+///> subject to the following conditions:
+///>
+///> The above copyright notice and this permission notice shall
+///> be included in all copies or substantial portions of the
+///> Software.
+///>
+///> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+///> KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+///> WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+///> PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS
+///> OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+///> OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+///> OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+///> SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 class NFABuilder {
 
   public:
@@ -63,23 +105,43 @@ class NFABuilder {
 
     /// \brief Push an NFABuilder::Frag structure containing an
     /// NFA::State which represents a terminal state which recognizes a
-    /// token with id, aTokenId.
+    /// token with id, aTokenId. This token will be matched but not
+    /// inserted into the parse tree if ignoreToken is true.
     NFA::State *match(Token::TokenId aTokenId,
                       const char *startStateName,
                       bool ignoreToken = false);
 
     /// \brief Compile the Regular Expression into a (sub)NFA used to
     /// recognize a Token with Token ID aTokenId with the given
-    /// startStateName.
+    /// startStateName. The matched token will not be inserted into the
+    /// parse tree if ignoreToken if false.
+    ///
+    /// This regular expression implementation supports the standard
+    /// operators '(' '|' ')' '*' '+' '?', as well as the local
+    /// extensions:
+    ///* '[' <className> ']' to specify a UTF8 character class which
+    ///  has been registered with the Classifier associated with the NFA.
+    ///  (The class set is complemented if the class name is prepended
+    ///  with an '!').
+    ///* '{' <startStateName> '}' to specify the name of a rule's
+    ///  startState at which recognition should restart in the
+    ///  associated PushDownMachine.
+    ///* '\' (or '\\\\' inside double quotes) are used to escape the next
+    ///  character.
+    ///
+    /// Any other character (including a ' ' space) is assumed to be
+    /// part of the regular expression to be recognized.
+    ///
     void compileRegularExpressionForTokenId(const char *startStateName,
                                             const char *re,
                                             Token::TokenId aTokenId,
                                             bool ignoreToken = false)
-                                            throw (LexerException);
+                                            throw (ParserException);
 
   protected:
+
     /// \brief a Ptrlist is a linked list of NFA::State structures
-    /// which the NFABuilder::patch method should patck to provide
+    /// which the NFABuilder::patch method should patch to provide
     /// a fully specified NFA structure.
     typedef union Ptrlist {
       /// \brief Since the NFA::State out pointers in the Ptrlist are
@@ -131,6 +193,7 @@ class NFABuilder {
     }
 
   protected:
+
     /// \brief The NFA for which this NFABuilder is being constructed.
     NFA *nfa;
 
@@ -139,13 +202,6 @@ class NFABuilder {
     /// A given regular expression is parsed directly into an impliclit
     /// reverse polish structure using this stack.
     VarArray<Frag> stack;
-//    Frag *stack;
-
-    /// \brief The current top of the NFABuilder stack.
-//    size_t stackTop;
-
-    /// \brief The size of the allocated NFABuilder stack.
-//    size_t stackSize;
 
     /// \brief An instance of NFA::MatchData initialized to represent
     /// no/empty/null match data.

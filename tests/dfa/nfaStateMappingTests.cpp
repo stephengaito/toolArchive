@@ -183,7 +183,7 @@ go_bandit([](){
         AssertThat(aStateNum.stateByte, Is().EqualTo(2));
         AssertThat((int)aStateNum.stateBit,  Is().EqualTo(16));
         AssertThat(false, Is().True());
-      } catch (LexerException& e) {
+      } catch (ParserException& e) {
         AssertThat(true, Is().True());
       }
       // stateMapper is owned by allocator

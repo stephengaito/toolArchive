@@ -6,23 +6,6 @@
 #include <string.h>
 
 #include "assertions.h"
-
-#define merge3(bufferName, str0, str1, str2)			\
-  char bufferName[strlen(str0)+strlen(str1)+strlen(str2)+10];	\
-  strcpy(bufferName, (str0));					\
-  strcat(bufferName, (str1));					\
-  strcat(bufferName, (str2));
-
-#define condMerge3(bufferName, cond, str0, str1, str2, str3)		   \
-  char bufferName[strlen(str0)+strlen(str1)+strlen(str2)+strlen(str3)+10]; \
-  if (cond) {								   \
-    strcpy(bufferName, (str0));						   \
-    strcat(bufferName, (str1));						   \
-    strcat(bufferName, (str2));						   \
-  } else {								   \
-    strcpy(bufferName, (str3));						   \
-  }
-
 #include "varArray.h"
 
 /// \brief The utf8Char_struct (utf8Char_t) is a simple union to allow
@@ -39,6 +22,11 @@ typedef union utf8Char_struct {
 class Utf8Chars {
   public:
 
+    /// \brief An invariant which should ALWAYS be true for any
+    /// instance of a Utf8Cchars class.
+    ///
+    /// Throws an AssertionFailure with a brief description of any
+    /// inconsistencies discovered.
     bool invariant(void) const {
       if ((origUtf8Chars == NULL) ||
           (utf8Chars     == NULL) ||
@@ -68,13 +56,9 @@ class Utf8Chars {
     /// \brief A list of UTF8 white space charaters
     static const char whiteSpaceChars[];
 
-    /// \brief Create an instance of the Utf8Chars...
-    ///
-    /// using the byte array someUtf8Chars.
-    Utf8Chars(
-      const char* someUtf8Chars, ///< [in] the byte array of UTF8 chars
-      Ownership ownership = DoNotOwn
-    ); ///< Create an instance of Utf8Chars
+    /// \brief Create an instance of the Utf8Chars using the byte array
+    /// someUtf8Chars with the provided OwnerShip model.
+    Utf8Chars(const char* someUtf8Chars, Ownership ownership = DoNotOwn);
 
     /// \brief Destroy this object.
     ///
@@ -84,6 +68,9 @@ class Utf8Chars {
 
     /// \brief Create a cloned copy of this Utf8Chars starting at
     /// the current location and *not* owning the underlying C-String.
+    ///
+    /// If subStream is true then the cloned Utf8Chars "starts" at the
+    /// parent's nextbyte (current position).
     Utf8Chars *clone(bool subStream = false) {
       ASSERT(invariant());
       Utf8Chars *result = new Utf8Chars(utf8Chars, DoNotOwn);
@@ -95,6 +82,8 @@ class Utf8Chars {
       return result;
     }
 
+    /// \brief Update the position of one Utf8Chars from an other
+    /// Utf8Chars instance.
     void updatePositionFrom(Utf8Chars *otherChars) {
       // return if otherChars is not a clone of this
       if (!otherChars)                                       return;
@@ -170,6 +159,11 @@ class Utf8Chars {
       return strndup(utf8Chars, getNumberOfBytesRead());
     }
 
+    /// \brief Returns the number of bytes which could still be read
+    /// from the stream.
+    ///
+    /// Note that the number of bytes might not be the number of
+    /// Utf8Chars which could be read from the rest of this stream.
     size_t getNumberOfBytesToRead(void) {
       ASSERT(invariant());
       if (lastByte <= nextByte) nextByte = lastByte;
@@ -194,7 +188,22 @@ class Utf8Chars {
     /// \brief Convert an integer code point into a UTF8 character
     static utf8Char_t codePoint2utf8Char(uint64_t codePoint);
 
+    /// \brief Returns true if the text provided is a valid collection
+    /// of UTF8 characters.
+    ///
+    /// If the text provided contains non UTF8 bytes this method will
+    /// either return false or throw an AssertionFailure exception
+    /// depending upon whether or not the C/C++ macro DEBUG is defined.
+    /// (see the assertions.h file).
     static bool validUtf8Chars(const char *textStart, size_t textLength);
+
+    /// \brief Returns true if the text provided is a valid collection
+    /// of UTF8 characters.
+    ///
+    /// If the text provided contains non UTF8 bytes this method will
+    /// either return false or throw an AssertionFailure exception
+    /// depending upon whether or not the C/C++ macro DEBUG is defined.
+    /// (see the assertions.h file).
     static bool validUtf8Chars(const char *textStart, const char *textEnd);
 
   protected:
