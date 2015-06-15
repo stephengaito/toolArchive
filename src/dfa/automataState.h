@@ -104,6 +104,9 @@ namespace DeterministicFiniteAutomaton {
         ASSERT(invariant());
         ASSERT(other.invariant());
 
+        automataStateType = other.automataStateType;
+        startStateId      = other.startStateId;
+
         ASSERT(dfa       || other.dfa);
         if (!dfa) dfa = other.dfa;
 
@@ -159,9 +162,8 @@ namespace DeterministicFiniteAutomaton {
         return automataStateType;
       }
 
-      const char *getStateTypeMessage(void) {
-        ASSERT(invariant());
-        switch(automataStateType) {
+      static const char *getStateTypeMessage(AutomataStateType stateType) {
+        switch(stateType) {
         case ASBackTrack:
           return "BackTrack";
         case ASContinue:
@@ -172,6 +174,11 @@ namespace DeterministicFiniteAutomaton {
           return "INVALID";
         }
         ASSERT_MESSAGE(false, "should never reach here");
+      }
+
+      const char *getStateTypeMessage(void) {
+        ASSERT(invariant());
+        return getStateTypeMessage(automataStateType);
       }
 
       const char *getStartStateMessage(void) {
@@ -187,13 +194,7 @@ namespace DeterministicFiniteAutomaton {
         ASSERT(invariant());
         return dState;
       }
-//      void setDState(State *aDState) {
-//        ASSERT(allocator);
-//        ASSERT(aDState);
-//        dState = allocator->clone(aDState);
-//        iterator = allocator->getNewIteratorOn(dState);
-//        ASSERT(invariant());
-//      }
+
       void clearNFAState(NFA::State *nfaState) {
         ASSERT(allocator);
         ASSERT(nfaState);
@@ -201,6 +202,16 @@ namespace DeterministicFiniteAutomaton {
         allocator->clearNFAState(dState, nfaState);
         ASSERT(invariant());
       }
+      void clearNFAStatesWithSameRestartState(NFA::StartStateId aStartStateId) {
+        NFAStateIterator iterator = allocator->newIteratorOn(dState);
+        while (NFA::State *nfaState = iterator.nextState()) {
+          if ((nfaState->matchType == NFA::ReStart) &&
+              (nfaState->matchData.r == aStartStateId)) {
+            clearNFAState(nfaState);
+          }
+        }
+      }
+
       NFA::State *stateMatchesToken(State *tokenStates) {
         ASSERT(allocator);
         ASSERT(tokenStates);

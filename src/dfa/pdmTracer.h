@@ -30,7 +30,7 @@ namespace DeterministicFiniteAutomaton {
         CurStreamPosition=32,
         StackPushes=64,
         StackPops=128,
-        StackSwaps=256,
+//        StackSwaps=256,
         CheckForRestarts=512,
         PDMRestarts=1024,
         PDMMatch=2048,
@@ -43,7 +43,8 @@ namespace DeterministicFiniteAutomaton {
         RestartMessages=262144,
         PDMTokens=524288,
         Progress=(PDMMatch|CurStreamPosition|RestartMessages),
-        PDMStack=(StackPushes|StackPops|StackSwaps),
+//        PDMStack=(StackPushes|StackPops|StackSwaps),
+        PDMStack=(StackPushes|StackPops),
         SimpleState=(NFAState|DFAState|AutomataStack|PDMTokens|PDMState),
         Transitions=(PDMErrorReturn|PDMBackTrack|PDMFailedBackTrack|PDMNextDFAState|PDMFailedWithStream|PDMDone|PDMMatch)
       };
@@ -89,12 +90,13 @@ namespace DeterministicFiniteAutomaton {
       void reportTokens(size_t indent = 0);
       void reportStreamPrefix();
       void reportStreamPostfix();
-      void swap(size_t indent = 0);
+//      void swap(size_t indent = 0);
       void push(const char *message, size_t indent = 0);
-      void pop(const char *message, size_t indent = 0);
+      void pop(const char *message0,
+               const char *message1 = "",
+               size_t indent = 0);
       void checkForRestart(size_t indent = 0);
       /// \brief Trace the use of a restart state transition.
-//      void restart(NFA::State *nfaState, size_t indent = 0);
       void restart(size_t indent = 0);
       void match(NFA::State *nfaState, size_t indent = 0);
       void done(size_t indent = 0);

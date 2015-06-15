@@ -25,8 +25,9 @@ void PDMTracer::reportDFAState(size_t indent) {
   if (!traceFile || !trace(DFAState)) return;
    NFAStateIterator iterator =
     pdm->allocator->newIteratorOn(pdm->curState.dState);
-  fprintf(traceFile, "%sCurrent state: %s\n",
-    indents[indent], pdm->curState.getStartStateMessage());
+  fprintf(traceFile, "%sCurrent state: %s(%s)\n", indents[indent],
+          pdm->curState.getStateTypeMessage(),
+          pdm->curState.getStartStateMessage());
   fprintf(traceFile, "%sNFA states:\n",
           indents[indent]);
   while (NFA::State *nfaState = iterator.nextState()) {
@@ -93,21 +94,29 @@ void PDMTracer::reportTokens(size_t indent) {
 
 void PDMTracer::push(const char *message, size_t indent) {
   if (!traceFile || !trace(StackPushes)) return;
-  fprintf(traceFile, "%spush::%s(%s)<%s> \n",
-          indents[indent], pdm->curState.getStateTypeMessage(),
-          pdm->curState.getStartStateMessage(), message);
+  fprintf(traceFile, "%spush::%s(%s)<%s> \n", indents[indent],
+          pdm->curState.getStateTypeMessage(),
+          pdm->curState.getStartStateMessage(),
+          message);
 }
 
-void PDMTracer::pop(const char *message, size_t indent) {
+void PDMTracer::pop(const char *message0, const char *message1, size_t indent) {
   if (!traceFile || !trace(StackPops)) return;
-  fprintf(traceFile, "%spop::%s (%s)\n", indents[indent],
-          pdm->curState.getStartStateMessage(), message);
+  const char *stateTypeMessage = "unknown";
+  if (pdm->stack.getNumItems()) stateTypeMessage =
+    pdm->stack.getTop().getStateTypeMessage();
+  const char *startStateMessage = "stack empty";
+  if (pdm->stack.getNumItems()) startStateMessage =
+    pdm->stack.getTop().getStartStateMessage();
+  fprintf(traceFile, "%spop::%s(%s) (%s%s)\n", indents[indent],
+          stateTypeMessage, startStateMessage,
+          message0, message1);
 }
 
-void PDMTracer::swap(size_t indent) {
-  if (!traceFile || !trace(StackSwaps)) return;
-    fprintf(traceFile, "swap\n");
-}
+//void PDMTracer::swap(size_t indent) {
+//  if (!traceFile || !trace(StackSwaps)) return;
+//    fprintf(traceFile, "swap\n");
+//}
 
 void PDMTracer::checkForRestart(size_t indent) {
   if (!traceFile || !trace(CheckForRestarts)) return;

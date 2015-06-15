@@ -43,7 +43,41 @@ namespace DeterministicFiniteAutomaton {
 
     protected:
 
-#include "pushDownMachineInline.h"
+      /// \brief Pop the current automata state off the top of the
+      /// push down automata's state stack, *keeping* the current
+      /// stream location.
+      void popKeepStreamPosition(PDMTracer *pdmTracer) {
+        // keepStreamState = true
+        // clearOldState   = true
+        if (pdmTracer) pdmTracer->pop("keep stream position");
+        curState.copyFrom(stack.popItem(), true, true);
+      }
+
+      /// \brief Pop the current automata state off the top of the
+      /// push down automata's state stack, *resetting* the current
+      /// stream location.
+      void popResetStreamPosition(PDMTracer *pdmTracer) {
+        // keepStreamState = false
+        // clearOldState   = true
+        if (pdmTracer) pdmTracer->pop("pop stream position");
+        curState.copyFrom(stack.popItem(), false, true);
+      }
+
+      /// \brief Pop the current automata state off the top of the
+      /// push down automata's state stack *until* the state type is
+      /// the required state type.
+      void popUntil(AutomataState::AutomataStateType requiredStateType, 
+                    PDMTracer *pdmTracer) {
+        // TODO: how do we clean up unused state?
+        //
+        // continue poping until we reach the required state type
+        while(stack.getNumItems() &&
+              stack.getTop().getStateType() != requiredStateType) {
+          if (pdmTracer) pdmTracer->pop("IGNORE looking for ",
+            AutomataState::getStateTypeMessage(requiredStateType));
+          stack.popItem();
+        }
+      }
 
       /// \brief The DFA integrated by this PushDownAutomata.
       DFA *dfa;

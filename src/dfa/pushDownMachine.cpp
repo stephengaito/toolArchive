@@ -26,7 +26,29 @@ Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
     if (pdmTracer) pdmTracer->checkForRestart();
     while(NFA::State *nfaState = curState.getIterator()->nextState()) {
       if (nfaState->matchType == NFA::ReStart) {
-        setupRestart(nfaState, pdmTracer);
+        // we need to try this path
+        //
+        // setup the backtrack state...
+        curState.setStateType(AutomataState::ASBackTrack);
+        // clear this NFA::State out of the backTrack DFA state
+        curState.clearNFAStatesWithSameRestartState(nfaState->matchData.r);
+        if (pdmTracer) pdmTracer->push("TODO");
+        stack.pushItem(curState);
+
+        // setup the call continue state...
+        curState.setStateType(AutomataState::ASContinue);
+        curState.setDState(dfa->getDFAStateFromNFAState(nfaState));
+        curState.cloneSubStream(false);
+        curState.cloneToken(true);
+        if (pdmTracer) pdmTracer->push("TODO");
+        stack.pushItem(curState);
+
+        // now set up the subDFA state
+        curState.setStateType(AutomataState::ASRestart);
+        curState.setStartStateId(nfaState->matchData.r);
+        curState.cloneSubStream(true);
+        curState.cloneToken(false);
+        if (pdmTracer) pdmTracer->restart();
         goto restart;
       }
     }
@@ -39,8 +61,8 @@ Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
 
     if (nextDFAState) {
       // we have a suitable nextDFAState...
-      if (pdmTracer) pdmTracer->nextDFAState();
       // so we greedily restart with the new nextDFAState
+      if (pdmTracer) pdmTracer->nextDFAState();
       curState.setDState(nextDFAState);
       goto restart;
     }
@@ -57,36 +79,36 @@ Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
       // we have a match... wrap up this token
       curState.setTokenId(Token::unWrapTokenId(tokenNFAState->matchData.t));
       curState.setTokenText();
+      Token *token = curState.releaseToken();
+
+      // we have found a match...
+      // so pop the stack until we reach a continue state
+      popUntil(AutomataState::ASContinue, pdmTracer);
 
       if (stack.getNumItems()) {
-        // we have successfully recoginized a sub state
-        // now pop the stack keeping the current stream and restart
-        Token *childToken = curState.releaseToken();
-        swap(pdmTracer);
-        popIgnore(pdmTracer); // ignore this backtrack state
+        // we have reached a continue state
+        // so pop the stack keeping the current stream and restart
         popKeepStreamPosition(pdmTracer); // use the continue state
         if (pdmTracer) pdmTracer->reportDFAState();
         if (Token::ignoreToken(tokenNFAState->matchData.t)) goto restart;
-        curState.addChildToken(childToken);
+        curState.addChildToken(token);
         goto restart;
       }
 
-      // we have a match BUT the stack is empty
       if (partialOK || curState.getStream()->atEnd()) {
-        if (pdmTracer) pdmTracer->done();
         // we have a match, the stack is empty and ...
         // we are at the end of the stream
         // (or we are happy with a partial match)...
         // so return this token and we are done!
-        Token *token = curState.releaseToken();
+        if (pdmTracer) pdmTracer->done();
         curState.clear();
         return token;
       }
 
-      if (pdmTracer) pdmTracer->failedWithStream();
       // we have a match, the stack is empty BUT
       // we have not finished scanning the string...
       // so return the NULL token we have FAILED.
+      if (pdmTracer) pdmTracer->failedWithStream();
       curState.clear();
       return NULL;
     }
@@ -94,17 +116,18 @@ Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
     // there is no suitable nextDFAState given the current character
     // AND the current DFAState does not contain a suitable token(match)
     // so we need to backtrack and try the next possible path
+    if (pdmTracer) pdmTracer->backtrack();
+    popUntil(AutomataState::ASBackTrack, pdmTracer);
+
     if (!stack.getNumItems()) {
-      if (pdmTracer) pdmTracer->failedBacktrack();
       // there are no alternate paths...
       // ... so we give up by returning the NULL token.
+      if (pdmTracer) pdmTracer->failedBacktrack();
       curState.clear();
       return NULL;
     }
 
-    if (pdmTracer) pdmTracer->backtrack();
-    popIgnore(pdmTracer); // ignore the continue state
-    pop(pdmTracer); // use the backtrack state
+    popResetStreamPosition(pdmTracer);
     // goto restart;
   }
   // if we have reached this point we have failed!
