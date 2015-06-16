@@ -1,4 +1,18 @@
 # This is a collection of utilities used by the main CMake file
+#
+# A good (simple) overview of the use of CMake can be found at:
+#   http://mirkokiefer.com/blog/2013/03/cmake-by-example/
+#
+# Then slightly more detail can be found at:
+#   http://www.cmake.org/cmake-tutorial/
+#
+# With a multi-(sub)-project structure we need to use project import/export
+# This has a good overview at:
+#   http://www.cmake.org/Wiki/CMake/Tutorials/Exporting_and_Importing_Targets
+#
+# To create targets in the root project for each subproject see:
+#  http://stackoverflow.com/questions/25019867/create-a-custom-target-that-call-subproject-custom-targets
+
 
 # Set the default build type
 #
@@ -61,13 +75,27 @@ endmacro(configureDoxygen)
 
 # DEFINE tests
 #
-function(defineTestsFor libraryName sourceDirectory
-         includeDirectories testDirectories testLibraries)
-  file(GLOB_RECURSE testSources 
-    "${testDirectories}/*.h" 
-    "${testDirectories}/*.c*"
-  )
+function(defineTestsFor libraryName includeDirectories testLibraries)
+  #
+  # Collect all of the required include files into the testSources
+  #
+  list(APPEND testSources "")
+  foreach(includeDir IN LISTS includeDirectories)
+    file(GLOB_RECURSE includeHeaders "${CMAKE_SOURCE_DIR}/${includeDir}/*.h")
+    list(APPEND testSources ${includeHeaders})
+  endforeach(includeDir)
+  #
+  # Now add in the sources from this project/directory
+  #
+  file(GLOB_RECURSE sourceFiles "*.h" "*.c*" )
+  list(APPEND testSources ${sourceFiles})
+  #
+  # Add the test executable
+  #
   add_executable("${libraryName}Tests" ${testSources})
+  #
+  # Add in the compile options
+  #
   foreach(includeDir IN LISTS includeDirectories)
     target_compile_options("${libraryName}Tests"
       PRIVATE "-I${CMAKE_SOURCE_DIR}/${includeDir}")
@@ -75,27 +103,49 @@ function(defineTestsFor libraryName sourceDirectory
   target_compile_options("${libraryName}Tests"
     PRIVATE "-I${CMAKE_SOURCE_DIR}/${sourceDirectory}")
   target_compile_options("${libraryName}Tests" 
-    PRIVATE "-I${CMAKE_SOURCE_DIR}/${sourceDirectory}" "-Wall" "-std=c++11")
+    PRIVATE "-Wall" "-std=c++11")
+  #
+  # Add in the libraries
+  #
   target_link_libraries("${libraryName}Tests" ${libraryName})
   foreach(testLibrary IN LISTS testLibraries)
     target_link_libraries("${libraryName}Tests" ${testLibrary})
   endforeach(testLibrary)
   target_link_libraries("${libraryName}Tests" ${llvm_libs})
+  #
+  # mark this executable as a test
+  #
   add_test(${libraryName} "${libraryName}Tests")
 endfunction(defineTestsFor)
 
 # DEFINE library
 #
 function(defineLibrary libraryName sourceDirectory includeDirectories)
-  file(GLOB_RECURSE librarySources
-    "${sourceDirectory}/*.h"
-    "${sourceDirectory}/*.c*"
-  )
+  #
+  # Collect all of the required include files into the testSources
+  #
+  list(APPEND librarySources "")
+  foreach(includeDir IN LISTS includeDirectories)
+    file(GLOB_RECURSE includeHeaders "${CMAKE_SOURCE_DIR}/${includeDir}/*.h")
+    list(APPEND librarySources ${includeHeaders})
+  endforeach(includeDir)
+  #
+  # Now add in the sources from this project/directory
+  #
+  file(GLOB_RECURSE sourceFiles "*.h" "*.c*" )
+  list(APPEND librarySources ${sourceFiles})
+  #
+  # Add the library
+  #
   add_library(${libraryName} ${librarySources})
+  #
+  # Add the compile options
+  #
   foreach(includeDir IN LISTS includeDirectories)
     target_compile_options(${libraryName} PRIVATE "-I${CMAKE_SOURCE_DIR}/${includeDir}")
   endforeach(includeDir)
   target_compile_options(${libraryName} PRIVATE "-I${CMAKE_SOURCE_DIR}/${sourceDirectory}")
+  target_compile_options(${libraryName} PRIVATE "-Wall")
 #  target_compile_options(${libraryName} PRIVATE "-Wall" "-std=c++11")
 endfunction(defineLibrary)
 

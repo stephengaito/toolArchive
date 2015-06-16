@@ -1,12 +1,9 @@
 # This is the cmake subproject description of how to build a llvm based 
 # HAT-Trie library.
 
-cmake_minimum_required (VERSION 2.6)
-enable_testing()
-
 project(HATTrie)
 
-defineLibrary(   hattrie  "src" "src")
+defineLibrary( hattrie  "HAT-trie/src" "")
 
 # We need to describe each test individually
 function(hatTrieTest testName testSource)
@@ -18,6 +15,7 @@ function(hatTrieTest testName testSource)
   target_compile_options(${testName} PRIVATE "-I${CMAKE_SOURCE_DIR}/HAT-trie/src")
   target_link_libraries(${testName} "hattrie")
   add_test(${testName} ${testName})
+  add_dependencies(tests ${testName})
 endfunction(hatTrieTest)
 
 hatTrieTest("bench_sorted_iter" "bench_sorted_iter.c")
