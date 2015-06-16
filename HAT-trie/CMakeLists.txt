@@ -3,7 +3,7 @@
 
 project(HATTrie)
 
-defineLibrary( hattrie  "HAT-trie/src" "")
+defineLibrary( hattrie  "HAT-trie/src" "" "HAT-trie")
 
 # We need to describe each test individually
 function(hatTrieTest testName testSource)

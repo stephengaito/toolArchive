@@ -10,8 +10,8 @@
 # This has a good overview at:
 #   http://www.cmake.org/Wiki/CMake/Tutorials/Exporting_and_Importing_Targets
 #
-# To create targets in the root project for each subproject see:
-#  http://stackoverflow.com/questions/25019867/create-a-custom-target-that-call-subproject-custom-targets
+# and the following for installation:
+# http://www.cmake.org/cmake/help/v2.8.12/cmake.html#command:install
 
 
 # Set the default build type
@@ -120,7 +120,7 @@ endfunction(defineTestsFor)
 
 # DEFINE library
 #
-function(defineLibrary libraryName sourceDirectory includeDirectories)
+function(defineLibrary libraryName sourceDirectory includeDirectories buildDirectory)
   #
   # Collect all of the required include files into the testSources
   #
@@ -147,6 +147,17 @@ function(defineLibrary libraryName sourceDirectory includeDirectories)
   target_compile_options(${libraryName} PRIVATE "-I${CMAKE_SOURCE_DIR}/${sourceDirectory}")
   target_compile_options(${libraryName} PRIVATE "-Wall")
 #  target_compile_options(${libraryName} PRIVATE "-Wall" "-std=c++11")
+  #
+  # now describe how to release/install
+  #
+  install(TARGETS ${libraryName} ARCHIVE DESTINATION lib)
+  install(DIRECTORY "${CMAKE_SOURCE_DIR}/${sourceDirectory}"
+          DESTINATION "include/${libraryName}"
+          FILES_MATCHING PATTERN "*.h")
+  add_custom_target("${libraryName}Release"
+                    COMMAND "make" "install"
+                    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/${buildDirectory}")
+  add_dependencies(release "${libraryName}Release")
 endfunction(defineLibrary)
 
 # DEFINE executable

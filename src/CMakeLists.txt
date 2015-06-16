@@ -3,6 +3,5 @@
 
 project(dynUtf8Parser)
 
-defineLibrary(dynUtf8Parser "src" "HAT-trie/src")
+defineLibrary(dynUtf8Parser "src" "HAT-trie/src" "src")
 add_dependencies(src dynUtf8Parser hattrie)
-
