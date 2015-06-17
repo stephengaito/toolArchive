@@ -163,14 +163,14 @@ endfunction(defineLibrary)
 # DEFINE executable
 #
 function(defineExecutable executableName sourceDirectories libraries)
-  file(GLOB_RECURSE executableSources
-    "${sourceDirectories}/*.h"
-    "${sourceDirectories}/*.c*"
-  )
-  add_executable(${executableName} 
-    ${executableSources} 
-  )
-  target_link_libraries(${executableName} ${libraries})
-  target_link_libraries(${executableName} ${llvm_libs})
+  file(GLOB_RECURSE executableSources "*.h" "*.c*" )
+  add_executable("${executableName}Bin" ${executableSources} )
+  foreach(library IN LISTS libraries)
+    target_link_libraries("${executableName}Bin" ${library})
+  endforeach(library)
+  target_link_libraries("${executableName}Bin" ${executableName})
+  target_link_libraries("${executableName}Bin" ${llvm_libs})
+  SET_TARGET_PROPERTIES("${executableName}Bin" 
+    PROPERTIES OUTPUT_NAME ${executableName})
 endfunction(defineExecutable)
 

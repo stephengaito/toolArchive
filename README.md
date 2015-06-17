@@ -87,7 +87,7 @@ To only run the Dynamic UTF8 Parser tests type:
 
     make tests
 
-Typically *I* build using LLVM's clang. I have also occasionaly built 
+Typically I build using LLVM's clang. I have also occasionaly built 
 using gcc/g++.
 
 ## LICENSES
