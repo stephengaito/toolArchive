@@ -17,10 +17,12 @@
 # Set up our standard custom targets
 #
 function(setupStandardTargets)
+  add_custom_target(bin)
   add_custom_target(src)
   add_custom_target(tests)
   add_custom_target(release)
   add_dependencies(release tests)
+  add_dependencies(bin src)
 
   message("--")
   message("Installation prefix:")
