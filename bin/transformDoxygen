@@ -1,0 +1,55 @@
+#!/usr/bin/env ruby
+
+# This ruby script takes a list of directories and transforms each file 
+# found recursively in subdirectories for C/C++/Bandit into C/C++ format
+# suitable for parsing with Doxygen.
+
+require 'fileutils'
+
+def getTitle(aLine)
+  title = aLine.sub(/^[^"]*"/, '')
+  title.sub!(/"[^"]*$/, '')
+  title
+end
+
+def wordize(aTitle)
+  aTitle.gsub(/[ \t\-\:\\]+/, '_')
+end
+
+def transformFile(aPath, aDir, aFile)
+  FileUtils.mkdir_p("Doxygen/#{aDir}");
+  outFile = File.open("Doxygen/#{aDir}/#{aFile}", 'w');
+  inFile  = File.open("#{aPath}/#{aDir}/#{aFile}", 'r');
+  inFile.each_line do | aLine |
+    aLine.gsub!(/^[ \t]*go_bandit/, '//go_bandit');
+    aLine.gsub!(/\}\)\;/, '};')
+#    aLine.gsub!(/\,[ \t]*\[\&?\]\(\)\{/,'{')
+    if aLine =~ /describe/ then
+      title = getTitle(aLine)
+      aLine = "  ///\n  public:\n  class #{wordize(title)}_Tests {\n"
+    end
+    if aLine =~ /^[ \t]*it\(/ then
+      title = getTitle(aLine)
+      aLine = "    ///\n    /// \\brief #{title}.\n    public:\n    void #{wordize(title)}(void) {\n"
+    end
+    outFile.puts aLine
+  end
+  inFile.close()
+  outFile.close()
+end
+
+def transformFilesInDir(aPath, aDir)
+  Dir.glob(aPath+'/'+aDir+'/*') do | aFile |
+    if File.directory?(aFile) then
+      transformFilesInDir(aPath, aDir+'/'+File.basename(aFile))
+    else 
+      transformFile(aPath, aDir, File.basename(aFile))
+    end
+  end
+end
+
+FileUtils.mkdir_p("Doxygen")
+
+ARGV.each do | aDir |
+  transformFilesInDir(File.dirname(aDir), File.basename(aDir))
+end

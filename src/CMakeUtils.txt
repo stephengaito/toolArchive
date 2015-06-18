@@ -14,6 +14,23 @@
 # http://www.cmake.org/cmake/help/v2.8.12/cmake.html#command:install
 
 
+# Set up our standard custom targets
+#
+function(setupStandardTargets)
+  add_custom_target(src)
+  add_custom_target(tests)
+  add_custom_target(release)
+  add_dependencies(release tests)
+
+  message("--")
+  message("Installation prefix:")
+  message("  ${CMAKE_INSTALL_PREFIX}")
+  message("--")
+  message("System install paths:")
+  message("  ${CMAKE_SYSTEM_INSTALL_PATHS}")
+  message("--")
+endfunction(setupStandardTargets)
+
 # Set the default build type
 #
 function(setDefaultBuildType buildType cFlags)
@@ -42,7 +59,7 @@ endmacro(loadLLVM)
 # Doxygen.
 macro(transformDoxygen)
   add_custom_target(transformDoxygenSrcs
-    COMMAND ${CMAKE_SOURCE_DIR}/bin/transformDoxygen ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/tests
+    COMMAND $ENV{HOME}/.cmake/transformDoxygen ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/tests
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     COMMENT "Transforming source and tests for API documentation with Doxygen" VERBATIM
   )
@@ -116,6 +133,9 @@ function(defineTestsFor libraryName includeDirectories testLibraries)
   # mark this executable as a test
   #
   add_test(${libraryName} "${libraryName}Tests")
+  add_custom_target("${libraryName}RunTests" COMMAND "${libraryName}Tests")
+  add_dependencies("${libraryName}RunTests" "${libraryName}Tests")
+  add_dependencies(tests "${libraryName}Tests" "${libraryName}RunTests")
 endfunction(defineTestsFor)
 
 # DEFINE library
@@ -147,12 +167,13 @@ function(defineLibrary libraryName sourceDirectory includeDirectories buildDirec
   target_compile_options(${libraryName} PRIVATE "-I${CMAKE_SOURCE_DIR}/${sourceDirectory}")
   target_compile_options(${libraryName} PRIVATE "-Wall")
 #  target_compile_options(${libraryName} PRIVATE "-Wall" "-std=c++11")
+  add_dependencies(src ${libraryName})
   #
   # now describe how to release/install
   #
   install(TARGETS ${libraryName} ARCHIVE DESTINATION lib)
-  install(DIRECTORY "${CMAKE_SOURCE_DIR}/${sourceDirectory}"
-          DESTINATION "include/${libraryName}"
+  install(DIRECTORY "${CMAKE_SOURCE_DIR}/${sourceDirectory}/${libraryName}"
+          DESTINATION "include"
           FILES_MATCHING PATTERN "*.h")
   add_custom_target("${libraryName}Release"
                     COMMAND "make" "install"
