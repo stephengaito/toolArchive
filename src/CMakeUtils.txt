@@ -203,5 +203,6 @@ function(defineExecutable executableName sourceDirectories libraries)
   target_link_libraries("${executableName}Bin" ${llvm_libs})
   SET_TARGET_PROPERTIES("${executableName}Bin" 
     PROPERTIES OUTPUT_NAME ${executableName})
+  add_dependencies(bin "${executableName}Bin")
 endfunction(defineExecutable)
 
