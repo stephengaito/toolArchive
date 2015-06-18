@@ -11,9 +11,9 @@ class Markdown {
 
     ~Markdown(void);
 
-    Token *parse(const char *utf8Stream, PDMTracer pdmTracer = NULL);
+    Token *parse(const char *utf8Stream, PDMTracer *pdmTracer = NULL);
 
-    Token *parse(Utf8Chars *utf8Stream, PDMTracer pdmTracer = NULL);
+    Token *parse(Utf8Chars *utf8Stream, PDMTracer *pdmTracer = NULL);
 
   protected:
 
