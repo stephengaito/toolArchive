@@ -18,11 +18,11 @@
 #
 function(setupStandardTargets)
   add_custom_target(bin)
-  add_custom_target(src)
+  add_custom_target(lib)
   add_custom_target(tests)
   add_custom_target(release)
   add_dependencies(release tests)
-  add_dependencies(bin src)
+  add_dependencies(bin lib)
 
   message("--")
   message("Installation prefix:")
@@ -61,7 +61,8 @@ endmacro(loadLLVM)
 # Doxygen.
 macro(transformDoxygen)
   add_custom_target(transformDoxygenSrcs
-    COMMAND $ENV{HOME}/.cmake/transformDoxygen ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/tests
+    COMMAND $ENV{HOME}/.cmake/transformDoxygen
+      ${CMAKE_SOURCE_DIR}/lib ${CMAKE_SOURCE_DIR}/tests
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     COMMENT "Transforming source and tests for API documentation with Doxygen" VERBATIM
   )
@@ -176,7 +177,7 @@ function(defineLibrary libraryName sourceDirectory includeDirectories buildDirec
   endforeach(systemDir)
   target_compile_options(${libraryName} PRIVATE "-Wall")
 #  target_compile_options(${libraryName} PRIVATE "-Wall" "-std=c++11")
-  add_dependencies(src ${libraryName})
+  add_dependencies(lib ${libraryName})
   #
   # now describe how to release/install
   #
