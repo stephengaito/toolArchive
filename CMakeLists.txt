@@ -7,20 +7,15 @@ enable_testing()
 # Load any user configuration
 include("$ENV{HOME}/.cmake/CMakeLists.txt")
 
-# Load our utilities
-include("CMakeUtils.txt")
-
 setDefaultBuildType("DEBUG" "-DDEBUG")
 
 project (DynamicUTF8Parser)
 loadLLVM()
+
+setupStandardTargets()
+
 configureDoxygen()
 transformDoxygen()
-
-add_custom_target(src)
-add_custom_target(tests COMMAND dynUtf8ParserTests)
-add_custom_target(release)
-add_dependencies(release tests)
 
 add_subdirectory(HAT-trie EXCLUDE_FROM_ALL)
 add_subdirectory(src EXCLUDE_FROM_ALL)

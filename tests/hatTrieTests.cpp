@@ -4,7 +4,7 @@ using namespace bandit;
 #include <string.h>
 #include <stdio.h>
 
-#include <hat-trie.h>
+#include <hattrie/hat-trie.h>
 
 go_bandit([](){
 

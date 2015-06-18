@@ -9,7 +9,7 @@ using namespace bandit;
 #define protected public
 #endif
 
-#include <simpleLisp.h>
+#include <dynUtf8Parser/simpleLisp.h>
 
 go_bandit([](){
 

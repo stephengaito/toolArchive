@@ -8,7 +8,7 @@ using namespace bandit;
 #define protected public
 #endif
 
-#include <utf8chars.h>
+#include <dynUtf8Parser/utf8chars.h>
 
 go_bandit([](){
 

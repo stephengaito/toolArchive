@@ -16,7 +16,7 @@ using namespace bandit;
 //
 #define NUM_NFA_STATES_PER_BLOCK 20
 
-#include <nfaBuilder.h>
+#include <dynUtf8Parser/nfaBuilder.h>
 
 go_bandit([](){
 

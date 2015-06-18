@@ -4,7 +4,7 @@ using namespace bandit;
 #include <string.h>
 #include <stdio.h>
 
-#include <classifier.h>
+#include <dynUtf8Parser/classifier.h>
 
 go_bandit([](){
 

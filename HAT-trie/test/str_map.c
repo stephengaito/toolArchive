@@ -8,7 +8,7 @@
 
 
 #include "str_map.h"
-#include "misc.h"
+#include "hattrie/misc.h"
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>

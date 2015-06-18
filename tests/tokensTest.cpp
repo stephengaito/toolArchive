@@ -9,7 +9,7 @@ using namespace bandit;
 #define protected public
 #endif
 
-#include <tokens.h>
+#include <dynUtf8Parser/tokens.h>
 
 
 go_bandit([](){

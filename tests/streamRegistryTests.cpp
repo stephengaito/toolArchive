@@ -9,7 +9,7 @@ using namespace bandit;
 #define protected public
 #endif
 
-#include <streamRegistry.h>
+#include <dynUtf8Parser/streamRegistry.h>
 
 go_bandit([](){
 

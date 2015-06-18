@@ -9,7 +9,7 @@ using namespace bandit;
 #define protected public
 #endif
 
-#include <nfaBuilder.h>
+#include <dynUtf8Parser/nfaBuilder.h>
 
 go_bandit([](){
 

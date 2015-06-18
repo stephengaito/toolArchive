@@ -10,7 +10,7 @@ using namespace bandit;
 #define protected public
 #endif
 
-#include <parser.h>
+#include <dynUtf8Parser/parser.h>
 
 enum ParserTestTokens {
   WhiteSpace=1,
