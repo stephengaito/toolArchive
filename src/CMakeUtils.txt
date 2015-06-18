@@ -117,8 +117,10 @@ function(defineTestsFor libraryName includeDirectories testLibraries)
     target_compile_options("${libraryName}Tests"
       PRIVATE "-I${CMAKE_SOURCE_DIR}/${includeDir}")
   endforeach(includeDir)
-  target_compile_options("${libraryName}Tests"
-    PRIVATE "-I${CMAKE_SOURCE_DIR}/${sourceDirectory}")
+  foreach(systemDir IN LISTS CMAKE_SYSTEM_INSTALL_PATHS)
+    target_compile_options("${libraryName}Tests" 
+      PRIVATE "-I${systemDir}/include")
+  endforeach(systemDir)
   target_compile_options("${libraryName}Tests" 
     PRIVATE "-Wall" "-std=c++11")
   #
@@ -161,10 +163,15 @@ function(defineLibrary libraryName sourceDirectory includeDirectories buildDirec
   #
   # Add the compile options
   #
+  target_compile_options(${libraryName} 
+    PRIVATE "-I${CMAKE_SOURCE_DIR}/${sourceDirectory}")
   foreach(includeDir IN LISTS includeDirectories)
-    target_compile_options(${libraryName} PRIVATE "-I${CMAKE_SOURCE_DIR}/${includeDir}")
+    target_compile_options(${libraryName}
+      PRIVATE "-I${CMAKE_SOURCE_DIR}/${includeDir}")
   endforeach(includeDir)
-  target_compile_options(${libraryName} PRIVATE "-I${CMAKE_SOURCE_DIR}/${sourceDirectory}")
+  foreach(systemDir IN LISTS CMAKE_SYSTEM_INSTALL_PATHS)
+    target_compile_options(${libraryName} PRIVATE "-I${systemDir}/include")
+  endforeach(systemDir)
   target_compile_options(${libraryName} PRIVATE "-Wall")
 #  target_compile_options(${libraryName} PRIVATE "-Wall" "-std=c++11")
   add_dependencies(src ${libraryName})
