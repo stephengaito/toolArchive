@@ -10,7 +10,9 @@ go_bandit([](){
 
   printf("\n----------------------------------\n");
   printf(  "Hat-Trie\n");
-  printf(  "  value_t = %zu bytes (%zu bits)\n", sizeof(value_t),   sizeof(value_t)*8);
+  hattrie_t *hatTrieBase = hattrie_create();
+  printf(  "  hatTrieBase = %zu bytes (%zu bits)\n", hattrie_sizeof(hatTrieBase), hattrie_sizeof(hatTrieBase)*8);
+  printf(  "      value_t = %zu bytes (%zu bits)\n", sizeof(value_t),             sizeof(value_t)*8);
   printf(  "----------------------------------\n");
 
   /// \brief Test the existing Hat-Trie code to ensure our use patterns work.
