@@ -1,4 +1,4 @@
-#include <bandit/bandit.h>
+#include <cUtils/specs/verboseRunner.h>
 
 #include <stdint.h>
 
@@ -13,7 +13,7 @@ int main(int argc, char* argv[]) {
   fprintf(stdout, " uint64_t = %zu bytes (%zu bits)\n", sizeof(uint64_t),  sizeof(uint64_t)*8);
   fprintf(stdout, "   size_t = %zu bytes (%zu bits)\n", sizeof(size_t),    sizeof(size_t)*8);
   printf("----------------------------------------------------------------\n");
-  int result = bandit::run(argc, argv);
+  int result = SpecRunner::runAllUsing(new VerboseRunner());
   printf("----------------------------------------------------------------\n");
   return result;
 }

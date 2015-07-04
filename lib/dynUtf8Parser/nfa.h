@@ -209,6 +209,9 @@ class NFA {
     State *addState(MatchType aMatchType, MatchData someMatchData,
                     State *out, State *out1, const char *message);
 
+    /// \brief Clean out the given state and all of its substates.
+    void deleteState(State *aState);
+
     /// \brief Get the current number of NFA::States.
     size_t getNumberStates(void) {
       return numKnownStates;

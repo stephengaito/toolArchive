@@ -12,6 +12,14 @@ Classifier::Classifier(void) {
   unClassifiedSet = ~0L;
 }
 
+Classifier::~Classifier(void) {
+  hattrie_free(className2classSet);
+  className2classSet = NULL;
+  hattrie_free(utf8Char2classSet);
+  utf8Char2classSet = NULL;
+  unClassifiedSet = 0;
+}
+
 Classifier::classSet_t Classifier::findClassSet(const char* aClassName) {
   value_t *classSetPtr = hattrie_tryget(className2classSet,
                                         aClassName,

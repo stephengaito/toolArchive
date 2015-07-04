@@ -30,7 +30,10 @@ class Classifier {
     typedef value_t classSet_t;
 
     /// \brief Create a UTF8 character classifier.
-    Classifier();
+    Classifier(void);
+
+    /// \brief Destroy the classifier.
+    ~Classifier(void);
 
     /// \brief Find the class set associated with a given class.
     ///

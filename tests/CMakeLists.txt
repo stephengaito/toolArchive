@@ -3,6 +3,6 @@
 
 project(dynUtf8ParserTests)
 
-defineTestsFor( dynUtf8Parser "lib;HAT-trie/src" "dynUtf8Parser;hattrie" )
+defineTestsFor( dynUtf8Parser "lib;HAT-trie/src" "dynUtf8Parser;hattrie;cUtils" )
 add_dependencies(tests dynUtf8ParserTests)
 

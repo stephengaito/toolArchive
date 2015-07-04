@@ -17,6 +17,9 @@ NFA::NFA(Classifier *aUTF8Classifier) {
 }
 
 NFA::~NFA(void) {
+  for (size_t i = 0; i < startState.getNumItems(); i++) {
+    deleteState(startState.getItem(i, NULL));
+  }
   if (stateAllocator) delete stateAllocator;
   stateAllocator = NULL;
   if (startStateIds) hattrie_free(startStateIds);
@@ -39,6 +42,18 @@ NFA::State *NFA::addState(NFA::MatchType aMatchType,
   newState->out1      = out1;
   newState->message   = strdup(aMessage);
   return newState;
+}
+
+void NFA::deleteState(NFA::State *aState) {
+  if (!aState) return;
+  NFA::State *oldOut = aState->out;
+  aState->out = NULL;
+  NFA::State *oldOut1 = aState->out1;
+  aState->out1 = NULL;
+  if (oldOut)  deleteState(oldOut);
+  if (oldOut1) deleteState(oldOut1);
+  if (aState->message) free((void*)(aState->message));
+  aState->message = NULL;
 }
 
 void NFA::appendNFAToStartState(const char *startStateName,
