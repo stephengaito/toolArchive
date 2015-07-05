@@ -1,9 +1,8 @@
-#include <bandit/bandit.h>
-using namespace bandit;
-
 #include <string.h>
 #include <stdio.h>
 #include <exception>
+
+#include <cUtils/specs/specs.h>
 
 #ifndef protected
 #define protected public
@@ -11,165 +10,171 @@ using namespace bandit;
 
 #include <dynUtf8Parser/tokens.h>
 
+/// \brief We test the correctness of the ParseTrees class.
+describe(Tokens) {
 
-go_bandit([](){
+  specSize(Token);
 
-  printf("\n----------------------------------\n");
-  printf(  "Tokens\n");
-  printf(  "     Token = %zu bytes (%zu bits)\n", sizeof(Token), sizeof(Token)*8);
-  printf(  "----------------------------------\n");
+  it("Should be able to create a null token") {
+    Token *token = new Token();
+    shouldNotBeNULL(token);
+    shouldBeZero(token->tokenId);
+    shouldBeNULL((void*)token->textStart);
+    shouldBeZero(token->textLength);
+    shouldBeZero(token->tokens.numItems);
+    shouldBeZero(token->tokens.arraySize);
+    shouldBeNULL(token->tokens.itemArray);
+    delete token;
+  } endIt();
 
-  /// \brief We test the correctness of the ParseTrees class.
-  describe("Tokens", [](){
+  pending_it("Should be able to setId/setText/addToken and copyFrom") {
+    Token *token = new Token();
+    shouldNotBeNULL(token);
+    shouldBeZero(token->tokenId);
+    shouldBeNULL((void*)token->textStart);
+    shouldBeZero(token->textLength);
+    shouldBeZero(token->tokens.numItems);
+    shouldBeZero(token->tokens.arraySize);
+    shouldBeNULL(token->tokens.itemArray);
+    //
+    // test setId
+    //
+    token->setId(1);
+    shouldBeEqual(token->tokenId, 1);
+    //
+    // test setText
+    //
+    const char *someText = "this is some text";
+    token->setText(someText, strlen(someText));
+    shouldBeEqual((void*)(token->textStart), (void*)someText);
+    shouldBeEqual(token->textStart, someText);
+    shouldBeEqual(token->textLength, strlen(someText));
+    shouldBeZero(token->tokens.numItems);
+    shouldBeZero(token->tokens.arraySize);
+    shouldBeNULL(token->tokens.itemArray);
+    //
+    // now test addChildToken
+    //
+    Token *childToken = new Token();
+    shouldNotBeNULL(childToken);
+    childToken->setId(2);
+    const char *childText = "this is some text for the child";
+    childToken->setText(childText, strlen(childText));
+    shouldBeZero(childToken->tokens.numItems);
+    shouldBeZero(childToken->tokens.arraySize);
+    shouldBeNULL(childToken->tokens.itemArray);
+    token->addChildToken(childToken);
+    shouldBeEqual(token->tokens.numItems, 1);
+    shouldNotBeZero(token->tokens.arraySize);
+    shouldNotBeNULL(token->tokens.itemArray);
+    shouldBeEqual(token->tokens.itemArray[0]->tokenId, 2);
+    shouldBeEqual((void*)(token->tokens.itemArray[0]->textStart), (void*)childText);
+    shouldBeEqual(token->tokens.itemArray[0]->textLength, strlen(childText));
+    shouldBeZero(token->tokens.itemArray[0]->tokens.numItems);
+    shouldBeZero(token->tokens.itemArray[0]->tokens.arraySize);
+    shouldBeNULL(token->tokens.itemArray[0]->tokens.itemArray);
+    //
+    // now test copyFrom
+    //
+    Token tokenCopy;
+    tokenCopy = *token;
+    shouldBeEqual(tokenCopy.tokenId, token->tokenId);
+    shouldBeEqual((void*)(tokenCopy.textStart), (void*)(token->textStart));
+    shouldBeEqual(tokenCopy.textLength, token->textLength);
+    shouldBeEqual(tokenCopy.tokens.numItems, 1);
+    shouldBeEqual(tokenCopy.tokens.numItems, token->tokens.numItems);
+    shouldBeEqual(tokenCopy.tokens.arraySize, token->tokens.arraySize);
+    shouldNotBeEqual(tokenCopy.tokens.itemArray, token->tokens.itemArray);
+    shouldBeEqual(tokenCopy.tokens.itemArray[0]->tokenId, 2);
+    shouldBeEqual((void*)(tokenCopy.tokens.itemArray[0]->textStart), (void*)childText);
+    shouldBeEqual(tokenCopy.tokens.itemArray[0]->textLength, strlen(childText));
+    shouldBeZero(tokenCopy.tokens.itemArray[0]->tokens.numItems);
+    shouldBeZero(tokenCopy.tokens.itemArray[0]->tokens.arraySize);
+    shouldBeNULL(tokenCopy.tokens.itemArray[0]->tokens.itemArray);
+    //
+    // now test clone
+    //
+    Token *tokenClone = token->clone();
+    shouldBeEqual(tokenClone->tokenId, token->tokenId);
+    shouldBeEqual((void*)(tokenClone->textStart), (void*)(token->textStart));
+    shouldBeEqual(tokenClone->textLength, token->textLength);
+    shouldBeEqual(tokenClone->tokens.numItems, 1);
+    shouldBeEqual(tokenClone->tokens.numItems, token->tokens.numItems);
+    shouldBeEqual(tokenClone->tokens.arraySize, token->tokens.arraySize);
+    shouldNotBeEqual(tokenClone->tokens.itemArray, token->tokens.itemArray);
+    shouldBeEqual(tokenClone->tokens.itemArray[0]->tokenId, 2);
+    shouldBeEqual((void*)(tokenClone->tokens.itemArray[0]->textStart), (void*)childText);
+    shouldBeEqual(tokenClone->tokens.itemArray[0]->textLength, strlen(childText));
+    shouldBeZero(tokenClone->tokens.itemArray[0]->tokens.numItems);
+    shouldBeZero(tokenClone->tokens.itemArray[0]->tokens.arraySize);
+    shouldBeNULL(tokenClone->tokens.itemArray[0]->tokens.itemArray);
 
-    it("Should be able to create a null token", [](){
-      Token *token = new Token();
-      AssertThat(token,  Is().Not().EqualTo((void*)0));
-      AssertThat(token->tokenId,    Equals(0));
-      AssertThat(token->textStart,  Equals((void*)0));
-      AssertThat(token->textLength, Equals(0));
-      AssertThat(token->tokens.numItems, Equals(0));
-      AssertThat(token->tokens.arraySize, Equals(0));
-      AssertThat(token->tokens.itemArray, Equals((void*)0));
-      delete token;
-    });
+    delete tokenClone;
+    tokenCopy.~Token();
+    delete childToken;
+    delete token;
+  } endIt();
 
-    it("Should be able to setId/setText/addToken and copyFrom", [](){
-      Token *token = new Token();
-      AssertThat(token,  Is().Not().EqualTo((void*)0));
-      AssertThat(token->tokenId,    Equals(0));
-      AssertThat(token->textStart,  Equals((void*)0));
-      AssertThat(token->textLength, Equals(0));
-      AssertThat(token->tokens.numItems, Equals(0));
-      AssertThat(token->tokens.arraySize, Equals(0));
-      AssertThat(token->tokens.itemArray, Equals((void*)0));
-      //
-      // test setId
-      //
-      token->setId(1);
-      AssertThat(token->tokenId, Equals(1));
-      //
-      // test setText
-      //
-      const char *someText = "this is some text";
-      token->setText(someText, strlen(someText));
-      AssertThat(token->textStart, Equals((char*)someText));
-      AssertThat(token->textStart, Equals(someText));
-      AssertThat(token->textLength, Equals(strlen(someText)));
-      AssertThat(token->tokens.numItems, Equals(0));
-      AssertThat(token->tokens.arraySize, Equals(0));
-      AssertThat(token->tokens.itemArray, Equals((void*)0));
-      //
-      // now test addChildToken
-      //
-      Token *childToken = new Token();
-      AssertThat(childToken, Is().Not().EqualTo((void*)0));
-      childToken->setId(2);
-      const char *childText = "this is some text for the child";
-      childToken->setText(childText, strlen(childText));
-      AssertThat(childToken->tokens.numItems, Equals(0));
-      AssertThat(childToken->tokens.arraySize, Equals(0));
-      AssertThat(childToken->tokens.itemArray, Equals((void*)0));
-      token->addChildToken(childToken);
-      AssertThat(token->tokens.numItems, Equals(1));
-      AssertThat(token->tokens.arraySize, Is().Not().EqualTo(0));
-      AssertThat(token->tokens.itemArray, Is().Not().EqualTo((void*)0));
-      AssertThat(token->tokens.itemArray[0]->tokenId, Equals(2));
-      AssertThat(token->tokens.itemArray[0]->textStart, Equals((char*)childText));
-      AssertThat(token->tokens.itemArray[0]->textLength, Equals(strlen(childText)));
-      AssertThat(token->tokens.itemArray[0]->tokens.numItems, Equals(0));
-      AssertThat(token->tokens.itemArray[0]->tokens.arraySize, Equals(0));
-      AssertThat(token->tokens.itemArray[0]->tokens.itemArray, Equals((void*)0));
-      //
-      // now test copyFrom
-      //
-      Token tokenCopy;
-      tokenCopy = *token;
-      AssertThat(tokenCopy.tokenId, Equals(token->tokenId));
-      AssertThat(tokenCopy.textStart, Equals((char*)token->textStart));
-      AssertThat(tokenCopy.textLength, Equals(token->textLength));
-      AssertThat(tokenCopy.tokens.numItems, Equals(1));
-      AssertThat(tokenCopy.tokens.numItems, Equals(token->tokens.numItems));
-      AssertThat(tokenCopy.tokens.arraySize, Equals(token->tokens.arraySize));
-      AssertThat(tokenCopy.tokens.itemArray, Is().Not().EqualTo(token->tokens.itemArray));
-      AssertThat(tokenCopy.tokens.itemArray[0]->tokenId, Equals(2));
-      AssertThat(tokenCopy.tokens.itemArray[0]->textStart, Equals((char*)childText));
-      AssertThat(tokenCopy.tokens.itemArray[0]->textLength, Equals(strlen(childText)));
-      AssertThat(tokenCopy.tokens.itemArray[0]->tokens.numItems, Equals(0));
-      AssertThat(tokenCopy.tokens.itemArray[0]->tokens.arraySize, Equals(0));
-      AssertThat(tokenCopy.tokens.itemArray[0]->tokens.itemArray, Equals((void*)0));
-      //
-      // now test clone
-      //
-      Token *tokenClone = token->clone();
-      AssertThat(tokenClone->tokenId, Equals(token->tokenId));
-      AssertThat(tokenClone->textStart, Equals((char*)token->textStart));
-      AssertThat(tokenClone->textLength, Equals(token->textLength));
-      AssertThat(tokenClone->tokens.numItems, Equals(1));
-      AssertThat(tokenClone->tokens.numItems, Equals(token->tokens.numItems));
-      AssertThat(tokenClone->tokens.arraySize, Equals(token->tokens.arraySize));
-      AssertThat(tokenClone->tokens.itemArray, Is().Not().EqualTo(token->tokens.itemArray));
-      AssertThat(tokenClone->tokens.itemArray[0]->tokenId, Equals(2));
-      AssertThat(tokenClone->tokens.itemArray[0]->textStart, Equals((char*)childText));
-      AssertThat(tokenClone->tokens.itemArray[0]->textLength, Equals(strlen(childText)));
-      AssertThat(tokenClone->tokens.itemArray[0]->tokens.numItems, Equals(0));
-      AssertThat(tokenClone->tokens.itemArray[0]->tokens.arraySize, Equals(0));
-      AssertThat(tokenClone->tokens.itemArray[0]->tokens.itemArray, Equals((void*)0));
+  pending_it("should be able to add deep collections of child tokens") {
+    Token *token0 = new Token(1, "0Token");
+    shouldNotBeNULL(token0);
+    Token *token1 = new Token(2, "1Token");
+    shouldNotBeNULL(token1);
+    Token *token2 = new Token(3, "2Token");
+    shouldNotBeNULL(token2);
+    Token *token3 = new Token(4, "3Token");
+    shouldNotBeNULL(token3);
+    Token *token4 = new Token(5, "4Token");
+    shouldNotBeNULL(token4);
+    Token *token5 = new Token(6, "5Token");
+    shouldNotBeNULL(token5);
+    Token *token6 = new Token(7, "6Token");
+    shouldNotBeNULL(token6);
+    token5->addChildToken(token6);
+    token4->addChildToken(token5);
+    token3->addChildToken(token4);
+    token2->addChildToken(token3);
+    token1->addChildToken(token2);
+    token0->addChildToken(token1);
+    shouldBeEqual(token0->tokenId, 1);
+    shouldBeEqual(token0->tokens.numItems, 1);
+    //
+    Token *childToken = token0->tokens.itemArray[0];
+    shouldBeEqual(childToken->tokenId, token1->tokenId);
+    shouldBeEqual(childToken->textStart, token1->textStart);
+    shouldBeEqual(childToken->tokens.numItems, 1);
+    //
+    childToken = childToken->tokens.itemArray[0];
+    shouldBeEqual(childToken->tokenId, token2->tokenId);
+    shouldBeEqual(childToken->textStart, token2->textStart);
+    shouldBeEqual(childToken->tokens.numItems, 1);
+    //
+    childToken = childToken->tokens.itemArray[0];
+    shouldBeEqual(childToken->tokenId, token3->tokenId);
+    shouldBeEqual(childToken->textStart, token3->textStart);
+    shouldBeEqual(childToken->tokens.numItems, 1);
+    //
+    childToken = childToken->tokens.itemArray[0];
+    shouldBeEqual(childToken->tokenId, token4->tokenId);
+    shouldBeEqual(childToken->textStart, token4->textStart);
+    shouldBeEqual(childToken->tokens.numItems, 1);
+    //
+    childToken = childToken->tokens.itemArray[0];
+    shouldBeEqual(childToken->tokenId, token5->tokenId);
+    shouldBeEqual(childToken->textStart, token5->textStart);
+    shouldBeEqual(childToken->tokens.numItems, 1);
+    //
+    childToken = childToken->tokens.itemArray[0];
+    shouldBeEqual(childToken->tokenId, token6->tokenId);
+    shouldBeEqual(childToken->textStart, token6->textStart);
+    shouldBeZero(childToken->tokens.numItems);
+    delete token6;
+    delete token5;
+    delete token4;
+    delete token3;
+    delete token2;
+    delete token1;
+    delete token0;
+ } endIt();
 
-      delete tokenClone;
-      tokenCopy.~Token();
-      delete childToken;
-      delete token;
-    });
-
-    it("should be able to add deep collections of child tokens", [](){
-      Token *token0 = new Token(1, "0Token");
-      Token *token1 = new Token(2, "1Token");
-      Token *token2 = new Token(3, "2Token");
-      Token *token3 = new Token(4, "3Token");
-      Token *token4 = new Token(5, "4Token");
-      Token *token5 = new Token(6, "5Token");
-      Token *token6 = new Token(7, "6Token");
-      token5->addChildToken(token6);
-      token4->addChildToken(token5);
-      token3->addChildToken(token4);
-      token2->addChildToken(token3);
-      token1->addChildToken(token2);
-      token0->addChildToken(token1);
-      AssertThat(token0->tokenId, Equals(1));
-      AssertThat(token0->tokens.numItems, Equals(1));
-      //
-      Token *childToken = token0->tokens.itemArray[0];
-      AssertThat(childToken->tokenId, Equals(token1->tokenId));
-      AssertThat(childToken->textStart, Equals(token1->textStart));
-      AssertThat(childToken->tokens.numItems, Equals(1));
-      //
-      childToken = childToken->tokens.itemArray[0];
-      AssertThat(childToken->tokenId, Equals(token2->tokenId));
-      AssertThat(childToken->textStart, Equals(token2->textStart));
-      AssertThat(childToken->tokens.numItems, Equals(1));
-      //
-      childToken = childToken->tokens.itemArray[0];
-      AssertThat(childToken->tokenId, Equals(token3->tokenId));
-      AssertThat(childToken->textStart, Equals(token3->textStart));
-      AssertThat(childToken->tokens.numItems, Equals(1));
-      //
-      childToken = childToken->tokens.itemArray[0];
-      AssertThat(childToken->tokenId, Equals(token4->tokenId));
-      AssertThat(childToken->textStart, Equals(token4->textStart));
-      AssertThat(childToken->tokens.numItems, Equals(1));
-      //
-      childToken = childToken->tokens.itemArray[0];
-      AssertThat(childToken->tokenId, Equals(token5->tokenId));
-      AssertThat(childToken->textStart, Equals(token5->textStart));
-      AssertThat(childToken->tokens.numItems, Equals(1));
-      //
-      childToken = childToken->tokens.itemArray[0];
-      AssertThat(childToken->tokenId, Equals(token6->tokenId));
-      AssertThat(childToken->textStart, Equals(token6->textStart));
-      AssertThat(childToken->tokens.numItems, Equals(0));
-   });
-
-  }); // describe ParseTrees
-
-});
+} endDescribe(Tokens);
