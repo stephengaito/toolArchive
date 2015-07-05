@@ -116,6 +116,13 @@ function(defineTestsFor libraryName includeDirectories testLibraries)
   #
   # Add in the compile options
   #
+  target_compile_options(${libraryName}Tests
+    PRIVATE "-g3")
+  target_compile_options(${libraryName}Tests
+    PRIVATE "-fsanitize=address")
+  target_compile_options(${libraryName}Tests
+    PRIVATE "-fno-omit-frame-pointer")
+  target_link_libraries(${libraryName}Tests "-fsanitize=address")
   foreach(includeDir IN LISTS includeDirectories)
     target_compile_options("${libraryName}Tests"
       PRIVATE "-I${CMAKE_SOURCE_DIR}/${includeDir}")
@@ -166,6 +173,13 @@ function(defineLibrary libraryName sourceDirectory includeDirectories buildDirec
   #
   # Add the compile options
   #
+  target_compile_options(${libraryName}
+    PRIVATE "-g3")
+  target_compile_options(${libraryName}
+    PRIVATE "-fsanitize=address")
+  target_compile_options(${libraryName}
+    PRIVATE "-fno-omit-frame-pointer")
+  target_link_libraries(${libraryName} "-fsanitize=address")
   target_compile_options(${libraryName} 
     PRIVATE "-I${CMAKE_SOURCE_DIR}/${sourceDirectory}")
   foreach(includeDir IN LISTS includeDirectories)
