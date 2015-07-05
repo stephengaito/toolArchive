@@ -48,6 +48,14 @@ class Parser {
       dfa          = NULL;
     }
 
+    ~Parser(void) {
+      if (dfa) delete dfa;
+      dfa = NULL;
+      delete nfaBuilder;
+      delete nfa;
+      delete classifier;
+    }
+
     /// \brief Setup the Classifier to classify white space using the
     /// lastClasseSet (a progression of consequtive powers of 2).
     ///
