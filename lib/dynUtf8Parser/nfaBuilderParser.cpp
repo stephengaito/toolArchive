@@ -88,14 +88,25 @@ void NFABuilder::compileRegularExpressionForTokenId(
         natom = 0;
         break;
       case '|':
-        if (natom == 0)
+        if (natom == 0) {
+          delete re;
+          nfa->deleteState(baseSplitState);
           throw ParserException("no previous atom found in alternation");
+        }
         while (--natom > 0) concatenate();
         nalt++;
         break;
       case ')':
-        if (p == paren) throw ParserException("mismatched parentheses");
-        if (natom == 0) throw ParserException("no previous atom found before closing paranthesis");
+        if (p == paren) {
+          delete re;
+          nfa->deleteState(baseSplitState);
+          throw ParserException("mismatched parentheses");
+        }
+        if (natom == 0) {
+          delete re;
+          nfa->deleteState(baseSplitState);
+          throw ParserException("no previous atom found before closing paranthesis");
+        }
         while (--natom > 0) concatenate();
         for (; nalt > 0; nalt--) alternate();
         --p;
@@ -104,15 +115,27 @@ void NFABuilder::compileRegularExpressionForTokenId(
         natom++;
         break;
       case '*':
-        if (natom == 0) throw ParserException("no previous atom found for zero or more");
+        if (natom == 0) {
+          delete re;
+          nfa->deleteState(baseSplitState);
+          throw ParserException("no previous atom found for zero or more");
+        }
         zeroOrMore();
         break;
       case '+':
-        if (natom == 0) throw ParserException("no previous atom found for one or more");
+        if (natom == 0) {
+          delete re;
+          nfa->deleteState(baseSplitState);
+          throw ParserException("no previous atom found for one or more");
+        }
         oneOrMore();
         break;
       case '?':
-        if (natom == 0) throw ParserException("no previous atom found for zero or one");
+        if (natom == 0) {
+          delete re;
+          nfa->deleteState(baseSplitState);
+          throw ParserException("no previous atom found for zero or one");
+        }
         zeroOrOne();
         break;
       case '[':
@@ -131,7 +154,11 @@ void NFABuilder::compileRegularExpressionForTokenId(
           className++;
         }
         // find the class set for this className
-        if (className[0] == 0) throw ParserException("mallformed classification specifier");
+        if (className[0] == 0) {
+          delete re;
+          nfa->deleteState(baseSplitState);
+          throw ParserException("mallformed classification specifier");
+        }
         classSet = nfa->findClassSet(className);
         // negate the class if needed
         if (classNegated) {
@@ -156,9 +183,17 @@ void NFABuilder::compileRegularExpressionForTokenId(
           if (reStartStateName[i] == 0) break;
         }
         // find the reStartId for this reStartStateName
-        if (reStartStateName[0] == 0) throw ParserException("mallformed reStart name");
+        if (reStartStateName[0] == 0) {
+          delete re;
+          nfa->deleteState(baseSplitState);
+          throw ParserException("mallformed reStart name");
+        }
         reStartStateId = nfa->findStartStateId(reStartStateName);
-        if (reStartStateId == -1L) throw ParserException("unregistered reStartStateId");
+        if (reStartStateId == -1L) {
+          delete re;
+          nfa->deleteState(baseSplitState);
+          throw ParserException("unregistered reStartStateId");
+        }
         // now repeat the natom manipulate done for checkCharacter
         if (natom > 1) {
           --natom;
@@ -181,10 +216,17 @@ void NFABuilder::compileRegularExpressionForTokenId(
       }
       curChar = re->nextUtf8Char();
     }
-  if (p != paren) throw ParserException("mismatched parentheses");
+  delete re;
+  if (p != paren) {
+    nfa->deleteState(baseSplitState);
+    throw ParserException("mismatched parentheses");
+  }
   while (--natom > 0) concatenate();
   for (; nalt > 0; nalt--) alternate();
-  if (!stack.getNumItems()) throw ParserException("empty regular expression - nothing to match");
+  if (!stack.getNumItems()) {
+    nfa->deleteState(baseSplitState);
+    throw ParserException("empty regular expression - nothing to match");
+  }
   baseSplitState->out = match(aTokenId, startStateName, ignoreToken);
   nfa->appendNFAToStartState(startStateName, baseSplitState);
 }

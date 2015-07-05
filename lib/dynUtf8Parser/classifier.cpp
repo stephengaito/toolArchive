@@ -53,6 +53,7 @@ void Classifier::classifyUtf8CharsAs(const char* someUtf8Chars,
     *classSetPtr = newClassSet;
     aUtf8Char = utf8Chars->nextUtf8Char();
   }
+  delete utf8Chars;
 }
 
 void Classifier::classifyWhiteSpace(classSet_t aClassSet) {
@@ -63,7 +64,9 @@ void Classifier::classifyWhiteSpace(classSet_t aClassSet) {
 Classifier:: classSet_t Classifier::getClassSet(const char* someUtf8Chars) {
   Utf8Chars *utf8Chars = new Utf8Chars(someUtf8Chars);
   utf8Char_t aUtf8Char = utf8Chars->nextUtf8Char();
-  return getClassSet(aUtf8Char);
+  classSet_t result = getClassSet(aUtf8Char);
+  delete utf8Chars;
+  return result;
 }
 
 Classifier::classSet_t Classifier::getClassSet(utf8Char_t aUtf8Char) {

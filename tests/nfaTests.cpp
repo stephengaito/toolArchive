@@ -179,6 +179,7 @@ describe(NFA) {
     shouldBeEqual(nextState->matchData.t, 2); // token:1 ignore:false
     shouldBeNULL(nextState->out);
     shouldBeNULL(nextState->out1);
+    delete nfaBuilder;
     delete nfa;
     delete classifier;
   } endIt();
@@ -229,6 +230,7 @@ describe(NFA) {
     shouldBeEqual(matchState->matchData.t, 2); // token:1 ignore:false
     shouldBeNULL(matchState->out);
     shouldBeNULL(matchState->out1);
+    delete nfaBuilder;
     delete nfa;
     delete classifier;
   } endIt();
@@ -310,6 +312,7 @@ describe(NFA) {
     shouldBeEqual(nextState->matchData.t, 2); // token:1 ignore:false
     shouldBeNULL(nextState->out);
     shouldBeNULL(nextState->out1);
+    delete nfaBuilder;
     delete nfa;
     delete classifier;
   } endIt();
@@ -325,6 +328,7 @@ describe(NFA) {
       nfaBuilder->compileRegularExpressionForTokenId("start", "\\", 1);
       shouldBeTrue(false);
     } catch (ParserException& e) { }
+    delete nfaBuilder;
     delete nfa;
     delete classifier;
   } endIt();
@@ -340,6 +344,7 @@ describe(NFA) {
       nfaBuilder->compileRegularExpressionForTokenId("start", "*", 1);
       shouldBeTrue(false);
     } catch (ParserException& e) { }
+    delete nfaBuilder;
     delete nfa;
     delete classifier;
   } endIt();
@@ -385,6 +390,7 @@ describe(NFA) {
     } catch (ParserException& e) {
       shouldBeTrue(false);
     }
+    delete nfaBuilder;
     delete nfa;
     delete classifier;
   } endIt();
@@ -435,6 +441,7 @@ describe(NFA) {
     shouldBeEqual(nextState->matchData.t, 2); // token:1 ignore:false
     shouldBeNULL(nextState->out);
     shouldBeNULL(nextState->out1);
+    delete nfaBuilder;
     delete nfa;
     delete classifier;
   } endIt();
@@ -479,6 +486,7 @@ describe(NFA) {
     shouldBeEqual(nextState->matchData.t, 2); //token:1 ignore:false
     shouldBeNULL(nextState->out);
     shouldBeNULL(nextState->out1);
+    delete nfaBuilder;
     delete nfa;
     delete classifier;
   } endIt();
@@ -489,7 +497,9 @@ describe(NFA) {
     classifier->registerClassSet("whitespace",1);
     classifier->classifyUtf8CharsAs(Utf8Chars::whiteSpaceChars,"whitespace");
     NFA *nfa = new NFA(classifier);
+    shouldNotBeNULL(nfa);
     NFABuilder *nfaBuilder = new NFABuilder(nfa);
+    shouldNotBeNULL(nfaBuilder);
     nfaBuilder->compileRegularExpressionForTokenId("start", "[whitespace]+", 1);
     shouldBeEqual(nfa->getNumberStates(), 4);
     NFA::State *baseState =
@@ -589,6 +599,7 @@ describe(NFA) {
     shouldBeEqual(nextState->matchData.c.u, 4); //token:2 ignore:false
     shouldBeNULL(nextState->out);
     shouldBeNULL(nextState->out1);
+    delete nfaBuilder;
     delete nfa;
     delete classifier;
   } endIt();
