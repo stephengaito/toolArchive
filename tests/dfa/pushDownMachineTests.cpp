@@ -1,9 +1,8 @@
-#include <bandit/bandit.h>
-using namespace bandit;
-
 #include <string.h>
 #include <stdio.h>
 #include <exception>
+
+#include <cUtils/specs/specs.h>
 
 #ifndef protected
 #define protected public
@@ -14,37 +13,37 @@ using namespace bandit;
 
 using namespace DeterministicFiniteAutomaton;
 
-// TODO: TEST MEMORY LEAKS (using C++ mocks)
+/// \brief We test the AutomataState class.
+describe(PushDownMachine) {
 
-go_bandit([](){
+  specSize(PushDownMachine);
 
-  printf("\n----------------------------------\n");
-  printf(  "PushDownMachine\n");
-  printf(  "PushDownMachine = %zu bytes (%zu bits)\n", sizeof(PushDownMachine),  sizeof(PushDownMachine)*8);
-  printf(  "----------------------------------\n");
+  it("Should create an instance") {
+    Classifier *classifier = new Classifier();
+    shouldNotBeNULL(classifier);
+    NFA *nfa = new NFA(classifier);
+    shouldNotBeNULL(nfa);
+    NFABuilder *nfaBuilder = new NFABuilder(nfa);
+    shouldNotBeNULL(nfaBuilder);
+    nfaBuilder->compileRegularExpressionForTokenId("start", "(abab|abbb)", 1);
+    DFA *dfa = new DFA(nfa);
+    shouldNotBeNULL(dfa);
+    PushDownMachine *pdm = new PushDownMachine(dfa);
+    shouldNotBeNULL(pdm);
+    shouldBeEqual(pdm->dfa, dfa);
+    shouldBeEqual(pdm->nfa, nfa);
+    shouldBeEqual(pdm->allocator, dfa->allocator);
+    shouldBeNULL(pdm->curState.token);
+    shouldBeNULL(pdm->curState.stream);
+    shouldBeNULL(pdm->curState.iterator);
+    shouldBeNULL(pdm->curState.dState);
+    shouldBeNULL(pdm->curState.allocator);
+    shouldBeZero(pdm->stack.getNumItems());
+    delete pdm;
+    delete dfa;
+    delete nfaBuilder;
+    delete nfa;
+    delete classifier;
+  } endIt();
 
-  /// \brief We test the AutomataState class.
-  describe("PushDownMachine", [](){
-
-    it("Should create an instance", [](){
-      Classifier *classifier = new Classifier();
-      NFA *nfa = new NFA(classifier);
-      NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfaBuilder->compileRegularExpressionForTokenId("start", "(abab|abbb)", 1);
-      DFA *dfa = new DFA(nfa);
-      PushDownMachine *pdm = new PushDownMachine(dfa);
-      AssertThat(pdm, Is().Not().EqualTo((void*)0));
-      AssertThat(pdm->dfa, Equals(dfa));
-      AssertThat(pdm->nfa, Equals(nfa));
-      AssertThat(pdm->allocator, Equals(dfa->allocator));
-      AssertThat(pdm->curState.token, Equals((void*)0));
-      AssertThat(pdm->curState.stream, Equals((void*)0));
-      AssertThat(pdm->curState.iterator, Equals((void*)0));
-      AssertThat(pdm->curState.dState, Equals((void*)0));
-      AssertThat(pdm->curState.allocator, Equals((void*)0));
-      AssertThat(pdm->stack.getNumItems(), Equals(0));
-    });
-
-  }); // describe parser
-
-});
+} endDescribe(PushDownMachine);

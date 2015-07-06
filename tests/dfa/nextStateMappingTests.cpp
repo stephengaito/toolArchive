@@ -1,8 +1,7 @@
-#include <bandit/bandit.h>
-using namespace bandit;
-
 #include <string.h>
 #include <stdio.h>
+
+#include <cUtils/specs/specs.h>
 
 #ifndef protected
 #define protected public
@@ -13,161 +12,171 @@ using namespace bandit;
 
 namespace DeterministicFiniteAutomaton {
 
-go_bandit([](){
+/// \brief Test the NextStateMapping class.
+describe(NextStateMapping) {
 
-  printf("\n----------------------------------\n");
-  printf(  "dfa-nextStateMapping\n");
-  printf(  "NextStateMapping = %zu bytes (%zu bits)\n", sizeof(NextStateMapping), sizeof(NextStateMapping)*8);
-  printf(  "----------------------------------\n");
+  specSize(NextStateMapping);
 
-  /// \brief Test the NextStateMapping class.
-  describe("NextStateMapping", [](){
+  /// Show that we can create an appropriately allocated DFA
+  /// from a given NFA.
+  it("Should have correct sizes and pointers setup") {
+    Classifier *classifier = new Classifier();
+    shouldNotBeNULL(classifier);
+    NFA *nfa = new NFA(classifier);
+    shouldNotBeNULL(nfa);
+    NFABuilder *nfaBuilder = new NFABuilder(nfa);
+    shouldNotBeNULL(nfaBuilder);
+    nfaBuilder->compileRegularExpressionForTokenId("start", "(abab|abbb)", 1);
+    shouldBeEqual(nfa->getNumberStates(), 11);
+    StateAllocator *allocator = new StateAllocator(nfa);
+    shouldNotBeNULL(allocator);
+    NextStateMapping *mapping = new NextStateMapping(allocator);
+    shouldNotBeNULL(mapping);
+    shouldBeEqual(mapping->allocator, allocator);
+    shouldNotBeNULL(mapping->nextDFAStateMap);
+    shouldBeEqual(mapping->dfaStateProbeSize,
+               (allocator->stateSize+sizeof(utf8Char_t)));
+    shouldNotBeNULL((void*)mapping->dfaStateProbe);
+    for (size_t i = 0; i < mapping->dfaStateProbeSize; i++) {
+      shouldBeZero(mapping->dfaStateProbe[i]);
+    }
+    delete mapping;
+    delete allocator;
+    delete nfaBuilder;
+    delete nfa;
+    delete classifier;
+  } endIt();
 
-    /// Show that we can create an appropriately allocated DFA
-    /// from a given NFA.
-    it("Should have correct sizes and pointers setup", [&](){
-      Classifier *classifier = new Classifier();
-      NFA *nfa = new NFA(classifier);
-      NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfaBuilder->compileRegularExpressionForTokenId("start", "(abab|abbb)", 1);
-      AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
-      StateAllocator *allocator = new StateAllocator(nfa);
-      AssertThat(allocator, Is().Not().EqualTo((void*)0));
-      NextStateMapping *mapping = new NextStateMapping(allocator);
-      AssertThat(mapping, Is().Not().EqualTo((void*)0));
-      AssertThat(mapping->allocator, Equals(allocator));
-      AssertThat(mapping->nextDFAStateMap, Is().Not().EqualTo((void*)0));
-      AssertThat(mapping->dfaStateProbeSize,
-                 Equals(allocator->stateSize+sizeof(utf8Char_t)));
-      AssertThat(mapping->dfaStateProbe, Is().Not().EqualTo((void*)0));
-      for (size_t i = 0; i < mapping->dfaStateProbeSize; i++) {
-        AssertThat(mapping->dfaStateProbe[i], Equals(0));
-      }
-      delete mapping;
-      delete allocator;
-      delete nfa;
-      delete classifier;
-    });
+  it("Should be able to register a State using NextStateMapping::registerDState") {
+    Classifier *classifier = new Classifier();
+    shouldNotBeNULL(classifier);
+    NFA *nfa = new NFA(classifier);
+    shouldNotBeNULL(nfa);
+    NFABuilder *nfaBuilder = new NFABuilder(nfa);
+    shouldNotBeNULL(nfaBuilder);
+    nfaBuilder->compileRegularExpressionForTokenId("start", "(abab|abbb)", 1);
+    shouldBeEqual(nfa->getNumberStates(), 11);
+    StateAllocator *allocator = new StateAllocator(nfa);
+    shouldNotBeNULL(allocator);
+    shouldBeEqual(allocator->stateSize, 2);
+    NextStateMapping *mapping = new NextStateMapping(allocator);
+    shouldNotBeNULL(mapping);
+    shouldBeZero(mapping->dfaStateProbe[0]);
+    shouldBeZero(mapping->dfaStateProbe[1]);
+    State *testState = allocator->allocateANewState();
+    testState[0] = 255;
+    testState[1] = 255;
+    mapping->assembleStateProbe(testState);
+    shouldBeEqual((uint8_t)mapping->dfaStateProbe[0], (uint8_t)255);
+    shouldBeEqual((uint8_t)mapping->dfaStateProbe[1], (uint8_t)255);
+    shouldBeEqual((uint8_t)mapping->dfaStateProbe[2], (uint8_t)0);
+    State **registeredTryState =
+      (State **)hattrie_tryget(mapping->nextDFAStateMap,
+                               testState, allocator->stateSize);
+    shouldBeNULL((void*)registeredTryState);
+    State *registeredState  = mapping->registerState(testState);
+    shouldBeEqual(registeredState, testState);
+    registeredTryState =
+      (State **)hattrie_tryget(mapping->nextDFAStateMap,
+                               testState, allocator->stateSize);
+    shouldNotBeNULL((void*)registeredTryState);
+    shouldBeEqual((void*)*registeredTryState, (void*)testState);
+    delete mapping;
+    delete allocator;
+    delete nfaBuilder;
+    delete nfa;
+    delete classifier;
+  } endIt();
 
-    it("Should be able to register a State using NextStateMapping::registerDState", [&](){
-      Classifier *classifier = new Classifier();
-      NFA *nfa = new NFA(classifier);
-      NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfaBuilder->compileRegularExpressionForTokenId("start", "(abab|abbb)", 1);
-      AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
-      StateAllocator *allocator = new StateAllocator(nfa);
-      AssertThat(allocator, Is().Not().EqualTo((void*)0));
-      AssertThat(allocator->stateSize, Equals(2));
-      NextStateMapping *mapping = new NextStateMapping(allocator);
-      AssertThat(mapping, Is().Not().EqualTo((void*)0));
-      AssertThat(mapping->dfaStateProbe[0], Equals(0));
-      AssertThat(mapping->dfaStateProbe[1], Equals(0));
-      State *testState = allocator->allocateANewState();
-      testState[0] = 255;
-      testState[1] = 255;
-      mapping->assembleStateProbe(testState);
-      AssertThat((uint8_t)mapping->dfaStateProbe[0], Equals(255));
-      AssertThat((uint8_t)mapping->dfaStateProbe[1], Equals(255));
-      AssertThat((uint8_t)mapping->dfaStateProbe[2], Equals(0));
-      State **registeredTryState =
-        (State **)hattrie_tryget(mapping->nextDFAStateMap,
-                                 testState, allocator->stateSize);
-      AssertThat((void*)registeredTryState, Equals((void*)0));
-      State *registeredState  = mapping->registerState(testState);
-      AssertThat(registeredState, Equals(testState));
-      registeredTryState =
-        (State **)hattrie_tryget(mapping->nextDFAStateMap,
-                                 testState, allocator->stateSize);
-      AssertThat((void*)registeredTryState, Is().Not().EqualTo((void*)0));
-      AssertThat((void*)*registeredTryState, Equals((void*)testState));
-      delete mapping;
-      delete allocator;
-      delete nfa;
-      delete classifier;
-    });
+  it("Should be able to register a State/character using NextStateMapping::getNextStateByCharacter") {
+    Classifier *classifier = new Classifier();
+    shouldNotBeNULL(classifier);
+    NFA *nfa = new NFA(classifier);
+    shouldNotBeNULL(nfa);
+    NFABuilder *nfaBuilder = new NFABuilder(nfa);
+    shouldNotBeNULL(nfaBuilder);
+    nfaBuilder->compileRegularExpressionForTokenId("start", "(abab|abbb)", 1);
+    shouldBeEqual(nfa->getNumberStates(), 11);
+    StateAllocator *allocator = new StateAllocator(nfa);
+    shouldNotBeNULL(allocator);
+    shouldBeEqual(allocator->stateSize, 2);
+    NextStateMapping *mapping = new NextStateMapping(allocator);
+    shouldNotBeNULL(mapping);
+    shouldBeZero(mapping->dfaStateProbe[0]);
+    shouldBeZero(mapping->dfaStateProbe[1]);
+    shouldBeZero(mapping->dfaStateProbe[2]);
+    shouldBeZero(mapping->dfaStateProbe[3]);
+    State *testState = allocator->allocateANewState();
+    testState[0] = 255;
+    testState[1] = 255;
+    utf8Char_t aChar;
+    aChar.u = 0;
+    aChar.c[0] = 'a';
+    mapping->assembleStateCharacterProbe(testState, aChar);
+    shouldBeEqual((uint8_t)mapping->dfaStateProbe[0], (uint8_t)255);
+    shouldBeEqual((uint8_t)mapping->dfaStateProbe[1], (uint8_t)255);
+    shouldBeEqual((uint8_t)mapping->dfaStateProbe[2], (uint8_t)'a');
+    shouldBeEqual((uint8_t)mapping->dfaStateProbe[3], (uint8_t)0);
+    State **nextState =
+      (State **)hattrie_tryget(mapping->nextDFAStateMap,
+                               mapping->dfaStateProbe,
+                               mapping->dfaStateProbeSize);
+    shouldBeNULL((void*)nextState);
+    nextState = mapping->tryGetNextStateByCharacter(testState, aChar);
+    shouldBeNULL((void**)nextState);
+    nextState = mapping->getNextStateByCharacter(testState, aChar);
+    shouldNotBeNULL((void*)nextState);
+    delete mapping;
+    delete allocator;
+    delete nfaBuilder;
+    delete nfa;
+    delete classifier;
+  } endIt();
 
-    it("Should be able to register a State/character using NextStateMapping::getNextStateByCharacter", [&](){
-      Classifier *classifier = new Classifier();
-      NFA *nfa = new NFA(classifier);
-      NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfaBuilder->compileRegularExpressionForTokenId("start", "(abab|abbb)", 1);
-      AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
-      StateAllocator *allocator = new StateAllocator(nfa);
-      AssertThat(allocator, Is().Not().EqualTo((void*)0));
-      AssertThat(allocator->stateSize, Equals(2));
-      NextStateMapping *mapping = new NextStateMapping(allocator);
-      AssertThat(mapping, Is().Not().EqualTo((void*)0));
-      AssertThat(mapping->dfaStateProbe[0], Equals(0));
-      AssertThat(mapping->dfaStateProbe[1], Equals(0));
-      AssertThat(mapping->dfaStateProbe[2], Equals(0));
-      AssertThat(mapping->dfaStateProbe[3], Equals(0));
-      State *testState = allocator->allocateANewState();
-      testState[0] = 255;
-      testState[1] = 255;
-      utf8Char_t aChar;
-      aChar.u = 0;
-      aChar.c[0] = 'a';
-      mapping->assembleStateCharacterProbe(testState, aChar);
-      AssertThat((uint8_t)mapping->dfaStateProbe[0], Equals(255));
-      AssertThat((uint8_t)mapping->dfaStateProbe[1], Equals(255));
-      AssertThat((uint8_t)mapping->dfaStateProbe[2], Equals('a'));
-      AssertThat((uint8_t)mapping->dfaStateProbe[3], Equals(0));
-      State **nextState =
-        (State **)hattrie_tryget(mapping->nextDFAStateMap,
-                                 mapping->dfaStateProbe,
-                                 mapping->dfaStateProbeSize);
-      AssertThat((void*)nextState, Equals((void*)0));
-      nextState = mapping->tryGetNextStateByCharacter(testState, aChar);
-      AssertThat((void**)nextState, Equals((void**)0));
-      nextState = mapping->getNextStateByCharacter(testState, aChar);
-      AssertThat((void*)nextState, Is().Not().EqualTo((void*)0));
-      delete mapping;
-      delete allocator;
-      delete nfa;
-      delete classifier;
-    });
+  it("Should be able to register a State/class using NextStateMapping::getNextStateByClass") {
+    Classifier *classifier = new Classifier();
+    shouldNotBeNULL(classifier);
+    NFA *nfa = new NFA(classifier);
+    shouldNotBeNULL(nfa);
+    NFABuilder *nfaBuilder = new NFABuilder(nfa);
+    shouldNotBeNULL(nfaBuilder);
+    nfaBuilder->compileRegularExpressionForTokenId("start", "(abab|abbb)", 1);
+    shouldBeEqual(nfa->getNumberStates(), 11);
+    StateAllocator *allocator = new StateAllocator(nfa);
+    shouldNotBeNULL(allocator);
+    shouldBeEqual(allocator->stateSize, 2);
+    NextStateMapping *mapping = new NextStateMapping(allocator);
+    shouldNotBeNULL(mapping);
+    shouldBeZero(mapping->dfaStateProbe[0]);
+    shouldBeZero(mapping->dfaStateProbe[1]);
+    shouldBeZero(mapping->dfaStateProbe[2]);
+    shouldBeZero(mapping->dfaStateProbe[3]);
+    State *testState = allocator->allocateANewState();
+    testState[0] = 255;
+    testState[1] = 255;
+    Classifier::classSet_t aClass;
+    aClass = 10;
+    mapping->assembleStateClassificationProbe(testState, aClass);
+    shouldBeEqual((uint8_t)mapping->dfaStateProbe[0], (uint8_t)255);
+    shouldBeEqual((uint8_t)mapping->dfaStateProbe[1], (uint8_t)255);
+    shouldBeEqual((uint8_t)mapping->dfaStateProbe[2], (uint8_t)10);
+    shouldBeEqual((uint8_t)mapping->dfaStateProbe[3], (uint8_t)0);
+    State **nextState =
+      (State **)hattrie_tryget(mapping->nextDFAStateMap,
+                               mapping->dfaStateProbe,
+                               mapping->dfaStateProbeSize);
+    shouldBeNULL((void*)nextState);
+    nextState = mapping->tryGetNextStateByClass(testState, aClass);
+    shouldBeNULL((void**)nextState);
+    nextState = mapping->getNextStateByClass(testState, aClass);
+    shouldNotBeNULL((void*)nextState);
+    delete mapping;
+    delete allocator;
+    delete nfaBuilder;
+    delete nfa;
+    delete classifier;
+  } endIt();
 
-    it("Should be able to register a State/class using NextStateMapping::getNextStateByClass", [&](){
-      Classifier *classifier = new Classifier();
-      NFA *nfa = new NFA(classifier);
-      NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfaBuilder->compileRegularExpressionForTokenId("start", "(abab|abbb)", 1);
-      AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
-      StateAllocator *allocator = new StateAllocator(nfa);
-      AssertThat(allocator, Is().Not().EqualTo((void*)0));
-      AssertThat(allocator->stateSize, Equals(2));
-      NextStateMapping *mapping = new NextStateMapping(allocator);
-      AssertThat(mapping, Is().Not().EqualTo((void*)0));
-      AssertThat(mapping->dfaStateProbe[0], Equals(0));
-      AssertThat(mapping->dfaStateProbe[1], Equals(0));
-      AssertThat(mapping->dfaStateProbe[2], Equals(0));
-      AssertThat(mapping->dfaStateProbe[3], Equals(0));
-      State *testState = allocator->allocateANewState();
-      testState[0] = 255;
-      testState[1] = 255;
-      Classifier::classSet_t aClass;
-      aClass = 10;
-      mapping->assembleStateClassificationProbe(testState, aClass);
-      AssertThat((uint8_t)mapping->dfaStateProbe[0], Equals(255));
-      AssertThat((uint8_t)mapping->dfaStateProbe[1], Equals(255));
-      AssertThat((uint8_t)mapping->dfaStateProbe[2], Equals(10));
-      AssertThat((uint8_t)mapping->dfaStateProbe[3], Equals(0));
-      State **nextState =
-        (State **)hattrie_tryget(mapping->nextDFAStateMap,
-                                 mapping->dfaStateProbe,
-                                 mapping->dfaStateProbeSize);
-      AssertThat((void*)nextState, Equals((void*)0));
-      nextState = mapping->tryGetNextStateByClass(testState, aClass);
-      AssertThat((void**)nextState, Equals((void**)0));
-      nextState = mapping->getNextStateByClass(testState, aClass);
-      AssertThat((void*)nextState, Is().Not().EqualTo((void*)0));
-      delete mapping;
-      delete allocator;
-      delete nfa;
-      delete classifier;
-    });
-
-  }); // dfa
-});
+} endDescribe(NextStateMapping);
 
 }; // namespace DeterministicFiniteAutomaton

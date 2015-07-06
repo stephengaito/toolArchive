@@ -178,6 +178,7 @@ namespace DeterministicFiniteAutomaton {
         token     = NULL;
         allocator = NULL; // we do not own the allocator
         dfa       = NULL; // we do not own the DFA
+        ASSERT(invariant());
       }
 
       /// \brief Get DFA state iterator associated with this AutomataState.

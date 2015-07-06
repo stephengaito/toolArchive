@@ -1,8 +1,7 @@
-#include <bandit/bandit.h>
-using namespace bandit;
-
 #include <string.h>
 #include <stdio.h>
+
+#include <cUtils/specs/specs.h>
 
 #ifndef protected
 #define protected public
@@ -13,222 +12,225 @@ using namespace bandit;
 
 namespace DeterministicFiniteAutomaton {
 
-go_bandit([](){
+/// \brief Test the NFAStateIterator class.
+describe(NFAStateIterator) {
 
-  printf("\n----------------------------------\n");
-  printf(  "dfa-nfaStateIterator\n");
-  printf(  "NFAStateIterator = %zu bytes (%zu bits)\n", sizeof(NFAStateIterator), sizeof(NFAStateIterator)*8);
-  printf(  "----------------------------------\n");
+  specSize(NFAStateIterator);
 
-  /// \brief Test the NFAStateIterator class.
-  describe("NFAStateIterator", [](){
+  /// Show that we can create an appropriately allocated DFA
+  /// from a given NFA.
+  it("Should have correct sizes and pointers setup") {
+    Classifier *classifier = new Classifier();
+    shouldNotBeNULL(classifier);
+    NFA *nfa = new NFA(classifier);
+    shouldNotBeNULL(nfa);
+    NFABuilder *nfaBuilder = new NFABuilder(nfa);
+    shouldNotBeNULL(nfaBuilder);
+    nfaBuilder->compileRegularExpressionForTokenId("start", "(abab|abbb)", 1);
+    shouldBeEqual(nfa->getNumberStates(), 11);
+    StateAllocator *allocator = new StateAllocator(nfa);
+    shouldNotBeNULL(allocator);
+    NFAStateMapping *mapping = allocator->nfaStateMapping;
+    shouldNotBeNULL(mapping);
+    State *state = allocator->allocateANewState();
+    shouldNotBeNULL((void*)state);
+    NFAStateIterator iterator = allocator->newIteratorOn(state);
+    shouldBeZero(iterator.curNFAStateNum);
+    shouldBeEqual((void*)iterator.curByte, (void*)state);
+    shouldBeEqual((void*)iterator.endByte, (void*)(state+allocator->stateSize));
+    shouldBeEqual(iterator.curBit, 1);
+    // mapping is owned by allocator
+    delete allocator;
+    delete nfaBuilder;
+    delete nfa;
+    delete classifier;
+  } endIt();
 
-    /// Show that we can create an appropriately allocated DFA
-    /// from a given NFA.
-    it("Should have correct sizes and pointers setup", [&](){
-      Classifier *classifier = new Classifier();
-      NFA *nfa = new NFA(classifier);
-      NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfaBuilder->compileRegularExpressionForTokenId("start", "(abab|abbb)", 1);
-      AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
-      StateAllocator *allocator = new StateAllocator(nfa);
-      AssertThat(allocator, Is().Not().EqualTo((void*)0));
-      NFAStateMapping *mapping = allocator->nfaStateMapping;
-      AssertThat(mapping, Is().Not().EqualTo((void*)0));
-      State *state = allocator->allocateANewState();
-      AssertThat(state, Is().Not().EqualTo((void*)0));
-      NFAStateIterator iterator = allocator->newIteratorOn(state);
-      AssertThat(iterator.curNFAStateNum, Equals(0));
-      AssertThat(iterator.curByte, Equals(state));
-      AssertThat(iterator.endByte, Equals(state+allocator->stateSize));
-      AssertThat(iterator.curBit, Equals(1));
-      // mapping is owned by allocator
-      delete allocator;
-      delete nfa;
-      delete classifier;
-    });
+  it("Show that DFA::getNFAStateNumber can deal with lots of NFA::States") {
+    Classifier *classifier = new Classifier();
+    shouldNotBeNULL(classifier);
+    NFA *nfa = new NFA(classifier);
+    shouldNotBeNULL(nfa);
+    NFABuilder *nfaBuilder = new NFABuilder(nfa);
+    shouldNotBeNULL(nfaBuilder);
+    nfaBuilder->compileRegularExpressionForTokenId("start", "thisisasimpletest", 1);
+    shouldBeEqual(nfa->getNumberStates(), 19);
+    StateAllocator *allocator = new StateAllocator(nfa);
+    shouldNotBeNULL(allocator);
+    shouldBeEqual(allocator->stateSize, 3);
+    NFAStateMapping *mapping = allocator->nfaStateMapping;
+    shouldNotBeNULL(mapping);
+    State *state = allocator->allocateANewState();
+    shouldNotBeNULL((void*)state);
+    NFA::State *baseState =
+      (NFA::State*)nfa->stateAllocator->blocks.getTop();
+    shouldNotBeNULL(baseState);
+    NFAStateMapping::NFAStateNumber aStateNum =
+      mapping->getNFAStateNumber(baseState);
+    shouldBeEqual(aStateNum.stateByte, 0);
+    shouldBeEqual((uint8_t)aStateNum.stateBit,  (uint8_t)1);
+    allocator->setNFAState(state, baseState);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)1);
+    aStateNum = mapping->getNFAStateNumber(baseState+1);
+    shouldBeEqual(aStateNum.stateByte, 0);
+    shouldBeEqual((uint8_t)aStateNum.stateBit,  (uint8_t)2);
+    allocator->setNFAState(state, baseState+1);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)3);
+    aStateNum = mapping->getNFAStateNumber(baseState+2);
+    shouldBeEqual(aStateNum.stateByte, 0);
+    shouldBeEqual((uint8_t)aStateNum.stateBit,  (uint8_t)4);
+    allocator->setNFAState(state, baseState+2);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)7);
+    aStateNum = mapping->getNFAStateNumber(baseState+3);
+    shouldBeEqual(aStateNum.stateByte, 0);
+    shouldBeEqual((uint8_t)aStateNum.stateBit,  (uint8_t)8);
+    allocator->setNFAState(state, baseState+3);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)15);
+    aStateNum = mapping->getNFAStateNumber(baseState+4);
+    shouldBeEqual(aStateNum.stateByte, 0);
+    shouldBeEqual((uint8_t)aStateNum.stateBit,  (uint8_t)16);
+    allocator->setNFAState(state, baseState+4);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)31);
+    aStateNum = mapping->getNFAStateNumber(baseState+5);
+    shouldBeEqual(aStateNum.stateByte, 0);
+    shouldBeEqual((uint8_t)aStateNum.stateBit,  (uint8_t)32);
+    allocator->setNFAState(state, baseState+5);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)63);
+    aStateNum = mapping->getNFAStateNumber(baseState+6);
+    shouldBeEqual(aStateNum.stateByte, 0);
+    shouldBeEqual((uint8_t)aStateNum.stateBit,  (uint8_t)64);
+    allocator->setNFAState(state, baseState+6);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)127);
+    aStateNum = mapping->getNFAStateNumber(baseState+7);
+    shouldBeEqual(aStateNum.stateByte, 0);
+    shouldBeEqual((uint8_t)aStateNum.stateBit,  (uint8_t)128);
+    allocator->setNFAState(state, baseState+7);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)255);
+    aStateNum = mapping->getNFAStateNumber(baseState+8);
+    shouldBeEqual(aStateNum.stateByte, 1);
+    shouldBeEqual((uint8_t)aStateNum.stateBit,  (uint8_t)1);
+    allocator->setNFAState(state, baseState+8);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)255);
+    shouldBeEqual((uint8_t)state[1], (uint8_t)1);
+    aStateNum = mapping->getNFAStateNumber(baseState+9);
+    shouldBeEqual(aStateNum.stateByte, 1);
+    shouldBeEqual((uint8_t)aStateNum.stateBit,  (uint8_t)2);
+    allocator->setNFAState(state, baseState+9);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)255);
+    shouldBeEqual((uint8_t)state[1], (uint8_t)3);
+    aStateNum = mapping->getNFAStateNumber(baseState+10);
+    shouldBeEqual(aStateNum.stateByte, 1);
+    shouldBeEqual((uint8_t)aStateNum.stateBit,  (uint8_t)4);
+    allocator->setNFAState(state, baseState+10);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)255);
+    shouldBeEqual((uint8_t)state[1], (uint8_t)7);
+    aStateNum = mapping->getNFAStateNumber(baseState+11);
+    shouldBeEqual(aStateNum.stateByte, 1);
+    shouldBeEqual((uint8_t)aStateNum.stateBit,  (uint8_t)8);
+    allocator->setNFAState(state, baseState+11);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)255);
+    shouldBeEqual((uint8_t)state[1], (uint8_t)15);
+    aStateNum = mapping->getNFAStateNumber(baseState+12);
+    shouldBeEqual(aStateNum.stateByte, 1);
+    shouldBeEqual((uint8_t)aStateNum.stateBit,  (uint8_t)16);
+    allocator->setNFAState(state, baseState+12);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)255);
+    shouldBeEqual((uint8_t)state[1], (uint8_t)31);
+    aStateNum = mapping->getNFAStateNumber(baseState+13);
+    shouldBeEqual(aStateNum.stateByte, 1);
+    shouldBeEqual((uint8_t)aStateNum.stateBit,  (uint8_t)32);
+    allocator->setNFAState(state, baseState+13);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)255);
+    shouldBeEqual((uint8_t)state[1], (uint8_t)63);
+    aStateNum = mapping->getNFAStateNumber(baseState+14);
+    shouldBeEqual(aStateNum.stateByte, 1);
+    shouldBeEqual((uint8_t)aStateNum.stateBit,  (uint8_t)64);
+    allocator->setNFAState(state, baseState+14);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)255);
+    shouldBeEqual((uint8_t)state[1], (uint8_t)127);
+    aStateNum = mapping->getNFAStateNumber(baseState+15);
+    shouldBeEqual(aStateNum.stateByte, 1);
+    shouldBeEqual((uint8_t)aStateNum.stateBit,  (uint8_t)128);
+    allocator->setNFAState(state, baseState+15);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)255);
+    shouldBeEqual((uint8_t)state[1], (uint8_t)255);
+    aStateNum = mapping->getNFAStateNumber(baseState+16);
+    shouldBeEqual(aStateNum.stateByte, 2);
+    shouldBeEqual((uint8_t)aStateNum.stateBit,  (uint8_t)1);
+    allocator->setNFAState(state, baseState+16);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)255);
+    shouldBeEqual((uint8_t)state[1], (uint8_t)255);
+    shouldBeEqual((uint8_t)state[2], (uint8_t)1);
+    aStateNum = mapping->getNFAStateNumber(baseState+17);
+    shouldBeEqual(aStateNum.stateByte, 2);
+    shouldBeEqual((uint8_t)aStateNum.stateBit,  (uint8_t)2);
+    allocator->setNFAState(state, baseState+17);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)255);
+    shouldBeEqual((uint8_t)state[1], (uint8_t)255);
+    shouldBeEqual((uint8_t)state[2], (uint8_t)3);
+    aStateNum = mapping->getNFAStateNumber(baseState+18);
+    shouldBeEqual(aStateNum.stateByte, 2);
+    shouldBeEqual((uint8_t)aStateNum.stateBit,  (uint8_t)4);
+    allocator->setNFAState(state, baseState+18);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)255);
+    shouldBeEqual((uint8_t)state[1], (uint8_t)255);
+    shouldBeEqual((uint8_t)state[2], (uint8_t)7);
+    NFAStateIterator iterator = allocator->newIteratorOn(state);
+    for (size_t i = 0; i < 19; i++) {
+      shouldBeEqual(iterator.nextState(), baseState+i);
+    }
+    shouldBeNULL(iterator.nextState());
+    allocator->clearNFAState(state, baseState);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)254);
+    shouldBeEqual((uint8_t)state[1], (uint8_t)255);
+    shouldBeEqual((uint8_t)state[2], (uint8_t)7);
+    allocator->clearNFAState(state, baseState+1);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)252);
+    shouldBeEqual((uint8_t)state[1], (uint8_t)255);
+    shouldBeEqual((uint8_t)state[2], (uint8_t)7);
+    allocator->clearNFAState(state, baseState+2);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)248);
+    shouldBeEqual((uint8_t)state[1], (uint8_t)255);
+    shouldBeEqual((uint8_t)state[2], (uint8_t)7);
+    allocator->clearNFAState(state, baseState+3);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)240);
+    shouldBeEqual((uint8_t)state[1], (uint8_t)255);
+    shouldBeEqual((uint8_t)state[2], (uint8_t)7);
+    allocator->clearNFAState(state, baseState+4);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)224);
+    shouldBeEqual((uint8_t)state[1], (uint8_t)255);
+    shouldBeEqual((uint8_t)state[2], (uint8_t)7);
+    allocator->clearNFAState(state, baseState+5);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)192);
+    shouldBeEqual((uint8_t)state[1], (uint8_t)255);
+    shouldBeEqual((uint8_t)state[2], (uint8_t)7);
+    allocator->clearNFAState(state, baseState+6);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)128);
+    shouldBeEqual((uint8_t)state[1], (uint8_t)255);
+    shouldBeEqual((uint8_t)state[2], (uint8_t)7);
+    allocator->clearNFAState(state, baseState+7);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)0);
+    shouldBeEqual((uint8_t)state[1], (uint8_t)255);
+    shouldBeEqual((uint8_t)state[2], (uint8_t)7);
+    allocator->clearNFAState(state, baseState+8);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)0);
+    shouldBeEqual((uint8_t)state[1], (uint8_t)254);
+    shouldBeEqual((uint8_t)state[2], (uint8_t)7);
+    allocator->clearNFAState(state, baseState+9);
+    shouldBeEqual((uint8_t)state[0], (uint8_t)0);
+    shouldBeEqual((uint8_t)state[1], (uint8_t)252);
+    shouldBeEqual((uint8_t)state[2], (uint8_t)7);
+    iterator = allocator->newIteratorOn(state);
+    for (size_t i = 10; i < 19; i++) {
+      shouldBeEqual(iterator.nextState(), baseState+i);
+    }
+    // mapping is owned by allocator
+    delete allocator;
+    delete nfaBuilder;
+    delete nfa;
+    delete classifier;
+  } endIt();
 
-    it("Show that DFA::getNFAStateNumber can deal with lots of NFA::States", [&](){
-      Classifier *classifier = new Classifier();
-      NFA *nfa = new NFA(classifier);
-      NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfaBuilder->compileRegularExpressionForTokenId("start", "thisisasimpletest", 1);
-      AssertThat(nfa->getNumberStates(), Is().EqualTo(19));
-      StateAllocator *allocator = new StateAllocator(nfa);
-      AssertThat(allocator, Is().Not().EqualTo((void*)0));
-      AssertThat(allocator->stateSize, Equals(3));
-      NFAStateMapping *mapping = allocator->nfaStateMapping;
-      AssertThat(mapping, Is().Not().EqualTo((void*)0));
-      State *state = allocator->allocateANewState();
-      AssertThat(state, Is().Not().EqualTo((void*)0));
-      NFA::State *baseState =
-       (NFA::State*)nfa->stateAllocator->blocks.getTop();
-      NFAStateMapping::NFAStateNumber aStateNum =
-        mapping->getNFAStateNumber(baseState);
-      AssertThat(aStateNum.stateByte, Is().EqualTo(0));
-      AssertThat((uint8_t)aStateNum.stateBit,  Is().EqualTo(1));
-      allocator->setNFAState(state, baseState);
-      AssertThat((uint8_t)state[0], Equals(1));
-      aStateNum = mapping->getNFAStateNumber(baseState+1);
-      AssertThat(aStateNum.stateByte, Is().EqualTo(0));
-      AssertThat((uint8_t)aStateNum.stateBit,  Is().EqualTo(2));
-      allocator->setNFAState(state, baseState+1);
-      AssertThat((uint8_t)state[0], Equals(3));
-      aStateNum = mapping->getNFAStateNumber(baseState+2);
-      AssertThat(aStateNum.stateByte, Is().EqualTo(0));
-      AssertThat((uint8_t)aStateNum.stateBit,  Is().EqualTo(4));
-      allocator->setNFAState(state, baseState+2);
-      AssertThat((uint8_t)state[0], Equals(7));
-      aStateNum = mapping->getNFAStateNumber(baseState+3);
-      AssertThat(aStateNum.stateByte, Is().EqualTo(0));
-      AssertThat((uint8_t)aStateNum.stateBit,  Is().EqualTo(8));
-      allocator->setNFAState(state, baseState+3);
-      AssertThat((uint8_t)state[0], Equals(15));
-      aStateNum = mapping->getNFAStateNumber(baseState+4);
-      AssertThat(aStateNum.stateByte, Is().EqualTo(0));
-      AssertThat((uint8_t)aStateNum.stateBit,  Is().EqualTo(16));
-      allocator->setNFAState(state, baseState+4);
-      AssertThat((uint8_t)state[0], Equals(31));
-      aStateNum = mapping->getNFAStateNumber(baseState+5);
-      AssertThat(aStateNum.stateByte, Is().EqualTo(0));
-      AssertThat((uint8_t)aStateNum.stateBit,  Is().EqualTo(32));
-      allocator->setNFAState(state, baseState+5);
-      AssertThat((uint8_t)state[0], Equals(63));
-      aStateNum = mapping->getNFAStateNumber(baseState+6);
-      AssertThat(aStateNum.stateByte, Is().EqualTo(0));
-      AssertThat((uint8_t)aStateNum.stateBit,  Is().EqualTo(64));
-      allocator->setNFAState(state, baseState+6);
-      AssertThat((uint8_t)state[0], Equals(127));
-      aStateNum = mapping->getNFAStateNumber(baseState+7);
-      AssertThat(aStateNum.stateByte, Is().EqualTo(0));
-      AssertThat((uint8_t)aStateNum.stateBit,  Is().EqualTo(128));
-      allocator->setNFAState(state, baseState+7);
-      AssertThat((uint8_t)state[0], Equals(255));
-      aStateNum = mapping->getNFAStateNumber(baseState+8);
-      AssertThat(aStateNum.stateByte, Is().EqualTo(1));
-      AssertThat((uint8_t)aStateNum.stateBit,  Is().EqualTo(1));
-      allocator->setNFAState(state, baseState+8);
-      AssertThat((uint8_t)state[0], Equals(255));
-      AssertThat((uint8_t)state[1], Equals(1));
-      aStateNum = mapping->getNFAStateNumber(baseState+9);
-      AssertThat(aStateNum.stateByte, Is().EqualTo(1));
-      AssertThat((uint8_t)aStateNum.stateBit,  Is().EqualTo(2));
-      allocator->setNFAState(state, baseState+9);
-      AssertThat((uint8_t)state[0], Equals(255));
-      AssertThat((uint8_t)state[1], Equals(3));
-      aStateNum = mapping->getNFAStateNumber(baseState+10);
-      AssertThat(aStateNum.stateByte, Is().EqualTo(1));
-      AssertThat((uint8_t)aStateNum.stateBit,  Is().EqualTo(4));
-      allocator->setNFAState(state, baseState+10);
-      AssertThat((uint8_t)state[0], Equals(255));
-      AssertThat((uint8_t)state[1], Equals(7));
-      aStateNum = mapping->getNFAStateNumber(baseState+11);
-      AssertThat(aStateNum.stateByte, Is().EqualTo(1));
-      AssertThat((uint8_t)aStateNum.stateBit,  Is().EqualTo(8));
-      allocator->setNFAState(state, baseState+11);
-      AssertThat((uint8_t)state[0], Equals(255));
-      AssertThat((uint8_t)state[1], Equals(15));
-      aStateNum = mapping->getNFAStateNumber(baseState+12);
-      AssertThat(aStateNum.stateByte, Is().EqualTo(1));
-      AssertThat((uint8_t)aStateNum.stateBit,  Is().EqualTo(16));
-      allocator->setNFAState(state, baseState+12);
-      AssertThat((uint8_t)state[0], Equals(255));
-      AssertThat((uint8_t)state[1], Equals(31));
-      aStateNum = mapping->getNFAStateNumber(baseState+13);
-      AssertThat(aStateNum.stateByte, Is().EqualTo(1));
-      AssertThat((uint8_t)aStateNum.stateBit,  Is().EqualTo(32));
-      allocator->setNFAState(state, baseState+13);
-      AssertThat((uint8_t)state[0], Equals(255));
-      AssertThat((uint8_t)state[1], Equals(63));
-      aStateNum = mapping->getNFAStateNumber(baseState+14);
-      AssertThat(aStateNum.stateByte, Is().EqualTo(1));
-      AssertThat((uint8_t)aStateNum.stateBit,  Is().EqualTo(64));
-      allocator->setNFAState(state, baseState+14);
-      AssertThat((uint8_t)state[0], Equals(255));
-      AssertThat((uint8_t)state[1], Equals(127));
-      aStateNum = mapping->getNFAStateNumber(baseState+15);
-      AssertThat(aStateNum.stateByte, Is().EqualTo(1));
-      AssertThat((uint8_t)aStateNum.stateBit,  Is().EqualTo(128));
-      allocator->setNFAState(state, baseState+15);
-      AssertThat((uint8_t)state[0], Equals(255));
-      AssertThat((uint8_t)state[1], Equals(255));
-      aStateNum = mapping->getNFAStateNumber(baseState+16);
-      AssertThat(aStateNum.stateByte, Is().EqualTo(2));
-      AssertThat((uint8_t)aStateNum.stateBit,  Is().EqualTo(1));
-      allocator->setNFAState(state, baseState+16);
-      AssertThat((uint8_t)state[0], Equals(255));
-      AssertThat((uint8_t)state[1], Equals(255));
-      AssertThat((uint8_t)state[2], Equals(1));
-      aStateNum = mapping->getNFAStateNumber(baseState+17);
-      AssertThat(aStateNum.stateByte, Is().EqualTo(2));
-      AssertThat((uint8_t)aStateNum.stateBit,  Is().EqualTo(2));
-      allocator->setNFAState(state, baseState+17);
-      AssertThat((uint8_t)state[0], Equals(255));
-      AssertThat((uint8_t)state[1], Equals(255));
-      AssertThat((uint8_t)state[2], Equals(3));
-      aStateNum = mapping->getNFAStateNumber(baseState+18);
-      AssertThat(aStateNum.stateByte, Is().EqualTo(2));
-      AssertThat((uint8_t)aStateNum.stateBit,  Is().EqualTo(4));
-      allocator->setNFAState(state, baseState+18);
-      AssertThat((uint8_t)state[0], Equals(255));
-      AssertThat((uint8_t)state[1], Equals(255));
-      AssertThat((uint8_t)state[2], Equals(7));
-      NFAStateIterator iterator = allocator->newIteratorOn(state);
-      for (size_t i = 0; i < 19; i++) {
-        AssertThat(iterator.nextState(), Equals(baseState+i));
-      }
-      AssertThat(iterator.nextState(), Equals((void*)0));
-      allocator->clearNFAState(state, baseState);
-      AssertThat((uint8_t)state[0], Equals(254));
-      AssertThat((uint8_t)state[1], Equals(255));
-      AssertThat((uint8_t)state[2], Equals(7));
-      allocator->clearNFAState(state, baseState+1);
-      AssertThat((uint8_t)state[0], Equals(252));
-      AssertThat((uint8_t)state[1], Equals(255));
-      AssertThat((uint8_t)state[2], Equals(7));
-      allocator->clearNFAState(state, baseState+2);
-      AssertThat((uint8_t)state[0], Equals(248));
-      AssertThat((uint8_t)state[1], Equals(255));
-      AssertThat((uint8_t)state[2], Equals(7));
-      allocator->clearNFAState(state, baseState+3);
-      AssertThat((uint8_t)state[0], Equals(240));
-      AssertThat((uint8_t)state[1], Equals(255));
-      AssertThat((uint8_t)state[2], Equals(7));
-      allocator->clearNFAState(state, baseState+4);
-      AssertThat((uint8_t)state[0], Equals(224));
-      AssertThat((uint8_t)state[1], Equals(255));
-      AssertThat((uint8_t)state[2], Equals(7));
-      allocator->clearNFAState(state, baseState+5);
-      AssertThat((uint8_t)state[0], Equals(192));
-      AssertThat((uint8_t)state[1], Equals(255));
-      AssertThat((uint8_t)state[2], Equals(7));
-      allocator->clearNFAState(state, baseState+6);
-      AssertThat((uint8_t)state[0], Equals(128));
-      AssertThat((uint8_t)state[1], Equals(255));
-      AssertThat((uint8_t)state[2], Equals(7));
-      allocator->clearNFAState(state, baseState+7);
-      AssertThat((uint8_t)state[0], Equals(0));
-      AssertThat((uint8_t)state[1], Equals(255));
-      AssertThat((uint8_t)state[2], Equals(7));
-      allocator->clearNFAState(state, baseState+8);
-      AssertThat((uint8_t)state[0], Equals(0));
-      AssertThat((uint8_t)state[1], Equals(254));
-      AssertThat((uint8_t)state[2], Equals(7));
-      allocator->clearNFAState(state, baseState+9);
-      AssertThat((uint8_t)state[0], Equals(0));
-      AssertThat((uint8_t)state[1], Equals(252));
-      AssertThat((uint8_t)state[2], Equals(7));
-      iterator = allocator->newIteratorOn(state);
-      for (size_t i = 10; i < 19; i++) {
-        AssertThat(iterator.nextState(), Equals(baseState+i));
-      }
-      // mapping is owned by allocator
-      delete allocator;
-      delete nfa;
-      delete classifier;
-    });
-
-  }); // dfa
-});
+} endDescribe(NFAStateIterator);
 
 }; // namespace DeterministicFiniteAutomaton

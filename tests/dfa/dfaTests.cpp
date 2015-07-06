@@ -1,8 +1,7 @@
-#include <bandit/bandit.h>
-using namespace bandit;
-
 #include <string.h>
 #include <stdio.h>
+
+#include <cUtils/specs/specs.h>
 
 #ifndef protected
 #define protected public
@@ -13,441 +12,509 @@ using namespace bandit;
 
 namespace DeterministicFiniteAutomaton {
 
-go_bandit([](){
+/// \brief Test the ability of a given DFA class to compile, on the fly,
+/// a DFA corresponding to a given NFA.
+pending_describe(DFA) {
 
-  printf("\n----------------------------------\n");
-  printf(  "dfa\n");
-  printf(  "           DFA = %zu bytes (%zu bits)\n", sizeof(DFA), sizeof(DFA)*8);
-  printf(  "----------------------------------\n");
+  specSize(DFA);
 
-  /// \brief Test the ability of a given DFA class to compile, on the fly,
-  /// a DFA corresponding to a given NFA.
-  describe("DFA", [](){
+  /// Show that we can create an appropriately allocated DFA
+  /// from a given NFA.
+  it("Should have correct sizes and pointers setup") {
+    Classifier *classifier = new Classifier();
+    shouldNotBeNULL(classifier);
+    NFA *nfa = new NFA(classifier);
+    shouldNotBeNULL(nfa);
+    NFABuilder *nfaBuilder = new NFABuilder(nfa);
+    shouldNotBeNULL(nfaBuilder);
+    nfaBuilder->compileRegularExpressionForTokenId("start", "(abab|abbb)", 1);
+    shouldBeEqual(nfa->getNumberStates(), 11);
+    DFA *dfa = new DFA(nfa);
+    shouldNotBeNULL(dfa);
+    shouldBeEqual(dfa->nfa, nfa);
+    shouldNotBeNULL(dfa->allocator);
+    shouldNotBeNULL(dfa->nextStateMapping);
+    shouldNotBeNULL(dfa->startState);
+    shouldBeEqual(dfa->numStartStates, 1);
+    shouldBeNULL(dfa->startState[0]);
+    shouldNotBeNULL(((void*)dfa->tokensState));
+    for( size_t i = 0; i < dfa->allocator->stateSize; i++) {
+      shouldBeZero(dfa->tokensState[i]);
+    }
+    State *startState = dfa->getDFAStartState((NFA::StartStateId)0);
+    shouldNotBeNULL(dfa->startState[0]);
+    shouldBeEqual((void*)dfa->startState[0], (void*)startState);
+    shouldBeEqual((int)dfa->startState[0][0], 15);
+    for( size_t i = 1; i < dfa->allocator->stateSize; i++) {
+      shouldBeZero(dfa->startState[0][i]);
+    }
+    shouldBeFalse(dfa->allocator->isSubStateOf(dfa->startState[0], dfa->tokensState));
+    delete dfa;
+    delete nfaBuilder;
+    delete nfa;
+    delete classifier;
+  } endIt();
 
+  it("should be able to register lots of start states") {
+    Classifier *classifier = new Classifier();
+    shouldNotBeNULL(classifier);
+    NFA *nfa = new NFA(classifier);
+    shouldNotBeNULL(nfa);
+    shouldNotBeNULL(nfa->startStateIds);
+    shouldBeZero(nfa->startState.getNumItems());
+    char buffer[100];
+    NFA::State *states[100];
+    NFA::MatchData noMatchData;
+    noMatchData.c.u = 0;
+    for (size_t i = 0; i < 100; i++) {
+      memset(buffer, 0, 100);
+      sprintf(buffer, "%zu", i);
+      nfa->registerStartState(buffer);
+      states[i] = nfa->addState(NFA::Split, noMatchData, NULL, NULL, "test");
+      shouldNotBeNULL(states[i]);
+      nfa->appendNFAToStartState(buffer, states[i]);
+      shouldBeEqual(nfa->getNumberStartStates(), i+1);
+      shouldBeEqual(nfa->findStartStateId(buffer), i);
+      shouldBeEqual((void*)nfa->getStartState(buffer), (void*)states[i]);
+      shouldBeEqual((void*)nfa->getStartState((NFA::StartStateId)i), (void*)states[i]);
+    }
+    DFA *dfa = new DFA(nfa);
+    shouldNotBeNULL(dfa);
+    shouldBeEqual(nfa->getNumberStartStates(), 100);
+    shouldNotBeNULL(dfa->startState);
+    shouldBeEqual(dfa->numStartStates, 100);
+    for (size_t i = 0; i < 100; i++) {
+      shouldBeNULL((void*)dfa->startState[i]);
+      shouldBeEqual((void*)nfa->getStartState((NFA::StartStateId)i), (void*)states[i]);
+      dfa->getDFAStartState(i);
+      shouldNotBeNULL((void*)dfa->startState[i]);
+    }
+    delete dfa;
+    delete nfa;
+    delete classifier;
+  } endIt();
 
-    /// Show that we can create an appropriately allocated DFA
-    /// from a given NFA.
-    it("Should have correct sizes and pointers setup", [&](){
-      Classifier *classifier = new Classifier();
-      NFA *nfa = new NFA(classifier);
-      NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfaBuilder->compileRegularExpressionForTokenId("start", "(abab|abbb)", 1);
-      AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
-      DFA *dfa = new DFA(nfa);
-      AssertThat(dfa, Is().Not().EqualTo((void*)0));
-      AssertThat(dfa->nfa, Equals(nfa));
-      AssertThat(dfa->allocator, Is().Not().EqualTo((void*)0));
-      AssertThat(dfa->nextStateMapping, Is().Not().EqualTo((void*)0));
-      AssertThat(dfa->startState, Is().Not().EqualTo((State**)0));
-      AssertThat(dfa->numStartStates, Equals(1));
-      AssertThat(dfa->startState[0], Equals((State*)0));
-      AssertThat(((void*)dfa->tokensState), Is().Not().EqualTo((void*)0));
-      for( size_t i = 0; i < dfa->allocator->stateSize; i++) {
-        AssertThat(dfa->tokensState[i], Equals(0));
-      }
-      State *startState = dfa->getDFAStartState((NFA::StartStateId)0);
-      AssertThat(dfa->startState[0], Is().Not().EqualTo((State*)0));
-      AssertThat(dfa->startState[0], Equals(startState));
-      AssertThat((int)dfa->startState[0][0], Equals(15));
-      for( size_t i = 1; i < dfa->allocator->stateSize; i++) {
-        AssertThat(dfa->startState[0][i], Equals(0));
-      }
-      AssertThat(dfa->allocator->isSubStateOf(dfa->startState[0], dfa->tokensState), Is().False());
-      delete dfa;
-      delete nfa;
-      delete classifier;
-    });
+  /// Show that DFA::computeNextDFAState can compile a simple
+  /// NFA corresponding to the regular expression: /(abab|abbb)/
+  /// which has only characters to match.
+  it("Should computeNextDFAState with no generic states") {
+    Classifier *classifier = new Classifier();
+    shouldNotBeNULL(classifier);
+    NFA *nfa = new NFA(classifier);
+    shouldNotBeNULL(nfa);
+    NFABuilder *nfaBuilder = new NFABuilder(nfa);
+    shouldNotBeNULL(nfaBuilder);
+    nfaBuilder->compileRegularExpressionForTokenId("start", "(abab|abbb)", 1);
+    shouldBeEqual(nfa->getNumberStates(), 11);
+    DFA *dfa = new DFA(nfa);
+    shouldNotBeNULL(dfa);
+    StateAllocator *allocator = dfa->allocator;
+    shouldNotBeNULL(allocator);
+    NextStateMapping *mapping = dfa->nextStateMapping;
+    shouldNotBeNULL(mapping);
+    shouldBeZero(allocator->allocatedUnusedStack.getNumItems());
+    State *specificState = allocator->allocateANewState(); // this will be the specific state
+    State *genericState  = allocator->allocateANewState(); // this will be generic state
+    State *startState    = allocator->allocateANewState(); // this will be the start state
+    shouldNotBeNULL((void*)specificState);
+    shouldNotBeNULL((void*)genericState);
+    shouldNotBeNULL((void*)startState);
+    allocator->unallocateState(specificState);
+    allocator->unallocateState(genericState);
+    allocator->unallocateState(startState); // last in first out of stack
+    utf8Char_t firstChar;
+    firstChar.u = 0;
+    firstChar.c[0] = 'a';
+    Classifier::classSet_t classificationSet = 0;
+    State *nextDFAState =
+      dfa->computeNextDFAState(dfa->getDFAStartState("start"),
+                               firstChar,
+                               classificationSet);
+    shouldNotBeNULL((void*)nextDFAState);
+    shouldBeEqual((void*)nextDFAState, (void*)specificState);
+    shouldBeTrue(allocator->isStateEmpty(genericState));
+    State **registeredGenericState =
+      (State**)hattrie_tryget(mapping->nextDFAStateMap,
+                              genericState, allocator->stateSize);
+    shouldBeNULL((void**)registeredGenericState);
 
-    it("should be able to register lots of start states", [](){
-      Classifier *classifier = new Classifier();
-      NFA *nfa = new NFA(classifier);
-      AssertThat(nfa->startStateIds,  Is().Not().EqualTo((void*)0));
-      AssertThat(nfa->startState.getNumItems(), Equals(0));
-      char buffer[100];
-      NFA::State *states[100];
-      NFA::MatchData noMatchData;
-      noMatchData.c.u = 0;
-      for (size_t i = 0; i < 100; i++) {
-        memset(buffer, 0, 100);
-        sprintf(buffer, "%zu", i);
-        nfa->registerStartState(buffer);
-        states[i] = nfa->addState(NFA::Split, noMatchData, NULL, NULL, "test");
-        nfa->appendNFAToStartState(buffer, states[i]);
-        AssertThat(nfa->getNumberStartStates(), Equals(i+1));
-        AssertThat(nfa->findStartStateId(buffer), Equals(i));
-        AssertThat(nfa->getStartState(buffer), Equals(states[i]));
-        AssertThat(nfa->getStartState((NFA::StartStateId)i), Equals(states[i]));
-      }
-      DFA *dfa = new DFA(nfa);
-      AssertThat(nfa->getNumberStartStates(), Equals(100));
-      AssertThat(dfa->startState, Is().Not().EqualTo((void*)0));
-      AssertThat(dfa->numStartStates, Equals(100));
-      for (size_t i = 0; i < 100; i++) {
-        AssertThat((State*)dfa->startState[i], Equals((State*)0));
-        AssertThat(nfa->getStartState((NFA::StartStateId)i), Equals(states[i]));
-        dfa->getDFAStartState(i);
-        AssertThat((State*)dfa->startState[i], Is().Not().EqualTo((State*)0));
-      }
-      delete dfa;
-      delete nfa;
-      delete classifier;
-    });
+    shouldBeFalse(allocator->isStateEmpty(specificState));
+    State **registeredSpecificState =
+      (State**)hattrie_tryget(mapping->nextDFAStateMap,
+                              specificState, allocator->stateSize);
+    shouldNotBeNULL((void**)registeredSpecificState);
+    shouldBeEqual((void*)*registeredSpecificState, (void*)specificState);
+    shouldBeEqual(((int)nextDFAState[0]), (int)0x30);
+    for (size_t i = 1; i < allocator->stateSize; i++) {
+      shouldBeEqual(((int)nextDFAState[i]), (int)0x00);
+    }
+    delete dfa;
+    delete nfaBuilder;
+    delete nfa;
+    delete classifier;
+  } endIt();
 
-    /// Show that DFA::computeNextDFAState can compile a simple
-    /// NFA corresponding to the regular expression: /(abab|abbb)/
-    /// which has only characters to match.
-    it("Should computeNextDFAState with no generic states", [&](){
-      Classifier *classifier = new Classifier();
-      NFA *nfa = new NFA(classifier);
-      NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfaBuilder->compileRegularExpressionForTokenId("start", "(abab|abbb)", 1);
-      AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
-      DFA *dfa = new DFA(nfa);
-      AssertThat(dfa, Is().Not().EqualTo((void*)0));
-      StateAllocator *allocator = dfa->allocator;
-      AssertThat(allocator, Is().Not().EqualTo((void*)0));
-      NextStateMapping *mapping = dfa->nextStateMapping;
-      AssertThat(mapping, Is().Not().EqualTo((void*)0));
-      AssertThat(allocator->allocatedUnusedStack.getNumItems(), Equals(0));
-      State *specificState = allocator->allocateANewState(); // this will be the specific state
-      State *genericState  = allocator->allocateANewState(); // this will be generic state
-      State *startState    = allocator->allocateANewState(); // this will be the start state
-      allocator->unallocateState(specificState);
-      allocator->unallocateState(genericState);
-      allocator->unallocateState(startState); // last in first out of stack
-      utf8Char_t firstChar;
-      firstChar.u = 0;
-      firstChar.c[0] = 'a';
-      Classifier::classSet_t classificationSet = 0;
-      State *nextDFAState =
-        dfa->computeNextDFAState(dfa->getDFAStartState("start"),
-                                 firstChar,
-                                 classificationSet);
-      AssertThat((void*)nextDFAState, Is().Not().EqualTo((void*)0));
-      AssertThat((void*)nextDFAState, Is().EqualTo((void*)specificState));
-      AssertThat(allocator->isStateEmpty(genericState), Is().True());
-      State **registeredGenericState =
-        (State**)hattrie_tryget(mapping->nextDFAStateMap,
-                                genericState, allocator->stateSize);
-      AssertThat((void**)registeredGenericState, Is().EqualTo((void*)0));
+  /// Show that DFA::computeNextDFAState can compile an
+  /// NFA corresponding to the regular expression:
+  /// /(abab|[!whitespace]bbb)/ which has both characters
+  /// and Classifier::classSet_t(s) to match.
+  it("Should computeNextDFAState with generic states") {
+    Classifier *classifier = new Classifier();
+    shouldNotBeNULL(classifier);
+    classifier->registerClassSet("whitespace",1);
+    classifier->classifyUtf8CharsAs(Utf8Chars::whiteSpaceChars,"whitespace");
+    shouldBeEqual(classifier->getClassSet(" "), 1);
+    shouldBeEqual(classifier->getClassSet("a"), ~1L);
+    NFA *nfa = new NFA(classifier);
+    shouldNotBeNULL(nfa);
+    NFABuilder *nfaBuilder = new NFABuilder(nfa);
+    shouldNotBeNULL(nfaBuilder);
+    nfaBuilder->compileRegularExpressionForTokenId("start", "(abab|[!whitespace]bbb)", 1);
+    shouldBeEqual(nfa->getNumberStates(), 11);
+    DFA *dfa = new DFA(nfa);
+    shouldNotBeNULL(dfa);
+    StateAllocator *allocator = dfa->allocator;
+    shouldNotBeNULL(allocator);
+    NextStateMapping *mapping = dfa->nextStateMapping;
+    shouldNotBeNULL(mapping);
+    shouldBeZero(allocator->allocatedUnusedStack.getNumItems());
+    State *specificState = allocator->allocateANewState(); // this will be the specific state
+    State *genericState  = allocator->allocateANewState(); // this will be generic state
+    State *startState    = allocator->allocateANewState(); // this will be the start state
+    shouldNotBeNULL((void*)specificState);
+    shouldNotBeNULL((void*)genericState);
+    shouldNotBeNULL((void*)startState);
+    allocator->unallocateState(specificState);
+    allocator->unallocateState(genericState);
+    allocator->unallocateState(startState); // last in first out of stack
+    shouldBeEqual((void*)allocator->allocatedUnusedStack.getItem(0, NULL),
+      (void*)specificState);
+    shouldBeEqual((void*)allocator->allocatedUnusedStack.getItem(1, NULL),
+      (void*)genericState);
+    utf8Char_t firstChar;
+    firstChar.u = 0;
+    firstChar.c[0] = 'a';
+    Classifier::classSet_t classificationSet =
+      classifier->getClassSet(firstChar);
+    shouldBeEqual(classificationSet, ~1L);
+    State *nextDFAState =
+      dfa->computeNextDFAState(dfa->getDFAStartState("start"),
+                               firstChar,
+                               classificationSet);
+    shouldNotBeNULL((void*)nextDFAState);
+    shouldBeEqual((void*)nextDFAState, (void*)specificState);
+    shouldBeFalse(allocator->isStateEmpty(specificState));
+    shouldBeEqual(((int)specificState[0]), (int)0x30);
+    for (size_t i = 1; i < dfa->allocator->stateSize; i++) {
+      shouldBeEqual(((int)specificState[i]), (int)0x00);
+    }
+    State **registeredSpecificState =
+      (State**)hattrie_tryget(mapping->nextDFAStateMap,
+                              specificState, allocator->stateSize);
+    shouldNotBeNULL((void**)registeredSpecificState);
+    shouldBeEqual((void*)*registeredSpecificState, (void*)specificState);
 
-      AssertThat(allocator->isStateEmpty(specificState), Is().False());
-      State **registeredSpecificState =
-        (State**)hattrie_tryget(mapping->nextDFAStateMap,
-                                specificState, allocator->stateSize);
-      AssertThat((void**)registeredSpecificState,
-        Is().Not().EqualTo((void*)0));
-      AssertThat((void*)*registeredSpecificState,
-        Is().EqualTo((void*)specificState));
-      AssertThat(((int)nextDFAState[0]), Is().EqualTo((int)0x30));
-      for (size_t i = 1; i < allocator->stateSize; i++) {
-        AssertThat(((int)nextDFAState[i]), Is().EqualTo((int)0x00));
-      }
-      delete dfa;
-      delete nfa;
-      delete classifier;
-    });
+    shouldBeFalse(allocator->isStateEmpty(genericState));
+    State **registeredGenericState =
+      (State**)hattrie_tryget(mapping->nextDFAStateMap,
+                              genericState, allocator->stateSize);
+    shouldNotBeNULL((void**)registeredGenericState);
+    shouldBeEqual((void*)*registeredGenericState, (void*)genericState);
+    shouldBeEqual(((int)genericState[0]), (int)0x20);
+    for (size_t i = 1; i < dfa->allocator->stateSize; i++) {
+      shouldBeEqual(((int)genericState[i]), (int)0x00);
+    }
+    delete dfa;
+    delete nfaBuilder;
+    delete nfa;
+    delete classifier;
+  } endIt();
 
-    /// Show that DFA::computeNextDFAState can compile an
-    /// NFA corresponding to the regular expression:
-    /// /(abab|[!whitespace]bbb)/ which has both characters
-    /// and Classifier::classSet_t(s) to match.
-    it("Should computeNextDFAState with generic states", [&](){
-      Classifier *classifier = new Classifier();
-      classifier->registerClassSet("whitespace",1);
-      classifier->classifyUtf8CharsAs(Utf8Chars::whiteSpaceChars,"whitespace");
-      AssertThat(classifier->getClassSet(" "), Is().EqualTo(1));
-      AssertThat(classifier->getClassSet("a"), Is().EqualTo(~1L));
-      NFA *nfa = new NFA(classifier);
-      NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfaBuilder->compileRegularExpressionForTokenId("start", "(abab|[!whitespace]bbb)", 1);
-      AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
-      DFA *dfa = new DFA(nfa);
-      AssertThat(dfa, Is().Not().EqualTo((void*)0));
-      StateAllocator *allocator = dfa->allocator;
-      AssertThat(allocator, Is().Not().EqualTo((void*)0));
-      NextStateMapping *mapping = dfa->nextStateMapping;
-      AssertThat(mapping, Is().Not().EqualTo((void*)0));
-      AssertThat(allocator->allocatedUnusedStack.getNumItems(), Equals(0));
-      State *specificState = allocator->allocateANewState(); // this will be the specific state
-      State *genericState  = allocator->allocateANewState(); // this will be generic state
-      State *startState    = allocator->allocateANewState(); // this will be the start state
-      allocator->unallocateState(specificState);
-      allocator->unallocateState(genericState);
-      allocator->unallocateState(startState); // last in first out of stack
-      AssertThat(allocator->allocatedUnusedStack.getItem(0, NULL),
-        Equals(specificState));
-      AssertThat(allocator->allocatedUnusedStack.getItem(1, NULL),
-        Equals(genericState));
-      utf8Char_t firstChar;
-      firstChar.u = 0;
-      firstChar.c[0] = 'a';
-      Classifier::classSet_t classificationSet =
-        classifier->getClassSet(firstChar);
-      AssertThat(classificationSet, Is().EqualTo(~1L));
-      State *nextDFAState =
-        dfa->computeNextDFAState(dfa->getDFAStartState("start"),
-                                 firstChar,
-                                 classificationSet);
-      AssertThat((void*)nextDFAState, Is().Not().EqualTo((void*)0));
-      AssertThat((void*)nextDFAState, Is().EqualTo((void*)specificState));
-      AssertThat(allocator->isStateEmpty(specificState), Is().False());
-      AssertThat(((int)specificState[0]), Is().EqualTo((int)0x30));
-      for (size_t i = 1; i < dfa->allocator->stateSize; i++) {
-        AssertThat(((int)specificState[i]), Is().EqualTo((int)0x00));
-      }
-      State **registeredSpecificState =
-        (State**)hattrie_tryget(mapping->nextDFAStateMap,
-                                specificState, allocator->stateSize);
-      AssertThat((void**)registeredSpecificState, Is().Not().EqualTo((void*)0));
-      AssertThat((void*)*registeredSpecificState, Is().EqualTo((void*)specificState));
+  /// Show that DFA::computeNextDFAState can compile an
+  /// NFA corresponding to the regular expression:
+  /// /([!whitespace]bab|[!whitespace]bbb)/ which has only
+  /// Classifier::classSet_t(s) to match in the first transition.
+  it("computeNextDFAState with only generic states") {
+    Classifier *classifier = new Classifier();
+    shouldNotBeNULL(classifier);
+    classifier->registerClassSet("whitespace",1);
+    classifier->classifyUtf8CharsAs(Utf8Chars::whiteSpaceChars,"whitespace");
+    shouldBeEqual(classifier->getClassSet(" "), 1);
+    shouldBeEqual(classifier->getClassSet("a"), ~1L);
+    NFA *nfa = new NFA(classifier);
+    shouldNotBeNULL(nfa);
+    NFABuilder *nfaBuilder = new NFABuilder(nfa);
+    shouldNotBeNULL(nfaBuilder);
+    nfaBuilder->compileRegularExpressionForTokenId("start", "([!whitespace]bab|[!whitespace]bbb)", 1);
+    shouldBeEqual(nfa->getNumberStates(), 11);
+    DFA *dfa = new DFA(nfa);
+    shouldNotBeNULL(dfa);
+    StateAllocator *allocator = dfa->allocator;
+    shouldNotBeNULL(allocator);
+    NextStateMapping *mapping = dfa->nextStateMapping;
+    shouldNotBeNULL(mapping);
+    shouldBeZero(allocator->allocatedUnusedStack.getNumItems());
+    State *specificState = allocator->allocateANewState(); // this will be the specific state
+    State *genericState = allocator->allocateANewState(); // this will be generic state
+    State *startState    = allocator->allocateANewState(); // this will be the start state
+    shouldNotBeNULL((void*)specificState);
+    shouldNotBeNULL((void*)genericState);
+    shouldNotBeNULL((void*)startState);
+    allocator->unallocateState(specificState);
+    allocator->unallocateState(genericState);
+    allocator->unallocateState(startState); // last in first out stack
+    shouldBeEqual((void*)allocator->allocatedUnusedStack.getItem(0, NULL),
+      (void*)specificState);
+    shouldBeEqual((void*)allocator->allocatedUnusedStack.getItem(1, NULL),
+      (void*)genericState);
+    utf8Char_t firstChar;
+    firstChar.u = 0;
+    firstChar.c[0] = 'a';
+    Classifier::classSet_t classificationSet =
+      classifier->getClassSet(firstChar);
+    shouldBeEqual(classificationSet, ~1L);
+    State *nextDFAState =
+      dfa->computeNextDFAState(dfa->getDFAStartState("start"),
+                               firstChar,
+                               classificationSet);
+    shouldNotBeNULL((void*)nextDFAState);
+    shouldBeEqual((void*)nextDFAState, (void*)genericState);
+    shouldBeFalse(allocator->isStateEmpty(genericState));
+    shouldBeEqual(((int)genericState[0]), (int)0x30);
+    for (size_t i = 1; i < allocator->stateSize; i++) {
+      shouldBeEqual(((int)genericState[i]), (int)0x00);
+    }
+    State **registeredGenericState =
+      (State**)hattrie_tryget(mapping->nextDFAStateMap,
+                              genericState, allocator->stateSize);
+    shouldNotBeNULL((void**)registeredGenericState);
+    shouldBeEqual((void*)*registeredGenericState, (void*)genericState);
 
-      AssertThat(allocator->isStateEmpty(genericState), Is().False());
-      State **registeredGenericState =
-        (State**)hattrie_tryget(mapping->nextDFAStateMap,
-                                genericState, allocator->stateSize);
-      AssertThat((void**)registeredGenericState, Is().Not().EqualTo((void*)0));
-      AssertThat((void*)*registeredGenericState, Is().EqualTo((void*)genericState));
-      AssertThat(((int)genericState[0]), Is().EqualTo((int)0x20));
-      for (size_t i = 1; i < dfa->allocator->stateSize; i++) {
-        AssertThat(((int)genericState[i]), Is().EqualTo((int)0x00));
-      }
-      delete dfa;
-      delete nfa;
-      delete classifier;
-    });
+    shouldBeTrue(allocator->isStateEmpty(specificState));
+    State **registeredSpecificState =
+      (State**)hattrie_tryget(mapping->nextDFAStateMap,
+                              specificState, allocator->stateSize);
+    shouldBeNULL((void**)registeredSpecificState);
+    shouldBeEqual(((int)nextDFAState[0]), (int)0x30);
+    for (size_t i = 1; i < allocator->stateSize; i++) {
+      shouldBeEqual(((int)nextDFAState[i]), (int)0x00);
+    }
+    delete dfa;
+    delete nfaBuilder;
+    delete nfa;
+    delete classifier;
+  } endIt();
 
-    /// Show that DFA::computeNextDFAState can compile an
-    /// NFA corresponding to the regular expression:
-    /// /([!whitespace]bab|[!whitespace]bbb)/ which has only
-    /// Classifier::classSet_t(s) to match in the first transition.
-    it("computeNextDFAState with only generic states", [&](){
-      Classifier *classifier = new Classifier();
-      classifier->registerClassSet("whitespace",1);
-      classifier->classifyUtf8CharsAs(Utf8Chars::whiteSpaceChars,"whitespace");
-      AssertThat(classifier->getClassSet(" "), Is().EqualTo(1));
-      AssertThat(classifier->getClassSet("a"), Is().EqualTo(~1L));
-      NFA *nfa = new NFA(classifier);
-      NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfaBuilder->compileRegularExpressionForTokenId("start", "([!whitespace]bab|[!whitespace]bbb)", 1);
-      AssertThat(nfa->getNumberStates(), Is().EqualTo(11));
-      DFA *dfa = new DFA(nfa);
-      AssertThat(dfa, Is().Not().EqualTo((void*)0));
-      StateAllocator *allocator = dfa->allocator;
-      AssertThat(allocator, Is().Not().EqualTo((void*)0));
-      NextStateMapping *mapping = dfa->nextStateMapping;
-      AssertThat(mapping, Is().Not().EqualTo((void*)0));
-      AssertThat(allocator->allocatedUnusedStack.getNumItems(), Equals(0));
-      State *specificState = allocator->allocateANewState(); // this will be the specific state
-      State *genericState = allocator->allocateANewState(); // this will be generic state
-      State *startState    = allocator->allocateANewState(); // this will be the start state
-      allocator->unallocateState(specificState);
-      allocator->unallocateState(genericState);
-      allocator->unallocateState(startState); // last in first out stack
-      AssertThat(allocator->allocatedUnusedStack.getItem(0, NULL),
-        Equals(specificState));
-      AssertThat(allocator->allocatedUnusedStack.getItem(1, NULL),
-        Equals(genericState));
-      utf8Char_t firstChar;
-      firstChar.u = 0;
-      firstChar.c[0] = 'a';
-      Classifier::classSet_t classificationSet =
-        classifier->getClassSet(firstChar);
-      AssertThat(classificationSet, Is().EqualTo(~1L));
-      State *nextDFAState =
-        dfa->computeNextDFAState(dfa->getDFAStartState("start"),
-                                 firstChar,
-                                 classificationSet);
-      AssertThat((void*)nextDFAState, Is().Not().EqualTo((void*)0));
-      AssertThat((void*)nextDFAState, Is().EqualTo((void*)genericState));
-      AssertThat(allocator->isStateEmpty(genericState), Is().False());
-      AssertThat(((int)genericState[0]), Is().EqualTo((int)0x30));
-      for (size_t i = 1; i < allocator->stateSize; i++) {
-        AssertThat(((int)genericState[i]), Is().EqualTo((int)0x00));
-      }
-      State **registeredGenericState =
-        (State**)hattrie_tryget(mapping->nextDFAStateMap,
-                                genericState, allocator->stateSize);
-      AssertThat((void**)registeredGenericState, Is().Not().EqualTo((void*)0));
-      AssertThat((void*)*registeredGenericState, Is().EqualTo((void*)genericState));
+  it("Show that DFA::getNextToken works with a simple regular expression") {
+    Classifier *classifier = new Classifier();
+    shouldNotBeNULL(classifier);
+    NFA *nfa = new NFA(classifier);
+    shouldNotBeNULL(nfa);
+    NFABuilder *nfaBuilder = new NFABuilder(nfa);
+    shouldNotBeNULL(nfaBuilder);
+    nfaBuilder->compileRegularExpressionForTokenId("start", "simple", 1);
+    shouldBeEqual(nfa->getNumberStates(), 8);
+    DFA *dfa = new DFA(nfa);
+    shouldNotBeNULL(dfa);
+    PushDownMachine *pdm = new PushDownMachine(dfa);
+    shouldNotBeNULL(pdm);
+    Utf8Chars *stream0 = new Utf8Chars("simple");
+    shouldNotBeNULL(stream0);
+    PDMTracer *pdmTracer =
+//      new PDMTracer("Parse and tokenize 'simple'", stdout);
+      new PDMTracer("Parse and tokenize 'simple'", NULL);
+    shouldNotBeNULL(pdmTracer);
+    Token *aToken = pdm->runFromUsing("start", stream0, pdmTracer);
+    shouldNotBeNULL(aToken);
+    shouldBeEqual(aToken->tokenId,   1);
+    shouldNotBeNULL((void*)aToken->textStart);
+    shouldBeEqual((void*)aToken->textStart, (void*)stream0->getStart());
+    shouldNotBeZero(aToken->textLength);
+    shouldBeEqual(aToken->textLength, 6);
+    shouldBeZero(aToken->tokens.getNumItems());
+    Utf8Chars *stream1 = new Utf8Chars("notSoSimple");
+    shouldNotBeNULL(stream1);
+    delete pdmTracer;
+    pdmTracer =
+//      new PDMTracer("Parse and tokenize 'notSoSimple'", stdout);
+      new PDMTracer("Parse and tokenize 'notSoSimple'", NULL);
+    shouldNotBeNULL(pdmTracer);
+    aToken = pdm->runFromUsing("start", stream1, pdmTracer);
+    shouldBeNULL(aToken);
+    delete pdmTracer;
+    delete stream0;
+    delete stream1;
+    delete pdm;
+    delete dfa;
+    delete nfaBuilder;
+    delete nfa;
+    delete classifier;
+  } endIt();
 
-      AssertThat(allocator->isStateEmpty(specificState), Is().True());
-      State **registeredSpecificState =
-        (State**)hattrie_tryget(mapping->nextDFAStateMap,
-                                specificState, allocator->stateSize);
-      AssertThat((void**)registeredSpecificState, Is().EqualTo((void*)0));
-      AssertThat(((int)nextDFAState[0]), Is().EqualTo((int)0x30));
-      for (size_t i = 1; i < allocator->stateSize; i++) {
-        AssertThat(((int)nextDFAState[i]), Is().EqualTo((int)0x00));
-      }
-      delete dfa;
-      delete nfa;
-      delete classifier;
-    });
+  it("Show that DFA::getNextToken works with simple regular expression with alternate patterns") {
+    Classifier *classifier = new Classifier();
+    shouldNotBeNULL(classifier);
+    NFA *nfa = new NFA(classifier);
+    shouldNotBeNULL(nfa);
+    NFABuilder *nfaBuilder = new NFABuilder(nfa);
+    shouldNotBeNULL(nfaBuilder);
+    nfaBuilder->compileRegularExpressionForTokenId("start", "(simple|notSoSimple)", 1);
+    shouldBeEqual(nfa->getNumberStates(), 20);
+    NFA::State *baseState =
+      (NFA::State*)nfa->stateAllocator->blocks.getTop();
+    shouldNotBeNULL((void*)baseState);
+    for (size_t i = 0; i < 19; i++) {
+      shouldBeEqual(baseState[i].matchType, NFA::Token);
+    }
+    shouldBeEqual(baseState[19].matchType, NFA::Token);
+    for (size_t i = 1; i < 6; i++) {
+      shouldBeEqual((void*)baseState[i].out, (void*)(baseState+i+1));
+    }
+    shouldBeEqual((void*)baseState[6].out, (void*)(baseState+19));
+    DFA *dfa = new DFA(nfa);
+    shouldNotBeNULL(dfa);
+    PushDownMachine *pdm = new PushDownMachine(dfa);
+    shouldNotBeNULL(pdm);
+    Utf8Chars *stream0 = new Utf8Chars("simple");
+    shouldNotBeNULL(stream0);
+    PDMTracer *pdmTracer =
+//      new PDMTracer("Parse and tokenize 'simple'", stdout);
+      new PDMTracer("Parse and tokenize 'simple'", NULL);
+    shouldNotBeNULL(pdmTracer);
+    Token *aToken = pdm->runFromUsing("start", stream0, pdmTracer);
+    shouldNotBeNULL(aToken);
+    shouldNotBeNULL((void*)aToken->textStart);
+    shouldBeEqual((void*)aToken->textStart, (void*)stream0->getStart());
+    shouldNotBeZero(aToken->textLength);
+    shouldBeEqual(aToken->textLength, 6);
+    shouldBeZero(aToken->tokens.getNumItems());
+    shouldBeEqual(aToken->tokenId, 1);
+    Utf8Chars *stream1 = new Utf8Chars("notSoSimple");
+    shouldNotBeNULL(stream1);
+    delete pdmTracer;
+    pdmTracer =
+//      new PDMTracer("Parse and tokenize 'notSoSimple'", stdout);
+      new PDMTracer("Parse and tokenize 'notSoSimple'", NULL);
+    shouldNotBeNULL(pdmTracer);
+    aToken = pdm->runFromUsing("start", stream1, pdmTracer);
+    shouldNotBeNULL(aToken);
+    shouldNotBeNULL((void*)aToken->textStart);
+    shouldBeEqual((void*)aToken->textStart, (void*)stream1->getStart());
+    shouldNotBeZero(aToken->textLength);
+    shouldBeEqual(aToken->textLength, 11);
+    shouldBeZero(aToken->tokens.getNumItems());
+    shouldBeEqual(aToken->tokenId, 1);
+    delete pdmTracer;
+    delete stream0;
+    delete stream1;
+    delete pdm;
+    delete dfa;
+    delete nfaBuilder;
+    delete nfa;
+    delete classifier;
+  } endIt();
 
-    it("Show that DFA::getNextToken works with a simple regular expression", [&](){
-      Classifier *classifier = new Classifier();
-      NFA *nfa = new NFA(classifier);
-      NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfaBuilder->compileRegularExpressionForTokenId("start", "simple", 1);
-      AssertThat(nfa->getNumberStates(), Is().EqualTo(8));
-      DFA *dfa = new DFA(nfa);
-      AssertThat(dfa, Is().Not().EqualTo((void*)0));
-      PushDownMachine *pdm = new PushDownMachine(dfa);
-      AssertThat(pdm, Is().Not().EqualTo((void*)0));
-      Utf8Chars *stream0 = new Utf8Chars("simple");
-      PDMTracer *pdmTracer =
-//        new PDMTracer("Parse and tokenize 'simple'", stdout);
-        new PDMTracer("Parse and tokenize 'simple'", NULL);
-      Token *aToken = pdm->runFromUsing("start", stream0, pdmTracer);
-      AssertThat(aToken, Is().Not().EqualTo((void*)0));
-      AssertThat(aToken->tokenId,   Is().EqualTo(1));
-      AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
-      AssertThat(aToken->textStart, Equals(stream0->getStart()));
-      AssertThat(aToken->textLength, Is().Not().EqualTo(0));
-      AssertThat(aToken->textLength, Equals(6));
-      AssertThat(aToken->tokens.getNumItems(), Equals(0));
-      Utf8Chars *stream1 = new Utf8Chars("notSoSimple");
-      pdmTracer =
-//        new PDMTracer("Parse and tokenize 'notSoSimple'", stdout);
-        new PDMTracer("Parse and tokenize 'notSoSimple'", NULL);
-      aToken = pdm->runFromUsing("start", stream1, pdmTracer);
-      AssertThat(aToken, Equals((void*)0));
-      delete pdm;
-      delete dfa;
-      delete nfa;
-      delete classifier;
-    });
+  it("Show that DFA::getNextToken works with a regular expression with only Classifier::classSet_t transitions") {
+    Classifier *classifier = new Classifier();
+    shouldNotBeNULL(classifier);
+    classifier->registerClassSet("whitespace",1);
+    classifier->classifyUtf8CharsAs(Utf8Chars::whiteSpaceChars,"whitespace");
+    shouldBeEqual(classifier->getClassSet(" "), 1);
+    shouldBeEqual(classifier->getClassSet("a"), ~1L);
+    NFA *nfa = new NFA(classifier);
+    shouldNotBeNULL(nfa);
+    NFABuilder *nfaBuilder = new NFABuilder(nfa);
+    shouldNotBeNULL(nfaBuilder);
+    nfaBuilder->compileRegularExpressionForTokenId("start", "[!whitespace]+", 1);
+    shouldBeEqual(nfa->getNumberStates(), 4);
+    DFA *dfa = new DFA(nfa);
+    shouldNotBeNULL(dfa);
+    PushDownMachine *pdm = new PushDownMachine(dfa);
+    shouldNotBeNULL(pdm);
+    Utf8Chars *stream0 = new Utf8Chars("sillysomeNonWhiteSpace");
+    shouldNotBeNULL(stream0);
+    PDMTracer *pdmTracer =
+//      new PDMTracer("Parse and tokenize 'sillysomeNonWhiteSpace'", stdout);
+      new PDMTracer("Parse and tokenize 'sillysomeNonWhiteSpace'", NULL);
+    shouldNotBeNULL(pdmTracer);
+    Token *aToken = pdm->runFromUsing("start", stream0, pdmTracer);
+    shouldNotBeNULL(aToken);
+    shouldNotBeNULL((void*)aToken->textStart);
+    shouldBeEqual((void*)aToken->textStart, (void*)stream0->getStart());
+    shouldNotBeZero(aToken->textLength);
+    shouldBeEqual(aToken->textLength, 22);
+    shouldBeZero(aToken->tokens.getNumItems());
+    shouldBeEqual(aToken->tokenId, 1);
+    delete pdmTracer;
+    delete stream0;
+    delete pdm;
+    delete dfa;
+    delete nfaBuilder;
+    delete nfa;
+    delete classifier;
+  } endIt();
 
-    it("Show that DFA::getNextToken works with simple regular expression with alternate patterns", [&](){
-      Classifier *classifier = new Classifier();
-      NFA *nfa = new NFA(classifier);
-      NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfaBuilder->compileRegularExpressionForTokenId("start", "(simple|notSoSimple)", 1);
-      AssertThat(nfa->getNumberStates(), Is().EqualTo(20));
-      NFA::State *baseState =
-        (NFA::State*)nfa->stateAllocator->blocks.getTop();
-      for (size_t i = 0; i < 19; i++) {
-        AssertThat(baseState[i].matchType, Is().Not().EqualTo(NFA::Token));
-      }
-      AssertThat(baseState[19].matchType, Equals(NFA::Token));
-      for (size_t i = 1; i < 6; i++) {
-        AssertThat(baseState[i].out, Equals(baseState+i+1));
-      }
-      AssertThat(baseState[6].out, Equals(baseState+19));
-      DFA *dfa = new DFA(nfa);
-      AssertThat(dfa, Is().Not().EqualTo((void*)0));
-      PushDownMachine *pdm = new PushDownMachine(dfa);
-      AssertThat(pdm, Is().Not().EqualTo((void*)0));
-      Utf8Chars *stream0 = new Utf8Chars("simple");
-      PDMTracer *pdmTracer =
-//        new PDMTracer("Parse and tokenize 'simple'", stdout);
-        new PDMTracer("Parse and tokenize 'simple'", NULL);
-      Token *aToken = pdm->runFromUsing("start", stream0, pdmTracer);
-      AssertThat(aToken, Is().Not().EqualTo((void*)0));
-      AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
-      AssertThat(aToken->textStart, Equals(stream0->getStart()));
-      AssertThat(aToken->textLength, Is().Not().EqualTo(0));
-      AssertThat(aToken->textLength, Equals(6));
-      AssertThat(aToken->tokens.getNumItems(), Equals(0));
-      AssertThat(aToken->tokenId, Is().EqualTo(1));
-      Utf8Chars *stream1 = new Utf8Chars("notSoSimple");
-      pdmTracer =
-//        new PDMTracer("Parse and tokenize 'notSoSimple'", stdout);
-        new PDMTracer("Parse and tokenize 'notSoSimple'", NULL);
-      aToken = pdm->runFromUsing("start", stream1, pdmTracer);
-      AssertThat(aToken, Is().Not().EqualTo((void*)0));
-      AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
-      AssertThat(aToken->textStart, Equals(stream1->getStart()));
-      AssertThat(aToken->textLength, Is().Not().EqualTo(0));
-      AssertThat(aToken->textLength, Equals(11));
-      AssertThat(aToken->tokens.getNumItems(), Equals(0));
-      AssertThat(aToken->tokenId, Is().EqualTo(1));
-      delete dfa;
-      delete nfa;
-      delete classifier;
-    });
+  it("Show that DFA::getNextToken works with multiple regExp/TokenIds") {
+    Classifier *classifier = new Classifier();
+    shouldNotBeNULL(classifier);
+    classifier->registerClassSet("whitespace",1);
+    classifier->classifyUtf8CharsAs(Utf8Chars::whiteSpaceChars,"whitespace");
+    NFA *nfa = new NFA(classifier);
+    shouldNotBeNULL(nfa);
+    NFABuilder *nfaBuilder = new NFABuilder(nfa);
+    shouldNotBeNULL(nfaBuilder);
+    nfaBuilder->compileRegularExpressionForTokenId("start", "[whitespace]+", 1);
+    nfaBuilder->compileRegularExpressionForTokenId("start", "[!whitespace]+", 2);
+    shouldBeEqual(nfa->getNumberStates(), 8);
+    DFA *dfa = new DFA(nfa);
+    shouldNotBeNULL(dfa);
+    StateAllocator *allocator = dfa->allocator;
+    shouldNotBeNULL(allocator);
+    dfa->getDFAStartState("start");
+    NFA::State *nfaState =
+      allocator->stateMatchesToken(dfa->startState[0], dfa->tokensState);
+    shouldBeNULL(nfaState);
+    PushDownMachine *pdm = new PushDownMachine(dfa);
+    shouldNotBeNULL(pdm);
+    Utf8Chars *stream0 = new Utf8Chars("sillysomeNonWhiteSpace   ");
+    shouldNotBeNULL(stream0);
+    PDMTracer *pdmTracer =
+//      new PDMTracer("Parse and tokenize 'sillysomeNonWhiteSpace   '", stdout);
+      new PDMTracer("Parse and tokenize 'sillysomeNonWhiteSpace   '", NULL);
+    shouldNotBeNULL(pdmTracer);
+    Token *aToken = pdm->runFromUsing("start", stream0, pdmTracer, true);
+    shouldNotBeNULL(aToken);
+    shouldNotBeNULL((void*)aToken->textStart);
+    shouldBeEqual((void*)aToken->textStart, (void*)stream0->getStart());
+    shouldNotBeZero(aToken->textLength);
+    shouldBeEqual(aToken->textLength, 22);
+    shouldBeZero(aToken->tokens.getNumItems());
+    shouldBeEqual(aToken->tokenId, 2);
+    Utf8Chars *stream1 = new Utf8Chars("   sillysomeNonWhiteSpace");
+    shouldNotBeNULL(stream1);
+    delete pdmTracer;
+    pdmTracer =
+//      new PDMTracer("Parse and tokenize '   sillysomeNonWhiteSpace'", stdout);
+      new PDMTracer("Parse and tokenize '   sillysomeNonWhiteSpace'", NULL);
+    shouldNotBeNULL(pdmTracer);
+    aToken = pdm->runFromUsing("start", stream1, pdmTracer, true);
+    shouldNotBeNULL(aToken);
+    shouldNotBeNULL((void*)aToken->textStart);
+    shouldBeEqual((void*)aToken->textStart, (void*)stream1->getStart());
+    shouldNotBeZero(aToken->textLength);
+    shouldBeEqual(aToken->textLength, 3);
+    shouldBeZero(aToken->tokens.getNumItems());
+    shouldBeEqual(aToken->tokenId, 1);
+    delete stream0;
+    delete stream1;
+    delete pdmTracer;
+    delete pdm;
+    delete dfa;
+    delete nfaBuilder;
+    delete nfa;
+    delete classifier;
+  } endIt();
 
-   it("Show that DFA::getNextToken works with a regular expression with only Classifier::classSet_t transitions", [&](){
-      Classifier *classifier = new Classifier();
-      classifier->registerClassSet("whitespace",1);
-      classifier->classifyUtf8CharsAs(Utf8Chars::whiteSpaceChars,"whitespace");
-      AssertThat(classifier->getClassSet(" "), Is().EqualTo(1));
-      AssertThat(classifier->getClassSet("a"), Is().EqualTo(~1L));
-      NFA *nfa = new NFA(classifier);
-      NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfaBuilder->compileRegularExpressionForTokenId("start", "[!whitespace]+", 1);
-      AssertThat(nfa->getNumberStates(), Is().EqualTo(4));
-      DFA *dfa = new DFA(nfa);
-      AssertThat(dfa, Is().Not().EqualTo((void*)0));
-      PushDownMachine *pdm = new PushDownMachine(dfa);
-      AssertThat(pdm, Is().Not().EqualTo((void*)0));
-      Utf8Chars *stream0 = new Utf8Chars("sillysomeNonWhiteSpace");
-      PDMTracer *pdmTracer =
-//        new PDMTracer("Parse and tokenize 'sillysomeNonWhiteSpace'", stdout);
-        new PDMTracer("Parse and tokenize 'sillysomeNonWhiteSpace'", NULL);
-      Token *aToken = pdm->runFromUsing("start", stream0, pdmTracer);
-      AssertThat(aToken, Is().Not().EqualTo((void*)0));
-      AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
-      AssertThat(aToken->textStart, Equals(stream0->getStart()));
-      AssertThat(aToken->textLength, Is().Not().EqualTo(0));
-      AssertThat(aToken->textLength, Equals(22));
-      AssertThat(aToken->tokens.getNumItems(), Equals(0));
-      AssertThat(aToken->tokenId, Is().EqualTo(1));
-      delete dfa;
-      delete nfa;
-      delete classifier;
-    });
-
-    it("Show that DFA::getNextToken works with multiple regExp/TokenIds", [&](){
-      Classifier *classifier = new Classifier();
-      classifier->registerClassSet("whitespace",1);
-      classifier->classifyUtf8CharsAs(Utf8Chars::whiteSpaceChars,"whitespace");
-      NFA *nfa = new NFA(classifier);
-      NFABuilder *nfaBuilder = new NFABuilder(nfa);
-      nfaBuilder->compileRegularExpressionForTokenId("start", "[whitespace]+", 1);
-      nfaBuilder->compileRegularExpressionForTokenId("start", "[!whitespace]+", 2);
-      AssertThat(nfa->getNumberStates(), Is().EqualTo(8));
-      DFA *dfa = new DFA(nfa);
-      AssertThat(dfa, Is().Not().EqualTo((void*)0));
-      StateAllocator *allocator = dfa->allocator;
-      AssertThat(allocator, Is().Not().EqualTo((void*)0));
-      dfa->getDFAStartState("start");
-      NFA::State *nfaState =
-        allocator->stateMatchesToken(dfa->startState[0], dfa->tokensState);
-      AssertThat(nfaState, Is().EqualTo((void*)0));
-      PushDownMachine *pdm = new PushDownMachine(dfa);
-      AssertThat(pdm, Is().Not().EqualTo((void*)0));
-      Utf8Chars *stream0 = new Utf8Chars("sillysomeNonWhiteSpace   ");
-      PDMTracer *pdmTracer =
-//        new PDMTracer("Parse and tokenize 'sillysomeNonWhiteSpace   '", stdout);
-        new PDMTracer("Parse and tokenize 'sillysomeNonWhiteSpace   '", NULL);
-      Token *aToken = pdm->runFromUsing("start", stream0, pdmTracer, true);
-      AssertThat(aToken, Is().Not().EqualTo((void*)0));
-      AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
-      AssertThat(aToken->textStart, Equals(stream0->getStart()));
-      AssertThat(aToken->textLength, Is().Not().EqualTo(0));
-      AssertThat(aToken->textLength, Equals(22));
-      AssertThat(aToken->tokens.getNumItems(), Equals(0));
-      AssertThat(aToken->tokenId, Is().EqualTo(2));
-      Utf8Chars *stream1 = new Utf8Chars("   sillysomeNonWhiteSpace");
-      pdmTracer =
-//        new PDMTracer("Parse and tokenize '   sillysomeNonWhiteSpace'", stdout);
-        new PDMTracer("Parse and tokenize '   sillysomeNonWhiteSpace'", NULL);
-      aToken = pdm->runFromUsing("start", stream1, pdmTracer, true);
-      AssertThat(aToken, Is().Not().EqualTo((void*)0));
-      AssertThat(aToken->textStart, Is().Not().EqualTo((char*)0));
-      AssertThat(aToken->textStart, Equals(stream1->getStart()));
-      AssertThat(aToken->textLength, Is().Not().EqualTo(0));
-      AssertThat(aToken->textLength, Equals(3));
-      AssertThat(aToken->tokens.getNumItems(), Equals(0));
-      AssertThat(aToken->tokenId, Is().EqualTo(1));
-      delete dfa;
-      delete nfa;
-      delete classifier;
-    });
-
-  }); // dfa
-});
+} endDescribe(DFA);
 
 }; // namespace DeterministicFiniteAutomaton
