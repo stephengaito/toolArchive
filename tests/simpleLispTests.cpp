@@ -11,11 +11,11 @@
 #include <dynUtf8Parser/simpleLisp.h>
 
 /// \brief We test the SimpleLisp class.
-pending_describe(SimpleLisp) {
+describe(SimpleLisp) {
 
   specSize(SimpleLisp);
 
-  it("Create a SimpleLisp parser and tokenize 'hello'") {
+  pending_it("Create a SimpleLisp parser and tokenize 'hello'") {
     SimpleLisp *sLisp = new SimpleLisp();
     shouldNotBeNULL(sLisp);
     const char *cString ="hello";
@@ -42,7 +42,7 @@ pending_describe(SimpleLisp) {
     delete sLisp;
   } endIt();
 
-  it("Create a SimpleLisp parser and tokenize '(hello, there)'") {
+  pending_it("Create a SimpleLisp parser and tokenize '(hello, there)'") {
     SimpleLisp *sLisp = new SimpleLisp();
     shouldNotBeNULL(sLisp);
     const char *cString ="(hello, there)";
@@ -78,7 +78,8 @@ pending_describe(SimpleLisp) {
     delete sLisp;
   } endIt();
 
-  it("Create a SimpleLisp parser and tokenize a complex multi-level expression") {
+  pending_it("Create a SimpleLisp parser and tokenize a complex multi-level",
+    "expression") {
     SimpleLisp *sLisp = new SimpleLisp();
     shouldNotBeNULL(sLisp);
     const char *cString ="((hello, there), (this, (is, (a, (test)))))";

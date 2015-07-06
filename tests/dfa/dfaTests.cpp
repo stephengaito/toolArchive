@@ -14,7 +14,7 @@ namespace DeterministicFiniteAutomaton {
 
 /// \brief Test the ability of a given DFA class to compile, on the fly,
 /// a DFA corresponding to a given NFA.
-pending_describe(DFA) {
+describe(DFA) {
 
   specSize(DFA);
 
@@ -334,6 +334,7 @@ pending_describe(DFA) {
     shouldBeZero(aToken->tokens.getNumItems());
     Utf8Chars *stream1 = new Utf8Chars("notSoSimple");
     shouldNotBeNULL(stream1);
+    delete aToken;
     delete pdmTracer;
     pdmTracer =
 //      new PDMTracer("Parse and tokenize 'notSoSimple'", stdout);
@@ -351,20 +352,22 @@ pending_describe(DFA) {
     delete classifier;
   } endIt();
 
-  it("Show that DFA::getNextToken works with simple regular expression with alternate patterns") {
+  it("Show that DFA::getNextToken works with simple regular expression",
+     "with alternate patterns") {
     Classifier *classifier = new Classifier();
     shouldNotBeNULL(classifier);
     NFA *nfa = new NFA(classifier);
     shouldNotBeNULL(nfa);
     NFABuilder *nfaBuilder = new NFABuilder(nfa);
     shouldNotBeNULL(nfaBuilder);
-    nfaBuilder->compileRegularExpressionForTokenId("start", "(simple|notSoSimple)", 1);
+    nfaBuilder->compileRegularExpressionForTokenId("start",
+      "(simple|notSoSimple)", 1);
     shouldBeEqual(nfa->getNumberStates(), 20);
     NFA::State *baseState =
       (NFA::State*)nfa->stateAllocator->blocks.getTop();
     shouldNotBeNULL((void*)baseState);
     for (size_t i = 0; i < 19; i++) {
-      shouldBeEqual(baseState[i].matchType, NFA::Token);
+      shouldNotBeEqual(baseState[i].matchType, NFA::Token);
     }
     shouldBeEqual(baseState[19].matchType, NFA::Token);
     for (size_t i = 1; i < 6; i++) {
@@ -391,6 +394,7 @@ pending_describe(DFA) {
     shouldBeEqual(aToken->tokenId, 1);
     Utf8Chars *stream1 = new Utf8Chars("notSoSimple");
     shouldNotBeNULL(stream1);
+    delete aToken;
     delete pdmTracer;
     pdmTracer =
 //      new PDMTracer("Parse and tokenize 'notSoSimple'", stdout);
@@ -404,6 +408,7 @@ pending_describe(DFA) {
     shouldBeEqual(aToken->textLength, 11);
     shouldBeZero(aToken->tokens.getNumItems());
     shouldBeEqual(aToken->tokenId, 1);
+    delete aToken;
     delete pdmTracer;
     delete stream0;
     delete stream1;
@@ -414,7 +419,8 @@ pending_describe(DFA) {
     delete classifier;
   } endIt();
 
-  it("Show that DFA::getNextToken works with a regular expression with only Classifier::classSet_t transitions") {
+  it("Show that DFA::getNextToken works with a regular expression",
+     "with only Classifier::classSet_t transitions") {
     Classifier *classifier = new Classifier();
     shouldNotBeNULL(classifier);
     classifier->registerClassSet("whitespace",1);
@@ -445,6 +451,7 @@ pending_describe(DFA) {
     shouldBeEqual(aToken->textLength, 22);
     shouldBeZero(aToken->tokens.getNumItems());
     shouldBeEqual(aToken->tokenId, 1);
+    delete aToken;
     delete pdmTracer;
     delete stream0;
     delete pdm;
@@ -492,6 +499,7 @@ pending_describe(DFA) {
     shouldBeEqual(aToken->tokenId, 2);
     Utf8Chars *stream1 = new Utf8Chars("   sillysomeNonWhiteSpace");
     shouldNotBeNULL(stream1);
+    delete aToken;
     delete pdmTracer;
     pdmTracer =
 //      new PDMTracer("Parse and tokenize '   sillysomeNonWhiteSpace'", stdout);
@@ -505,6 +513,7 @@ pending_describe(DFA) {
     shouldBeEqual(aToken->textLength, 3);
     shouldBeZero(aToken->tokens.getNumItems());
     shouldBeEqual(aToken->tokenId, 1);
+    delete aToken;
     delete stream0;
     delete stream1;
     delete pdmTracer;

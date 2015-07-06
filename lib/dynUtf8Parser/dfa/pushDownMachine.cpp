@@ -63,7 +63,7 @@ Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
       // we have a suitable nextDFAState...
       // so we greedily restart with the new nextDFAState
       if (pdmTracer) pdmTracer->nextDFAState();
-      curState.setDState(nextDFAState);
+      curState.setDState(nextDFAState, true);
       goto restart;
     }
 

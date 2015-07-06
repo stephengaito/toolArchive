@@ -47,7 +47,8 @@ describe(NextStateMapping) {
     delete classifier;
   } endIt();
 
-  it("Should be able to register a State using NextStateMapping::registerDState") {
+  it("Should be able to register a State using",
+     "NextStateMapping::registerDState") {
     Classifier *classifier = new Classifier();
     shouldNotBeNULL(classifier);
     NFA *nfa = new NFA(classifier);
@@ -88,7 +89,8 @@ describe(NextStateMapping) {
     delete classifier;
   } endIt();
 
-  it("Should be able to register a State/character using NextStateMapping::getNextStateByCharacter") {
+  it("Should be able to register a State/character using",
+     "NextStateMapping::getNextStateByCharacter") {
     Classifier *classifier = new Classifier();
     shouldNotBeNULL(classifier);
     NFA *nfa = new NFA(classifier);
@@ -133,7 +135,8 @@ describe(NextStateMapping) {
     delete classifier;
   } endIt();
 
-  it("Should be able to register a State/class using NextStateMapping::getNextStateByClass") {
+  it("Should be able to register a State/class using",
+     "NextStateMapping::getNextStateByClass") {
     Classifier *classifier = new Classifier();
     shouldNotBeNULL(classifier);
     NFA *nfa = new NFA(classifier);

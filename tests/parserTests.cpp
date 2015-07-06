@@ -18,11 +18,11 @@ enum ParserTestTokens {
 };
 
 /// \brief We test the Parser class.
-pending_describe(Parser) {
+describe(Parser) {
 
   specSize(Parser);
 
-  it("Create a Parser and tokenize 'if A then B else C'") {
+  pending_it("Create a Parser and tokenize 'if A then B else C'") {
     Parser *parser = new Parser();
     shouldNotBeNULL(parser);
     shouldBeNULL(parser->dfa);
@@ -92,10 +92,12 @@ pending_describe(Parser) {
     shouldBeEqual(aToken->tokens.itemArray[12]->textStart[0], (' '));
     shouldBeEqual(aToken->tokens.itemArray[12]->tokens.numItems, (0));
     delete aToken;
+    delete pdmTracer;
     delete parser;
   } endIt();
 
-  pending_it("Create a Parser and tokenize 'if A then B else C' ignoring whiteSpace") {
+  pending_it("Create a Parser and tokenize 'if A then B else C'",
+    "ignoring whiteSpace") {
     Parser *parser = new Parser();
     shouldNotBeNULL(parser);
     shouldBeNULL(parser->dfa);
