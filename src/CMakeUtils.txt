@@ -109,6 +109,7 @@ function(defineTestsFor libraryName includeDirectories testLibraries)
   #
   file(GLOB_RECURSE sourceFiles "*.h" "*.c*" )
   list(APPEND testSources ${sourceFiles})
+  list(SORT testSources)
   #
   # Add the test executable
   #
