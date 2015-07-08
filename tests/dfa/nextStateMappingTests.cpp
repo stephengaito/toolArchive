@@ -13,7 +13,7 @@
 namespace DeterministicFiniteAutomaton {
 
 /// \brief Test the NextStateMapping class.
-describe(NextStateMapping) {
+describe(DFA_NextStateMapping) {
 
   specSize(NextStateMapping);
 
@@ -180,6 +180,6 @@ describe(NextStateMapping) {
     delete classifier;
   } endIt();
 
-} endDescribe(NextStateMapping);
+} endDescribe(DFA_NextStateMapping);
 
 }; // namespace DeterministicFiniteAutomaton

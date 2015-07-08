@@ -14,7 +14,7 @@
 using namespace DeterministicFiniteAutomaton;
 
 /// \brief We test the AutomataState class.
-describe(PushDownMachine) {
+describe(DFA_PushDownMachine) {
 
   specSize(PushDownMachine);
 
@@ -46,4 +46,4 @@ describe(PushDownMachine) {
     delete classifier;
   } endIt();
 
-} endDescribe(PushDownMachine);
+} endDescribe(DFA_PushDownMachine);

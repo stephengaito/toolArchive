@@ -71,6 +71,7 @@ namespace DeterministicFiniteAutomaton {
         ASSERT(aStream);
         stream   = aStream->clone();
         token    = new Token();
+        //printf("token: %p new token (initialize)\n", token);
         automataStateType = ASRestart;
         ASSERT(invariant());
       }
@@ -97,31 +98,29 @@ namespace DeterministicFiniteAutomaton {
 
       /// \brief Clone the stream. If subStream is true then the cloned
       /// stream will only read from the parent stream's current position.
-      ///
-      /// Clear the old state if clearOldState is true.
-      void cloneSubStream(bool subStream, bool clearOldState = false) {
-        Utf8Chars *oldStream = stream;
+      void cloneSubStream(bool subStream) {
         if (stream) {
           stream   = stream->clone(subStream);
           ASSERT(stream->invariant());
         }
-        if (clearOldState && oldStream) delete oldStream;
         ASSERT(invariant());
       }
 
       /// \brief Clone the token. Simply create a new token if
       /// shouldCLoneToken is false.
-      ///
-      /// Clear the old state if clearOldState is true.
-      void cloneToken(bool shouldCloneToken, bool clearOldState = false) {
-        Token *oldToken = token;
+      void cloneToken(bool shouldCloneToken) {
         if (shouldCloneToken) {
-          if (token) token = token->clone();
-          else token = new Token();
+          if (token) {
+            token = token->clone();
+            //printf("token: %p new token (cloneToken-A)\n", token);
+          } else {
+            token = new Token();
+            //printf("token: %p new token (cloneToken-B)\n", token);
+          }
         } else {
           token = new Token();
+          //printf("token: %p new token (cloneToken-C)\n", token);
         }
-        if (clearOldState && oldToken) delete oldToken;
         ASSERT(invariant());
       }
 
@@ -130,11 +129,8 @@ namespace DeterministicFiniteAutomaton {
       ///
       /// The current AutomataState's stream position will kept if
       /// keepStreamPosition is true.
-      ///
-      /// Clear the old state if clearOldState is true.
       void copyFrom(const AutomataState &other,
-                    bool keepStreamPosition = false,
-                    bool clearOldState = true) {
+                    bool keepStreamPosition = false) {
         ASSERT(invariant());
         ASSERT(other.invariant());
 
@@ -150,23 +146,27 @@ namespace DeterministicFiniteAutomaton {
         if (keepStreamPosition && other.stream) {
           other.stream->updatePositionFrom(stream);
         }
-        if (clearOldState && stream) delete stream;
+        if (stream) delete stream;
         stream   = other.stream;
 
-        if (clearOldState && iterator) delete iterator;
+        if (iterator) delete iterator;
         iterator = other.iterator;
 
-        if (clearOldState && dState) allocator->unallocateState(dState);
+        if (dState) allocator->unallocateState(dState);
         dState   = other.dState;
 
-        if (clearOldState && token) delete token;
-         token = other.token;
+        if (token) {
+          //printf("token: %p deleting token (copyFrom)\n", token);
+          delete token;
+        }
+        token = other.token;
 
         ASSERT(invariant());
       }
 
       /// \brief Clear the AutomataState's state.
       void clear(void) {
+        //printf("CLEARING AUTOMATA STATE\n");
         ASSERT(invariant());
         if (iterator) delete iterator;
         iterator  = NULL;
@@ -174,7 +174,10 @@ namespace DeterministicFiniteAutomaton {
         stream    = NULL;
         if (dState && allocator) allocator->unallocateState(dState);
         dState    = NULL;
-        if (token)   delete token;
+        if (token) {
+          //printf("token: %p deleting token (clear)\n", token);
+          delete token;
+        }
         token     = NULL;
         allocator = NULL; // we do not own the allocator
         dfa       = NULL; // we do not own the DFA
@@ -286,6 +289,9 @@ namespace DeterministicFiniteAutomaton {
         ASSERT(token);
         ASSERT(stream);
         token->setText(stream->getStart(), stream->getNumberOfBytesRead());
+        char *text = stream->getCopyOfTextRead();
+        //printf("token: %p setTokenText [%s]\n", token, text);
+        free(text);
         ASSERT(invariant());
       }
 
@@ -305,6 +311,7 @@ namespace DeterministicFiniteAutomaton {
         ASSERT(invariant());
         Token *oldToken = token;
         token = new Token();
+        //printf("token: %p new token (releaseToken)\n", token);
         ASSERT(invariant());
         return oldToken;
       }

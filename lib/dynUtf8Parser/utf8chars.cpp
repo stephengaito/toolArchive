@@ -65,7 +65,7 @@ Utf8Chars::Utf8Chars(const char* someUtf8Chars,
 }
 
 Utf8Chars::~Utf8Chars(void) {
-  ASSERT(invariant());
+  ASSERT_INSIDE_DELETE(invariant());
   if (utf8Chars && ownsString) free((void*)utf8Chars);
   origUtf8Chars = NULL;
   utf8Chars     = NULL;

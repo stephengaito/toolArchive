@@ -13,7 +13,7 @@
 namespace DeterministicFiniteAutomaton {
 
 /// \brief Test the NFAStateIterator class.
-describe(NFAStateIterator) {
+describe(DFA_NFAStateIterator) {
 
   specSize(NFAStateIterator);
 
@@ -231,6 +231,6 @@ describe(NFAStateIterator) {
     delete classifier;
   } endIt();
 
-} endDescribe(NFAStateIterator);
+} endDescribe(DFA_NFAStateIterator);
 
 }; // namespace DeterministicFiniteAutomaton

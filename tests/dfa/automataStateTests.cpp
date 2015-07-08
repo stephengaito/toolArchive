@@ -14,7 +14,7 @@
 using namespace DeterministicFiniteAutomaton;
 
 /// \brief We test the AutomataState class.
-describe(AutomataState) {
+describe(DFA_AutomataState) {
 
   specSize(AutomataState);
 
@@ -86,13 +86,14 @@ describe(AutomataState) {
     shouldBeNULL(newAutomataState.iterator);
     shouldBeNULL(newAutomataState.dState);
     shouldBeNULL(newAutomataState.allocator);
-    newAutomataState.copyFrom(automataState, true, true);
+    newAutomataState.copyFrom(automataState, true);
     shouldNotBeNULL(newAutomataState.token);
     shouldBeEqual(newAutomataState.stream,    automataState.stream);
     shouldBeEqual(newAutomataState.iterator,  automataState.iterator);
     shouldBeEqual((void*)newAutomataState.dState,    (void*)automataState.dState);
     shouldBeEqual(newAutomataState.allocator, allocator);
-    newAutomataState.copyFrom(automataState, false, false);
+    automataState.initialize(dfa, someChars, startStateId);
+    newAutomataState.copyFrom(automataState, false);
     shouldBeEqual(newAutomataState.token,     automataState.token);
     shouldBeEqual(newAutomataState.stream,    automataState.stream);
     shouldBeEqual(newAutomataState.iterator,  automataState.iterator);
@@ -148,4 +149,4 @@ describe(AutomataState) {
     delete classifier;
   } endIt();
 
-} endDescribe(AutomataState);
+} endDescribe(DFA_AutomataState);

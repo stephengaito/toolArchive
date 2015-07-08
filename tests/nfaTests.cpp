@@ -326,8 +326,10 @@ describe(NFA) {
     NFABuilder *nfaBuilder = new NFABuilder(nfa);
     try {
       nfaBuilder->compileRegularExpressionForTokenId("start", "\\", 1);
-      shouldBeTrue(false);
-    } catch (ParserException& e) { }
+      shouldNotReachThisPoint("should have thrown ParserExeception");
+    } catch (ParserException& e) {
+      shouldReachThisPoint();
+    }
     delete nfaBuilder;
     delete nfa;
     delete classifier;
@@ -342,8 +344,10 @@ describe(NFA) {
     NFABuilder *nfaBuilder = new NFABuilder(nfa);
     try {
       nfaBuilder->compileRegularExpressionForTokenId("start", "*", 1);
-      shouldBeTrue(false);
-    } catch (ParserException& e) { }
+      shouldNotReachThisPoint("should have thrown ParserException");
+    } catch (ParserException& e) {
+      shouldReachThisPoint();
+    }
     delete nfaBuilder;
     delete nfa;
     delete classifier;
@@ -362,7 +366,7 @@ describe(NFA) {
     shouldNotBeNULL(nfaBuilder);
     try {
       nfaBuilder->compileRegularExpressionForTokenId("start", "s\\", 1);
-      shouldBeTrue(true);
+      shouldReachThisPoint();
       NFA::State *anNFAState = nfa->getStartState("start");
       shouldBeEqual(nfa->getNumberStates(), 3);
       shouldBeEqual(anNFAState, nfa->startState.getItem(0, NULL));
@@ -388,7 +392,7 @@ describe(NFA) {
       shouldBeNULL(nextState->out);
       shouldBeNULL(nextState->out1);
     } catch (ParserException& e) {
-      shouldBeTrue(false);
+      shouldNotReachThisPoint("should NOT have thrown ParserException");
     }
     delete nfaBuilder;
     delete nfa;

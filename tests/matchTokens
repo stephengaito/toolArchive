@@ -1,0 +1,49 @@
+#!/usr/bin/env ruby
+
+# This ruby script reads through a sorted list of tokens deleting all 
+# that have matching new and delete calls.
+#
+# It expects to read in a file where each line has the format:
+#
+#  token: %p <some text>
+#
+# Where at the very least the <some text> should contain the words:
+#
+#  'delete Token(void)'
+#
+# whenever the token is actually deleted.
+#
+# The current sources have (commented out) lines with this format in 
+# most places in the token life-cycle.
+#
+# To obtain the required raw data for this script, type:
+#
+#   ./tests/dynUtf8ParserTests > testRun
+#   grep "token:" testRun | sort > tokensSorted
+#   ../dynamicUTF8Parser/tests/matchTokens
+#
+# This will list all tokens which have NOT been deleted along with a 
+# list of the token life-cycle associated with that token.
+
+tokens = Hash.new;
+
+mFile = File.open("build/tokensSorted", 'r');
+mFile.each_line() do | aLine |
+  fields = aLine.split();
+  fields.shift();
+  pointer = fields.shift();
+  tag     = fields.join(' ');
+  if !tokens.has_key?(pointer) then
+    tokens[pointer] = Array.new;
+  end
+  tokens[pointer].push(tag);
+end
+mFile.close;
+
+tokens.each_key.sort.each do | aKey |
+  next if tokens[aKey].include?("delete Token(void)");
+  puts aKey;
+  tokens[aKey].each.sort.each do | aValue |
+    puts "  #{aValue}";
+  end
+end

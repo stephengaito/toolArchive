@@ -85,13 +85,17 @@ Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
       // so pop the stack until we reach a continue state
       popUntil(AutomataState::ASContinue, pdmTracer);
 
-      if (stack.getNumItems()) {
+      if (0 < stack.getNumItems()) {
         // we have reached a continue state
         // so pop the stack keeping the current stream and restart
         popKeepStreamPosition(pdmTracer); // use the continue state
         if (pdmTracer) pdmTracer->reportDFAState();
-        if (Token::ignoreToken(tokenNFAState->matchData.t)) goto restart;
+        if (Token::ignoreToken(tokenNFAState->matchData.t)) {
+          delete token;
+          goto restart;
+        }
         curState.addChildToken(token);
+        delete token; // addChildToken takes a clone
         goto restart;
       }
 
@@ -110,6 +114,10 @@ Token *PushDownMachine::runFromUsing(NFA::StartStateId startStateId,
       // so return the NULL token we have FAILED.
       if (pdmTracer) pdmTracer->failedWithStream();
       curState.clear();
+      if (token) {
+        //printf("token: %p deleting token (runFromUsing)\n", token);
+        delete token;
+      }
       return NULL;
     }
 

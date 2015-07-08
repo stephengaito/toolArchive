@@ -22,7 +22,7 @@ describe(Parser) {
 
   specSize(Parser);
 
-  pending_it("Create a Parser and tokenize 'if A then B else C'") {
+  it("Create a Parser and tokenize 'if A then B else C'") {
     Parser *parser = new Parser();
     shouldNotBeNULL(parser);
     shouldBeNULL(parser->dfa);
@@ -92,11 +92,12 @@ describe(Parser) {
     shouldBeEqual(aToken->tokens.itemArray[12]->textStart[0], (' '));
     shouldBeEqual(aToken->tokens.itemArray[12]->tokens.numItems, (0));
     delete aToken;
+    delete someChars;
     delete pdmTracer;
     delete parser;
   } endIt();
 
-  pending_it("Create a Parser and tokenize 'if A then B else C'",
+  it("Create a Parser and tokenize 'if A then B else C'",
     "ignoring whiteSpace") {
     Parser *parser = new Parser();
     shouldNotBeNULL(parser);
@@ -147,6 +148,8 @@ describe(Parser) {
     shouldBeEqual(aToken->tokens.itemArray[5]->textStart[0], ('C'));
     shouldBeEqual(aToken->tokens.itemArray[5]->tokens.numItems, (0));
     delete aToken;
+    delete someChars;
+    delete pdmTracer;
     delete parser;
   } endIt();
 

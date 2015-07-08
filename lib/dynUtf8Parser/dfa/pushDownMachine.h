@@ -68,7 +68,7 @@ namespace DeterministicFiniteAutomaton {
         // keepStreamState = true
         // clearOldState   = true
         if (pdmTracer) pdmTracer->pop("keep stream position");
-        curState.copyFrom(stack.popItem(), true, true);
+        curState.copyFrom(stack.popItem(), true);
       }
 
       /// \brief Pop the current automata state off the top of the
@@ -78,7 +78,7 @@ namespace DeterministicFiniteAutomaton {
         // keepStreamState = false
         // clearOldState   = true
         if (pdmTracer) pdmTracer->pop("pop stream position");
-        curState.copyFrom(stack.popItem(), false, true);
+        curState.copyFrom(stack.popItem(), false);
       }
 
       /// \brief Pop the current automata state off the top of the
@@ -93,7 +93,7 @@ namespace DeterministicFiniteAutomaton {
               stack.getTop().getStateType() != requiredStateType) {
           if (pdmTracer) pdmTracer->pop("IGNORE looking for ",
             AutomataState::getStateTypeMessage(requiredStateType));
-          stack.popItem();
+          stack.popItem().clear();
         }
       }
 

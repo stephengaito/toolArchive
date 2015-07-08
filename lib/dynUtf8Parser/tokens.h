@@ -48,6 +48,7 @@ class Token {
       textStart  = someText;
       textLength = strlen(someText);
       ASSERT(invariant());
+      //printf("token: %p new Token(TokenId, const char*)\n", this);
     }
 
     /// \brief Construct a childless token with no token it or text.
@@ -56,11 +57,13 @@ class Token {
       textStart  = NULL;
       textLength = 0;
       ASSERT(invariant());
+      //printf("token: %p new Token(void*)\n", this);
     }
 
     /// \brief Destroy the token and all of its subtrees of child tokens.
     ~Token(void) {
-      ASSERT(invariant());
+      //printf("token: %p delete Token(void)\n", this);
+      ASSERT_INSIDE_DELETE(invariant());
       tokenId    = 0;
       textStart  = NULL;
       textLength = 0;
@@ -91,7 +94,7 @@ class Token {
     /// child token's subtrees of subchild tokens).
     void addChildToken(Token *childToken) {
       ASSERT(childToken->invariant());
-      tokens.pushItem(childToken);
+      tokens.pushItem(childToken->clone());
       ASSERT(invariant());
     }
 
@@ -115,8 +118,8 @@ class Token {
 
 #define ASSERT_EQUALS(tokenId, someChars) assertEquals(tokenId, someChars, __FILE__, __LINE__)
 
-    /// \brief A simple helper method used by the Bandit based test to
-    /// assert that a given token is has the TokenId and text provided.
+    /// \brief A simple helper method used by the tests to assert that
+    /// a given token is has the TokenId and text provided.
     bool assertEquals(TokenId aTokenId,
                       const char *someChars,
                       const char *filename,
@@ -170,29 +173,57 @@ class Token {
 
     /// \brief The TokenArray class holds the collection of child tokens.
     class TokenArray : public VarArray<Token*> {
-      public:
+    public:
 
-       /// \brief An invariant which should ALWAYS be true for any
-       /// instance of a TokenArray class.
-       ///
-       /// Throws an AssertionFailure with a brief description of any
-       /// inconsistencies discovered.
-       bool invariant(void) const {
-         if (!VarArray<Token*>::invariant())
-           throw AssertionFailure("TokenArray VarArray invariant failed");
+      /// \brief An invariant which should ALWAYS be true for any
+      /// instance of a TokenArray class.
+      ///
+      /// Throws an AssertionFailure with a brief description of any
+      /// inconsistencies discovered.
+      bool invariant(void) const {
+        if (!VarArray<Token*>::invariant())
+          throw AssertionFailure("TokenArray VarArray invariant failed");
 
-         for (size_t i = 0 ; i < numItems; i++) {
-           if (!itemArray[i]->invariant())
-             throw AssertionFailure("Token failed invariant");
-         }
-         return true;
-       }
+        for (size_t i = 0 ; i < numItems; i++) {
+          if (!itemArray[i]->invariant())
+            throw AssertionFailure("Token failed invariant");
+        }
+        return true;
+      }
+
+      /// \brief Delete all child tokens.
+      ~TokenArray(void) {
+        ASSERT_INSIDE_DELETE(invariant());
+        for (size_t i = 0; i < numItems; i++) {
+          delete itemArray[i];
+        }
+        VarArray::~VarArray();
+      }
+
+      /// \brief Make a *deep* copy of the token array ensuring any old
+      /// tokens are properly deleted.
+      void operator=(const TokenArray &other) {
+        ASSERT(other.invariant());
+        // start by correctly getting rid of any existing tokens
+        for (size_t i = 0; i < numItems; i++) {
+          delete itemArray[i];
+        }
+        // now there are no more items....
+        numItems  = 0;
+        for (size_t i = 0; i < other.numItems; i++) {
+          // MAKE SURE WE HAVE A DEEP COPY BY CLONING
+          pushItem(other.itemArray[i]->clone());
+        }
+        ASSERT(invariant());
+      }
+
+      /// \brief Print the child tokens on the FILE* provided.
+      void printOn(FILE *outFile, size_t indent);
+
     };
 
     /// \brief The number of child tokens which make up this token.
     TokenArray tokens;
-
-    friend class VarArray<Token>;
 };
 
 #endif

@@ -14,7 +14,7 @@ namespace DeterministicFiniteAutomaton {
 
 
 /// \brief Test the NFAStateMapping class.
-describe(NFAStateMapping) {
+describe(DFA_NFAStateMapping) {
 
   specSize(NFAStateMapping);
 
@@ -195,9 +195,9 @@ describe(NFAStateMapping) {
       aStateNum = mapping->getNFAStateNumber(baseState+19);
       shouldBeEqual(aStateNum.stateByte, 2);
       shouldBeEqual((int)aStateNum.stateBit,  16);
-      shouldBeTrue(false);
+      shouldNotReachThisPoint("should have thrown ParserException");
     } catch (ParserException& e) {
-      shouldBeTrue(true);
+      shouldReachThisPoint();
     }
     // stateMapper is owned by allocator
     delete allocator;
@@ -206,6 +206,6 @@ describe(NFAStateMapping) {
     delete classifier;
   } endIt();
 
-} endDescribe(NFAStateMapping);
+} endDescribe(DFA_NFAStateMapping);
 
 }; // namespace DeterministicFiniteAutomaton

@@ -27,7 +27,7 @@ describe(Tokens) {
     delete token;
   } endIt();
 
-  pending_it("Should be able to setId/setText/addToken and copyFrom") {
+  it("Should be able to setId/setText/addToken and copyFrom") {
     Token *token = new Token();
     shouldNotBeNULL(token);
     shouldBeZero(token->tokenId);
@@ -85,9 +85,13 @@ describe(Tokens) {
     shouldBeEqual(tokenCopy.tokens.numItems, token->tokens.numItems);
     shouldBeEqual(tokenCopy.tokens.arraySize, token->tokens.arraySize);
     shouldNotBeEqual(tokenCopy.tokens.itemArray, token->tokens.itemArray);
+    shouldNotBeEqual((void*)tokenCopy.tokens.itemArray[0],
+      (void*)token->tokens.itemArray[0]);
     shouldBeEqual(tokenCopy.tokens.itemArray[0]->tokenId, 2);
-    shouldBeEqual((void*)(tokenCopy.tokens.itemArray[0]->textStart), (void*)childText);
-    shouldBeEqual(tokenCopy.tokens.itemArray[0]->textLength, strlen(childText));
+    shouldBeEqual((void*)(tokenCopy.tokens.itemArray[0]->textStart),
+      (void*)childText);
+    shouldBeEqual(tokenCopy.tokens.itemArray[0]->textLength,
+      strlen(childText));
     shouldBeZero(tokenCopy.tokens.itemArray[0]->tokens.numItems);
     shouldBeZero(tokenCopy.tokens.itemArray[0]->tokens.arraySize);
     shouldBeNULL(tokenCopy.tokens.itemArray[0]->tokens.itemArray);
@@ -102,6 +106,8 @@ describe(Tokens) {
     shouldBeEqual(tokenClone->tokens.numItems, token->tokens.numItems);
     shouldBeEqual(tokenClone->tokens.arraySize, token->tokens.arraySize);
     shouldNotBeEqual(tokenClone->tokens.itemArray, token->tokens.itemArray);
+    shouldNotBeEqual((void*)tokenClone->tokens.itemArray[0],
+      (void*)token->tokens.itemArray[0]);
     shouldBeEqual(tokenClone->tokens.itemArray[0]->tokenId, 2);
     shouldBeEqual((void*)(tokenClone->tokens.itemArray[0]->textStart), (void*)childText);
     shouldBeEqual(tokenClone->tokens.itemArray[0]->textLength, strlen(childText));
@@ -115,7 +121,7 @@ describe(Tokens) {
     delete token;
   } endIt();
 
-  pending_it("should be able to add deep collections of child tokens") {
+  it("should be able to add deep collections of child tokens") {
     Token *token0 = new Token(1, "0Token");
     shouldNotBeNULL(token0);
     Token *token1 = new Token(2, "1Token");
@@ -139,32 +145,32 @@ describe(Tokens) {
     shouldBeEqual(token0->tokenId, 1);
     shouldBeEqual(token0->tokens.numItems, 1);
     //
-    Token *childToken = token0->tokens.itemArray[0];
+    Token *childToken = (token0->tokens.itemArray[0]);
     shouldBeEqual(childToken->tokenId, token1->tokenId);
     shouldBeEqual(childToken->textStart, token1->textStart);
     shouldBeEqual(childToken->tokens.numItems, 1);
     //
-    childToken = childToken->tokens.itemArray[0];
+    childToken = (childToken->tokens.itemArray[0]);
     shouldBeEqual(childToken->tokenId, token2->tokenId);
     shouldBeEqual(childToken->textStart, token2->textStart);
     shouldBeEqual(childToken->tokens.numItems, 1);
     //
-    childToken = childToken->tokens.itemArray[0];
+    childToken = (childToken->tokens.itemArray[0]);
     shouldBeEqual(childToken->tokenId, token3->tokenId);
     shouldBeEqual(childToken->textStart, token3->textStart);
     shouldBeEqual(childToken->tokens.numItems, 1);
     //
-    childToken = childToken->tokens.itemArray[0];
+    childToken = (childToken->tokens.itemArray[0]);
     shouldBeEqual(childToken->tokenId, token4->tokenId);
     shouldBeEqual(childToken->textStart, token4->textStart);
     shouldBeEqual(childToken->tokens.numItems, 1);
     //
-    childToken = childToken->tokens.itemArray[0];
+    childToken = (childToken->tokens.itemArray[0]);
     shouldBeEqual(childToken->tokenId, token5->tokenId);
     shouldBeEqual(childToken->textStart, token5->textStart);
     shouldBeEqual(childToken->tokens.numItems, 1);
     //
-    childToken = childToken->tokens.itemArray[0];
+    childToken = (childToken->tokens.itemArray[0]);
     shouldBeEqual(childToken->tokenId, token6->tokenId);
     shouldBeEqual(childToken->textStart, token6->textStart);
     shouldBeZero(childToken->tokens.numItems);

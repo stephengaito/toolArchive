@@ -13,7 +13,7 @@
 namespace DeterministicFiniteAutomaton {
 
 /// \brief Test the StateAllocator class.
-describe(StateAllocator) {
+describe(DFA_StateAllocator) {
 
   specSize(StateAllocator);
 
@@ -155,6 +155,6 @@ describe(StateAllocator) {
     delete classifier;
   } endIt();
 
-} endDescribe(StateAllocator);
+} endDescribe(DFA_StateAllocator);
 
 }; // namespace DeterministicFiniteAutomaton

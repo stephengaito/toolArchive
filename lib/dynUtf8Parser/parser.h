@@ -48,6 +48,7 @@ class Parser {
       dfa          = NULL;
     }
 
+    /// \brief Delete the parser.
     ~Parser(void) {
       if (dfa) delete dfa;
       dfa = NULL;
