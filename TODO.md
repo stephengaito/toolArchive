@@ -10,3 +10,6 @@ up the parser.
 
 Change TokenArray back to VarArray<Token> from VarArray<Token*> to help 
 improve the locality and hence cache usage.
+
+Review the creation/deletion of Tokens to help reduce the churn on the 
+heap and hence improve performance.
