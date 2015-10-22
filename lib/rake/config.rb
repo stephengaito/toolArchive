@@ -51,7 +51,7 @@ class ConfStack
     Rake::Application.mesg "Could not find the key [#{top[1].to_s}]";
     Rake::Application.mesg "in the configuration path [#{confPath}]\n\n";
 
-    Rake::Application.mesg errorObject.backtrace.join("\n");
+    Rake::Application.mesg errorObject.backtrace.join("\n") unless errorObject.backtrace.nil?;
 
     # Now construct a more user friendly discussion of the problem for 
     # novice users.
@@ -317,6 +317,7 @@ class Conf
 
   def self.method_missing(meth, *args)
     Thread.current[:confStack] = ConfStack.new(self, :Conf, args);
+    Thread.current[:confStack].calling(self, meth, :method_missing, args);
     meth_s = meth.to_s
     if @@data.respond_to?(meth) ||
       @@data.data.has_key?(meth) ||
@@ -324,8 +325,8 @@ class Conf
       meth_s[-1..-1] == '='then
       @@data.method_missing(meth, *args);
     else 
-      self.reportNoMethodError();
-#raise ConfigurationError, "No configuation value specified for Conf[#{meth.to_s}]";
+      Thread.current[:confStack].reportNoMethodError(
+        NoMethodError.new("no such key #{meth} in construct"))
     end
   end
 
