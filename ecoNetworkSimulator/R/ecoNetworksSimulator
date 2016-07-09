@@ -1,0 +1,3 @@
+
+# define the simulate function
+simulate <- function(x) .Call("C_simulate", x)
