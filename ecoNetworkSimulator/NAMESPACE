@@ -1,2 +1,2 @@
-useDynLib(ecoNetworksSimulator, .registratin = TRUE, .fixes = "C_")
-export(simulate, ecoNetworksSimulator)
+useDynLib(ecoNetworksSimulator, C_simulate)
+export(simulate)
