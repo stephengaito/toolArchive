@@ -36,3 +36,4 @@
 *.Rcheck
 *.rds
 .Rproj.user
+*.Rhistory

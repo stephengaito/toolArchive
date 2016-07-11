@@ -15,6 +15,7 @@ set of differential equations in a LaTeX format.
 
 ## Tasks
 
+* add model
 * add species
 * add species interactions
 

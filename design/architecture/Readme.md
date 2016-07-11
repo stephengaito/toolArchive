@@ -51,6 +51,8 @@ Extensions](https://cran.r-project.org/doc/manuals/r-release/R-exts.html)
 [An Introduction to the .C Interface to 
 R](http://www.biostat.jhsph.edu/~rpeng/docs/interface.pdf)
 
+[Advanced R](http://adv-r.had.co.nz/)
+
 [R packages](http://r-pkgs.had.co.nz/)
 
 We will use [devtools](https://github.com/hadley/devtools) 
