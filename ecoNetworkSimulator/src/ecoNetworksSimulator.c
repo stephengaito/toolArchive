@@ -4,17 +4,16 @@
 #include <Rinternals.h>
 #include <R_ext/Rdynload.h>
 
-SEXP simulate(SEXP x) {
+SEXP C_simulateModel(SEXP x) {
   Rprintf("Hello, world!\n");
   return x;
 }
 
 static R_CallMethodDef callMethods[] = {
-  { "C_simulate", (DL_FUNC) &simulate,  1},
+  { "C_simulateModel", (DL_FUNC) &C_simulateModel,  1},
   { NULL, NULL, 0}
 };
 
 void R_init_ecoNetworksSimulator(DllInfo *info) {
-  printf("hello from R_init_ecoNetworksSimulator\n");
   R_registerRoutines(info, NULL, callMethods, NULL, NULL);
 };

@@ -35,3 +35,4 @@
 # R-language
 *.Rcheck
 *.rds
+.Rproj.user

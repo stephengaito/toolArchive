@@ -6,10 +6,13 @@ Authors@R: c(person("Stephen", "Gaito", role = c("aut", "cre"),
 		     email = "stephen@perceptisys.co.uk"))
 Author: Stephen Gaito [aut, cre]
 Maintainer: Stephen Gaito <stephen@perceptisys.co.uk>
-Depends: R (>= 3.3.1)
+Depends:
+    R (>= 3.3.1)
 Suggests:
-Description: Simulate relatively realistic spatially extended trophic 
-  networks.
-License: MIT
+    testthat
+Description: Simulate relatively realistic spatially extended trophic
+    networks.
+License: MIT + file LICENSE
 URL: https://github.com/stephengaito/ecoNetworksSimulator
 BugReports: https://github.com/stephengaito/ecoNetworksSimulator/issues
+RoxygenNote: 5.0.1
