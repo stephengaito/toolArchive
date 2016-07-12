@@ -25,6 +25,12 @@ equation](https://en.wikipedia.org/wiki/Navier%E2%80%93Stokes_equations).
 
 ## Questions and Risks
 
+It is important to realize that the "spurious" solutions to a non-linear 
+diffusion equation with sources put rather strict limits on the spatial 
+and time integration steps.  Critically the step size must encompase the 
+information propogation ("light") cone. (See "Numerical Recipes in C" 
+section 17.2)
+
 ## Resources
 
 "Numerical Recipes in C" section 17.2 "Diffusive Initial value problems"

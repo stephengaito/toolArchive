@@ -37,3 +37,4 @@
 *.rds
 .Rproj.user
 *.Rhistory
+*.tar.gz

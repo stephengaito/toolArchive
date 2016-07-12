@@ -59,3 +59,5 @@ We will use [devtools](https://github.com/hadley/devtools)
 [roxygen2](https://cran.r-project.org/web/packages/roxygen2/vignettes/roxygen2.html) 
 and [testthat](https://github.com/hadley/testthat)
 
+[MathJaX](https://www.mathjax.org/) [TeX and LaTeX 
+support](http://docs.mathjax.org/en/latest/tex.html#tex-support)

@@ -1,0 +1,75 @@
+---
+title: "Trophic Logistic Models"
+author: "Stephen Gaito"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Trophic Logistic Model}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+We base the time integration on the Logistic Equation:
+
+\[
+\begin{align}
+\frac{dR_1}{dt} & = & rR_1(t) \left(1 − \frac{R_1(t)}{k_1} \right) - \frac{aC(t)R_1(t)}{1 + a(R_1(t) + R_2(t))} \\
+\frac{dR_2}{dt} & = & rR_2(t) \left(1 − \frac{R_2(t - \tau)}{k_2} \right) - \frac{aC(t)R_2(t)}{1 + a(R_1(t) + R_2(t))} \\
+\frac{dC}{dt} & = & C(t) \left(\frac{ea(R_1(t) + R_2(t))}{1 + a(R_1(t) + R_2(t))} - m \right)
+\end{align}
+\]
+
+
+To build a given trophic model we begin by adding the different species:
+
+r2c1a <- newModel(
+  species("resource1",
+    growthRate=norm(0.2, 0.01),
+    carryingCapacity=norm(25, 5)
+  ),
+  species("resource2",
+    growthRate=norm(0.2,0.1),
+    carryingCapacity=norm(25, 5)
+  ),
+  species("consumer",
+    mortality=norm(0.2, 0.01)
+  ),
+  interaction("consumer", "resource1",
+    atackRate=norm(0.1, 0.01),
+    conversionRate=norm(0.35, 0.01)
+  ),
+  interaction("consumer", "resource2",
+    atackRate=norm(0.1, 0.01),
+    conversionRate=norm(0.35, 0.01)
+  )
+)
+
+r2c1b <- Model$new()
+
+r2c1b$addSpecies("resource1")
+  $growthRate(norm(0.2, 0.01))
+  $carryingCapacity(norm(25, 5))
+
+r2c1b.addSpecies("resource2",
+  growthRate=norm(0.2,0.1),
+  carryingCapacity=norm(25, 5)
+)
+r2c1b.addSpecies("consumer",
+  mortality=norm(0.2, 0.01)
+)
+r2c1b.addInteraction("consumer", "resource1",
+  atackRate=norm(0.1, 0.01),
+  conversionRate=norm(0.35, 0.01)
+)
+r2c1b.addInteraction("consumer", "resource2",
+  atackRate=norm(0.1, 0.01),
+  conversionRate=norm(0.35, 0.01)
+)
+
+r2c1b.createLaTeX()
+
+r2c1b.createSpeciesTable()
+
+r2c1b.createInteractionTabel()
+
+
