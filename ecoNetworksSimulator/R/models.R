@@ -44,7 +44,8 @@ addSpecies <- function(speciesTable,
         data.frame(species=name,
                    growthRate=growthRate,
                    carryingCapacity=carryingCapacity,
-                   mortality=mortality))
+                   mortality=mortality),
+        stringsAsFactors = FALSE)
 }
 
 #' Create table of interactions
@@ -96,7 +97,22 @@ addInteraction <- function(interactionsTable,
         data.frame(preditor=preditor,
                    prey=prey,
                    attackRate=attackRate,
-                   conversionRate=conversionRate))
+                   conversionRate=conversionRate),
+        stringsAsFactors = FALSE)
+}
+
+#' Check that a speciesTable and a given interactionsTable are related.
+#' 
+#' @param speciesTable a species table
+#' @param interactionsTable a table of species interactions
+#' @return true if all of the species in the interaction table are defined in
+#'   the species table.
+#' @export
+areRelated <- function(speciesTable, interactionsTable) {
+  isSpeciesTable(speciesTable) &&
+    isInteractionsTable(interactionsTable) &&
+    all(levels(interactionsTable$preditor) %in% levels(speciesTable$species)) &&
+    all(levels(interactionsTable$prey) %in% levels(speciesTable$species))
 }
 
 #' Create a model
@@ -113,6 +129,9 @@ newModel <- function(speciesTable, interactionsTable) {
   if (!isInteractionsTable(interactionsTable)) {
     stop("the interactions table provided is incorrectly formated")
   }
+  if (!areRelated(speciesTable, interactionsTable)) {
+    stop("some of the preditor or prey species in the interations table are not defined in the species table")
+  }
   list(species=speciesTable, interactions=interactionsTable)
 }
 
@@ -123,8 +142,8 @@ newModel <- function(speciesTable, interactionsTable) {
 #' 
 #' @param speciesMeans a table of species means
 #' @param speciesStd a table of species standard deviations
-#' @param interactionsMeans a table of interaction means
-#' @param interactionsStd a table of interaction standard deviations
+#' @param interactionMeans a table of interaction means
+#' @param interactionStds a table of interaction standard deviations
 #' @export
 newNormalModel <- function(speciesMeans, speciesStd, 
                            interactionMeans, interactionStds) {
@@ -140,6 +159,9 @@ newNormalModel <- function(speciesMeans, speciesStd,
   if (!isInteractionsTable(interactionStds)) {
     stop("the table of interaction standard deviations provided is incorrectly formated")
   }
+  if (!areRelated(speciesMeans, interactionMeans)) {
+    stop("some of the preditor or prey species in the interations table are not defined in the species table")
+  }  
   list(species=speciesMeans, speciesStd=speciesStd,
        interactions=interactionMeans, interactionStds=interactionStds)
 }

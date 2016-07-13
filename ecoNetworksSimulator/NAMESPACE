@@ -2,6 +2,7 @@
 
 export(addInteraction)
 export(addSpecies)
+export(areRelated)
 export(isInteractionsTable)
 export(isSpeciesTable)
 export(newInteractionsTable)
