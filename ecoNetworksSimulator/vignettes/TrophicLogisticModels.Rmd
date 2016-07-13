@@ -9,6 +9,10 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+```{r echo=FALSE}
+library(ecoNetworksSimulator)
+```
+
 We base the time integration on the Logistic Equation:
 
 \[
@@ -22,21 +26,25 @@ We base the time integration on the Logistic Equation:
 
 To build a given trophic model we begin by creating an empty species table and then adding the different species:
 
+```{r}
 species <- newSpeciesTable()
 species <- addSpecies(species, 
-  name="resource1",
+  "resource1",
   growthRate=0.2,
-  carryingCapcity=25)
+  carryingCapacity=25)
 species <- addSpecies(species, 
-  name="resource2",
+  "resource2",
   growthRate=0.2,
-  carryingCapcity=25)
+  carryingCapacity=25)
 species <- addSpecies(species, 
-  name="consumer",
+  "consumer",
   mortality=0.2)
+species
+```
 
 Next we create an empty interactions table and then add some interactions:
 
+```{r}
 interactions <- newInteractionsTable()
 interactions <- addInteraction(interactions,
   preditor="consumer",
@@ -48,36 +56,49 @@ interactions <- addInteraction(interactions,
   prey="resource2",
   attackRate=0.1,
   conversionRate=0.35)
+interactions
+```
 
 now we assemble the species and ineractions tables in to a model:
 
+```{r}
 r2c1 <- newModel(species=species, interactions=interactions)
+r2c1
+```
 
 we can then get a LaTeX representation of our model
 
-getLaTeX(r2c1)
+```{r eval=FALSE}
+getLaTeX(r2c1) # NOT YET IMPLEMENTED
+```
 
 or the species interactions in an interactions *matrix* form
 
-getInteractionsMatrix(r2c1)
+```{r eval=FALSE}
+getInteractionsMatrix(r2c1) # NOT YET IMPLEMENTED
+```
 
 We might want to specify a random collection of models based upon individual species and interaction mean and standard deviations. To do this we can add species and interactions tables standard deviations tables to the model:
 
+```{r}
 speciesStd <- newSpeciesTable()
 speciesStd <- addSpecies(speciesStd, 
   name="resource1",
   growthRate=0.01,
-  carryingCapcity=5)
+  carryingCapacity=5)
 speciesStd <- addSpecies(speciesStd, 
   name="resource2",
   growthRate=0.01,
-  carryingCapcity=5)
+  carryingCapacity=5)
 speciesStd <- addSpecies(speciesStd, 
   name="consumer",
   mortality=0.01)
+speciesStd
+```
 
 Next we create an empty interactions table and then add some interactions:
 
+```{r}
 interactionsStd <- newInteractionsTable()
 interactionsStd <- addInteraction(interactionsStd,
   preditor="consumer",
@@ -89,15 +110,22 @@ interactionsStd <- addInteraction(interactionsStd,
   prey="resource2",
   attackRate=0.01,
   conversionRate=0.1)
+interactionsStd
+```
 
 This time we can add all four tables to the model at once:
 
-r2c1var <- newModelStd(
+```{r}
+r2c1var <- newNormalModel(
   species, speciesStd,
   interactions, interactionsStd
 )
+r2c1var
+```
 
 To get an individual model:
 
-r2c1 <- varyModel(r2c1var)
+```{r eval=FALSE}
+# r2c1 <- varyModel(r2c1var) # NOT YET IMPLEMENTED
+```
 

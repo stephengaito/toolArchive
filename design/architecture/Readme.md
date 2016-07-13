@@ -57,6 +57,7 @@ R](http://www.biostat.jhsph.edu/~rpeng/docs/interface.pdf)
 
 We will use [devtools](https://github.com/hadley/devtools) 
 [roxygen2](https://cran.r-project.org/web/packages/roxygen2/vignettes/roxygen2.html) 
+[knitr](https://github.com/yihui/knitr) 
 and [testthat](https://github.com/hadley/testthat)
 
 [MathJaX](https://www.mathjax.org/) [TeX and LaTeX 
