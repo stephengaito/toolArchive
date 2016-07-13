@@ -4,6 +4,8 @@
 #include <Rinternals.h>
 #include <R_ext/Rdynload.h>
 
+extern void registerCModelBuilder(DllInfo *info);
+
 SEXP C_createModel(SEXP x) {
   Rprintf("Created model\n");
   return x;
@@ -27,5 +29,6 @@ static R_CallMethodDef callMethods[] = {
 };
 
 void R_init_ecoNetworksSimulator(DllInfo *info) {
+  registerCModelBuilder(info);
   R_registerRoutines(info, NULL, callMethods, NULL, NULL);
 };
