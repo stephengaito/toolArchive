@@ -20,56 +20,84 @@ We base the time integration on the Logistic Equation:
 \]
 
 
-To build a given trophic model we begin by adding the different species:
+To build a given trophic model we begin by creating an empty species table and then adding the different species:
 
-r2c1a <- newModel(
-  species("resource1",
-    growthRate=norm(0.2, 0.01),
-    carryingCapacity=norm(25, 5)
-  ),
-  species("resource2",
-    growthRate=norm(0.2,0.1),
-    carryingCapacity=norm(25, 5)
-  ),
-  species("consumer",
-    mortality=norm(0.2, 0.01)
-  ),
-  interaction("consumer", "resource1",
-    atackRate=norm(0.1, 0.01),
-    conversionRate=norm(0.35, 0.01)
-  ),
-  interaction("consumer", "resource2",
-    atackRate=norm(0.1, 0.01),
-    conversionRate=norm(0.35, 0.01)
-  )
+species <- newSpeciesTable()
+species <- addSpecies(species, 
+  name="resource1",
+  growthRate=0.2,
+  carryingCapcity=25)
+species <- addSpecies(species, 
+  name="resource2",
+  growthRate=0.2,
+  carryingCapcity=25)
+species <- addSpecies(species, 
+  name="consumer",
+  mortality=0.2)
+
+Next we create an empty interactions table and then add some interactions:
+
+interactions <- newInteractionsTable()
+interactions <- addInteraction(interactions,
+  preditor="consumer",
+  prey="resource1",
+  attackRate=0.1,
+  conversionRate=0.35)
+interactions <- addInteraction(interactions,
+  preditor="consumer",
+  prey="resource2",
+  attackRate=0.1,
+  conversionRate=0.35)
+
+now we assemble the species and ineractions tables in to a model:
+
+r2c1 <- newModel(species=species, interactions=interactions)
+
+we can then get a LaTeX representation of our model
+
+getLaTeX(r2c1)
+
+or the species interactions in an interactions *matrix* form
+
+getInteractionsMatrix(r2c1)
+
+We might want to specify a random collection of models based upon individual species and interaction mean and standard deviations. To do this we can add species and interactions tables standard deviations tables to the model:
+
+speciesStd <- newSpeciesTable()
+speciesStd <- addSpecies(speciesStd, 
+  name="resource1",
+  growthRate=0.01,
+  carryingCapcity=5)
+speciesStd <- addSpecies(speciesStd, 
+  name="resource2",
+  growthRate=0.01,
+  carryingCapcity=5)
+speciesStd <- addSpecies(speciesStd, 
+  name="consumer",
+  mortality=0.01)
+
+Next we create an empty interactions table and then add some interactions:
+
+interactionsStd <- newInteractionsTable()
+interactionsStd <- addInteraction(interactionsStd,
+  preditor="consumer",
+  prey="resource1",
+  attackRate=0.01,
+  conversionRate=0.1)
+interactionsStd <- addInteraction(interactionsStd,
+  preditor="consumer",
+  prey="resource2",
+  attackRate=0.01,
+  conversionRate=0.1)
+
+This time we can add all four tables to the model at once:
+
+r2c1var <- newModelStd(
+  species, speciesStd,
+  interactions, interactionsStd
 )
 
-r2c1b <- Model$new()
+To get an individual model:
 
-r2c1b$addSpecies("resource1")
-  $growthRate(norm(0.2, 0.01))
-  $carryingCapacity(norm(25, 5))
-
-r2c1b.addSpecies("resource2",
-  growthRate=norm(0.2,0.1),
-  carryingCapacity=norm(25, 5)
-)
-r2c1b.addSpecies("consumer",
-  mortality=norm(0.2, 0.01)
-)
-r2c1b.addInteraction("consumer", "resource1",
-  atackRate=norm(0.1, 0.01),
-  conversionRate=norm(0.35, 0.01)
-)
-r2c1b.addInteraction("consumer", "resource2",
-  atackRate=norm(0.1, 0.01),
-  conversionRate=norm(0.35, 0.01)
-)
-
-r2c1b.createLaTeX()
-
-r2c1b.createSpeciesTable()
-
-r2c1b.createInteractionTabel()
-
+r2c1 <- varyModel(r2c1var)
 
