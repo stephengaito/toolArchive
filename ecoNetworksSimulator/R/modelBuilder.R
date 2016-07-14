@@ -48,22 +48,3 @@
 .C_setSpeciesValues <- function(cSpeciesTable, speciesNum, speciesValues) {
   .Call("C_setSpeciesValues", cSpeciesTable, as.integer(speciesNum), speciesValues, PACKAGE = "ecoNetworksSimulator")
 }
-
-# Create a new interactions table in C
-# 
-# @return an opaque reference to a C structure which holds an interactions table.
-#' @export
-#' @useDynLib ecoNetworksSimulator C_newInteractionsTable
-.C_newInteractionsTable <-function(numSpecies) {
-  .Call("C_newInteractionsTable", as.integer(numSpecies), PACKAGE = "ecoNetworksSimulator")
-}
-
-# Check that a table is an interactions table
-# 
-# @param interactionsTable a potential interactionsTable
-# @return true if the table provided is a interactionsTable
-#' @export
-#' @useDynLib ecoNetworksSimulator C_isInteractionsTable
-.C_isInteractionsTable <-function(cInteractionsTable) {
-  .Call("C_isInteractionsTable", cInteractionsTable, PACKAGE = "ecoNetworksSimulator")
-}
