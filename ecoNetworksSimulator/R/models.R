@@ -11,7 +11,7 @@ newSpeciesTable <- function() {
              growthRate=numeric(),
              carryingCapacity=numeric(),
              mortality=numeric(),
-             stringsAsFactors=FALSE) 
+             halfSaturation=numeric())
 }
 
 #' Check that a table is a species table
@@ -22,7 +22,7 @@ newSpeciesTable <- function() {
 isSpeciesTable <- function(speciesTable){
   is.data.frame(speciesTable) && 
     colnames(speciesTable) == 
-      c("species", "growthRate", "carryingCapacity", "mortality")
+      c("species", "growthRate", "carryingCapacity", "mortality", "halfSaturation")
 }
 
 #' Add a species to an existing species table
@@ -34,18 +34,20 @@ isSpeciesTable <- function(speciesTable){
 #' @param growthRate the growth rate of the species (could be 0.0)
 #' @param carryingCapacity the carrying capacity of the species (could be NA)
 #' @param mortality the mortality of the species (could be NA)
+#' @param halfSaturation the half saturation point for the predator's predation
 #' @export
 addSpecies <- function(speciesTable, 
                        name, 
                        growthRate=0.0, 
                        carryingCapacity=NA_real_, 
-                       mortality=NA_real_){
+                       mortality=NA_real_,
+                       halfSaturation=NA_real_){
   rbind(speciesTable, 
         data.frame(species=name,
                    growthRate=growthRate,
                    carryingCapacity=carryingCapacity,
-                   mortality=mortality),
-        stringsAsFactors = FALSE)
+                   mortality=mortality,
+                   halfSaturation=halfSaturation))
 }
 
 #' Create table of interactions
@@ -53,16 +55,15 @@ addSpecies <- function(speciesTable,
 #' A table of interactions is a data frame which has one row for each species 
 #' interaction
 #' 
-#' The columns are preditor (name), prey (name), attackRate (real), and 
+#' The columns are predator (name), prey (name), attackRate (real), and 
 #' conversionRate (real)
 #' 
 #' @export
 newInteractionsTable <- function() {
-  data.frame(preditor=character(),
+  data.frame(predator=character(),
              prey=character(),
              attackRate=numeric(),
-             conversionRate=numeric(),
-             stringsAsFactors=FALSE)
+             conversionRate=numeric())
 }
 
 #' Check that a table is a interactions table
@@ -73,7 +74,7 @@ newInteractionsTable <- function() {
 isInteractionsTable <- function(interactionsTable){
   is.data.frame(interactionsTable) && 
     colnames(interactionsTable) == 
-      c("preditor", "prey", "attackRate", "conversionRate")
+      c("predator", "prey", "attackRate", "conversionRate")
 }
 
 #' Add a species interaction to an existing interactions table
@@ -82,23 +83,22 @@ isInteractionsTable <- function(interactionsTable){
 #' 
 #' @param interactionsTable an existing interactions table which is to be
 #'   extended
-#' @param preditor the name of the preditor species
+#' @param predator the name of the predator species
 #' @param prey the name of the prey species
-#' @param attackRate the rate at which the preditor attacks the prey
-#' @param conversionRate the rate at which the preditor converts its prey into
+#' @param attackRate the rate at which the predator attacks the prey
+#' @param conversionRate the rate at which the predator converts its prey into
 #'   itself
 #' @export
 addInteraction <- function(interactionsTable, 
-                       preditor, 
+                       predator, 
                        prey,
                        attackRate=0.0, 
                        conversionRate=0.0) {
   rbind(interactionsTable, 
-        data.frame(preditor=preditor,
+        data.frame(predator=predator,
                    prey=prey,
                    attackRate=attackRate,
-                   conversionRate=conversionRate),
-        stringsAsFactors = FALSE)
+                   conversionRate=conversionRate))
 }
 
 #' Check that a speciesTable and a given interactionsTable are related.
@@ -111,7 +111,7 @@ addInteraction <- function(interactionsTable,
 areRelated <- function(speciesTable, interactionsTable) {
   isSpeciesTable(speciesTable) &&
     isInteractionsTable(interactionsTable) &&
-    all(levels(interactionsTable$preditor) %in% levels(speciesTable$species)) &&
+    all(levels(interactionsTable$predator) %in% levels(speciesTable$species)) &&
     all(levels(interactionsTable$prey) %in% levels(speciesTable$species))
 }
 
@@ -130,7 +130,7 @@ newModel <- function(speciesTable, interactionsTable) {
     stop("the interactions table provided is incorrectly formated")
   }
   if (!areRelated(speciesTable, interactionsTable)) {
-    stop("some of the preditor or prey species in the interations table are not defined in the species table")
+    stop("some of the predator or prey species in the interations table are not defined in the species table")
   }
   list(species=speciesTable, interactions=interactionsTable)
 }
@@ -160,7 +160,7 @@ newNormalModel <- function(speciesMeans, speciesStd,
     stop("the table of interaction standard deviations provided is incorrectly formated")
   }
   if (!areRelated(speciesMeans, interactionMeans)) {
-    stop("some of the preditor or prey species in the interations table are not defined in the species table")
+    stop("some of the predator or prey species in the interations table are not defined in the species table")
   }  
   list(species=speciesMeans, speciesStd=speciesStd,
        interactions=interactionMeans, interactionStds=interactionStds)

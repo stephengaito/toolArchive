@@ -6,7 +6,14 @@
 
 #define CSpeciesTable_TAG       1
 #define CInteractionsTable_TAG  2
-#define MAX_NUM_SPECIES 10000
+#define MAX_NUM_SPECIES         10000
+
+#define SPECIES_GROWTH_RATE     0
+#define SPECIES_CARRYING_CAP    1
+#define SPECIES_MORTALITY       2
+#define SPECIES_HALF_SAT        3
+#define SPECIES_PRED_TMP        4
+#define NUM_SPECIES_DOUBLES     5
 
 typedef struct CSpeciesTable_STRUCT {
   int tag;
@@ -83,9 +90,9 @@ SEXP C_newSpeciesTable(SEXP numSpecies) {
   cSpeciesTablePtr->tag        = CSpeciesTable_TAG;
   cSpeciesTablePtr->numSpecies = INTEGER(numSpecies)[0];
   cSpeciesTablePtr->data       = 
-    (double*)Calloc((3*(cSpeciesTablePtr->numSpecies)), double);
+    (double*)Calloc((NUM_SPECIES_DOUBLES*(cSpeciesTablePtr->numSpecies)), double);
   double* dataPtr = cSpeciesTablePtr->data;
-  double* dataMax = dataPtr + 3*(cSpeciesTablePtr->numSpecies);
+  double* dataMax = dataPtr + NUM_SPECIES_DOUBLES*(cSpeciesTablePtr->numSpecies);
   for(; dataPtr < dataMax; dataPtr++) *dataPtr = NA_REAL;
   SEXP cSpeciesTable = R_MakeExternalPtr(cSpeciesTablePtr, R_NilValue, R_NilValue);
   R_RegisterCFinalizerEx(cSpeciesTable, (R_CFinalizer_t) &C_newSpeciesTable_Finalizer, TRUE);
@@ -111,21 +118,23 @@ SEXP C_numSpecies(SEXP cTable) {
   return result;
 }
 
-#define SPECIES_PTR(cSpeciesTablePtr, speciesIndex) ((cSpeciesTablePtr)->data + (speciesIndex)*3)
+#define SPECIES_PTR(cSpeciesTablePtr, speciesIndex) ((cSpeciesTablePtr)->data + (speciesIndex)*NUM_SPECIES_DOUBLES)
 
 SEXP C_getSpeciesValues(SEXP cSpeciesTable, SEXP speciesNum) {
-  SEXP result = NEW_NUMERIC(3);
-  REAL(result)[0] = NA_REAL;
-  REAL(result)[1] = NA_REAL;
-  REAL(result)[2] = NA_REAL;
+  SEXP result = NEW_NUMERIC(4);
+  REAL(result)[SPECIES_GROWTH_RATE]  = NA_REAL;
+  REAL(result)[SPECIES_CARRYING_CAP] = NA_REAL;
+  REAL(result)[SPECIES_MORTALITY]    = NA_REAL;
+  REAL(result)[SPECIES_HALF_SAT]     = NA_REAL;
   if (!L_isSpeciesTable(cSpeciesTable)) return result;
   CSpeciesTable *cSpeciesTablePtr = (CSpeciesTable*)R_ExternalPtrAddr(cSpeciesTable); 
   if (!L_isAnIntegerInRange(speciesNum, 0, cSpeciesTablePtr->numSpecies)) return result;
   size_t speciesIndex = INTEGER(speciesNum)[0];
   double* speciesPtr = SPECIES_PTR(cSpeciesTablePtr, speciesIndex);
-  REAL(result)[0] = speciesPtr[0];
-  REAL(result)[1] = speciesPtr[1];
-  REAL(result)[2] = speciesPtr[2];
+  REAL(result)[SPECIES_GROWTH_RATE]  = speciesPtr[SPECIES_GROWTH_RATE];
+  REAL(result)[SPECIES_CARRYING_CAP] = speciesPtr[SPECIES_CARRYING_CAP];
+  REAL(result)[SPECIES_MORTALITY]    = speciesPtr[SPECIES_MORTALITY];
+  REAL(result)[SPECIES_HALF_SAT]     = speciesPtr[SPECIES_HALF_SAT];
   return result;
 }
 
@@ -137,10 +146,11 @@ SEXP C_setSpeciesValues(SEXP cSpeciesTable, SEXP speciesNum, SEXP speciesValues)
   if (!L_isAnIntegerInRange(speciesNum, 0, cSpeciesTablePtr->numSpecies)) return result;
   size_t speciesIndex = INTEGER(speciesNum)[0];
   double* speciesPtr = SPECIES_PTR(cSpeciesTablePtr, speciesIndex);
-  if (!L_isDoubleVector(speciesValues, 3)) return result;
-  speciesPtr[0] = REAL(speciesValues)[0];
-  speciesPtr[1] = REAL(speciesValues)[1];
-  speciesPtr[2] = REAL(speciesValues)[2];
+  if (!L_isDoubleVector(speciesValues, 4)) return result;
+  speciesPtr[SPECIES_GROWTH_RATE]  = REAL(speciesValues)[SPECIES_GROWTH_RATE];
+  speciesPtr[SPECIES_CARRYING_CAP] = REAL(speciesValues)[SPECIES_CARRYING_CAP];
+  speciesPtr[SPECIES_MORTALITY]    = REAL(speciesValues)[SPECIES_MORTALITY];
+  speciesPtr[SPECIES_HALF_SAT]     = REAL(speciesValues)[SPECIES_HALF_SAT];
   LOGICAL(result)[0] = TRUE;
   return result;
 }
