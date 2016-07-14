@@ -77,9 +77,7 @@ void C_newSpeciesTable_Finalizer(SEXP cSpeciesTable) {
 }
 
 SEXP C_newSpeciesTable(SEXP numSpecies) {
-  Rprintf("\nC_newSpeciesTable\n");
   if (!L_isAnIntegerInRange(numSpecies, 0, MAX_NUM_SPECIES)) return R_NilValue;
-  Rprintf("numSpecies = %d\n", INTEGER(numSpecies)[0]);
   CSpeciesTable *cSpeciesTablePtr = 
     (CSpeciesTable*)Calloc(1, CSpeciesTable);
   cSpeciesTablePtr->tag        = CSpeciesTable_TAG;
@@ -95,7 +93,6 @@ SEXP C_newSpeciesTable(SEXP numSpecies) {
 }
 
 SEXP C_isSpeciesTable(SEXP cSpeciesTable) {
-  Rprintf("\nC_isSpeciesTable\n");
   SEXP result = NEW_LOGICAL(1);
   LOGICAL(result)[0] = L_isSpeciesTable(cSpeciesTable);
   return result;
@@ -148,43 +145,47 @@ SEXP C_setSpeciesValues(SEXP cSpeciesTable, SEXP speciesNum, SEXP speciesValues)
   return result;
 }
 
-/*
 void C_newInteractionsTable_Finalizer(SEXP cInteractionsTable) {
-  if (L_isInteractionsTable(cInteractionsTable)) {
+    if (L_isInteractionsTable(cInteractionsTable)) {
     CInteractionsTable *cInteractionsTablePtr = 
       (CInteractionsTable*)R_ExternalPtrAddr(cInteractionsTable);
     CInteractionVec *interactionVec = 
       cInteractionsTablePtr->interactionVecs;
     CInteractionVec *maxInteractionVec = 
-      interactionVec + (cInteractionsTablePtr->numSpecies)*2;
+      interactionVec + 2*(cInteractionsTablePtr->numSpecies);
     for(; interactionVec < maxInteractionVec; interactionVec++) {
-      Free(interactionVec->interactions);
-      Free(interactionVec);
+      if (interactionVec) {
+        Free(interactionVec->interactions);
+      }
     }
     Free(cInteractionsTablePtr->interactionVecs);
     Free(cInteractionsTablePtr);
   }
 }
-*/
 
 SEXP C_newInteractionsTable(SEXP numSpecies) {
-  return R_NilValue;
-/*
   if (!L_isAnIntegerInRange(numSpecies, 0, MAX_NUM_SPECIES)) return R_NilValue;
   CInteractionsTable *cInteractionsTablePtr = Calloc(1, CInteractionsTable);
   cInteractionsTablePtr->tag  = CInteractionsTable_TAG;
   cInteractionsTablePtr->numSpecies = INTEGER(numSpecies)[0];
   cInteractionsTablePtr->interactionVecs = 
-    (CInteractionVec*)Calloc((2*(cInteractionsTablePtr->numSpecies)), CInteractionVec*);
+    (CInteractionVec*)Calloc((2*(cInteractionsTablePtr->numSpecies)), CInteractionVec);
+  CInteractionVec *interactionVec = 
+    cInteractionsTablePtr->interactionVecs;
+  CInteractionVec *maxInteractionVec = 
+    interactionVec + 2*(cInteractionsTablePtr->numSpecies);
+  for(; interactionVec < maxInteractionVec; interactionVec++) {
+    interactionVec->numInteractions = 0;
+    interactionVec->interactions = NULL;
+  }
   SEXP cInteractionsTable = R_MakeExternalPtr(cInteractionsTablePtr, R_NilValue, R_NilValue);
   R_RegisterCFinalizerEx(cInteractionsTable, (R_CFinalizer_t) &C_newInteractionsTable_Finalizer, TRUE);
   return cInteractionsTable;
-*/
 }
 
 SEXP C_isInteractionsTable(SEXP cInteractionsTable) {
   SEXP result = NEW_LOGICAL(1);
-  LOGICAL(result)[0] = L_isSpeciesTable(cInteractionsTable);
+  LOGICAL(result)[0] = L_isInteractionsTable(cInteractionsTable);
   return result;
 }
 

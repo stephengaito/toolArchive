@@ -34,5 +34,7 @@ test_that("C_getSpeciesValues gets the correct values", {
 })
 
 test_that("C_newInteractionsTable creates an interaction table in C", {
-  expect_true(.C_isInteractionTable(NULL))
+  test <- .C_newInteractionsTable(10)
+  expect_false(is.null(test))
+  expect_true(.C_isInteractionsTable(test))
 })
