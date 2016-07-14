@@ -17,13 +17,13 @@
   .Call("C_isSpeciesTable", cSpeciesTable, PACKAGE = "ecoNetworksSimulator")
 }
 
-# Return the number of species in the species table
+# Return the number of species in either a species or interactions table
 #
 # @return the number of species
 #' @export
 #' @useDynLib ecoNetworksSimulator C_numSpecies
-.C_numSpecies <- function(cSpeciesTable) {
-  .Call("C_numSpecies", cSpeciesTable, PACKAGE = "ecoNetworksSimulator")
+.C_numSpecies <- function(cTable) {
+  .Call("C_numSpecies", cTable, PACKAGE = "ecoNetworksSimulator")
 }
 
 # Get the values for a given species
@@ -47,4 +47,13 @@
 #' @useDynLib ecoNetworksSimulator C_setSpeciesValues
 .C_setSpeciesValues <- function(cSpeciesTable, speciesNum, speciesValues) {
   .Call("C_setSpeciesValues", cSpeciesTable, as.integer(speciesNum), speciesValues, PACKAGE = "ecoNetworksSimulator")
+}
+
+# Create a new interactions table in C
+# 
+# @return an opaque reference to a C structure which holds an interactions table.
+#' @export
+#' @useDynLib ecoNetworksSimulator C_newInteractionsTable
+.C_newSpeciesTable <-function(numSpecies) {
+  .Call("C_newInteractionsTable", as.integer(numSpecies), PACKAGE = "ecoNetworksSimulator")
 }

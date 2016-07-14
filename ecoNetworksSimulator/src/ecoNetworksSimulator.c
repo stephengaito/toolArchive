@@ -6,29 +6,11 @@
 
 extern void registerCModelBuilder(DllInfo *info);
 
-SEXP C_createModel(SEXP x) {
-  Rprintf("Created model\n");
-  return x;
-}
-
-SEXP C_listModels() {
-  Rprintf("listing models\n");
-  return allocVector(STRSXP, 1);
-}
-
-SEXP C_simulateModel(SEXP x) {
-  Rprintf("Simulating model\n");
-  return x;
-}
-
-static R_CallMethodDef callMethods[] = {
-  { "C_createModel",   (DL_FUNC) &C_createModel,    1},
-  { "C_listModels",    (DL_FUNC) &C_listModels,     0},
-  { "C_simulateModel", (DL_FUNC) &C_simulateModel,  1},
+static R_CallMethodDef ecoNetworksSimulator_callMethods[] = {
   { NULL, NULL, 0}
 };
 
 void R_init_ecoNetworksSimulator(DllInfo *info) {
   registerCModelBuilder(info);
-  R_registerRoutines(info, NULL, callMethods, NULL, NULL);
+  R_registerRoutines(info, NULL, ecoNetworksSimulator_callMethods, NULL, NULL);
 };

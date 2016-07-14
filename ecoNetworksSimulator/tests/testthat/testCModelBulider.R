@@ -32,3 +32,7 @@ test_that("C_getSpeciesValues gets the correct values", {
   expect_equal(values[2], NA_real_)
   expect_equal(values[3], 0.3)
 })
+
+test_that("C_newInteractionsTable creates an interaction table in C", {
+  expect_true(.C_isInteractionTable(NULL))
+})
