@@ -35,3 +35,8 @@ test_that("C_getSpeciesValues gets the correct values", {
   expect_equal(values[3], 0.3)
   expect_equal(values[4], 0.4)
 })
+
+test_that("C_getPredators gets the correct values", {
+  test <- .C_newSpeciesTable(10)
+  expect_false(.C_setPredators(test))
+})
