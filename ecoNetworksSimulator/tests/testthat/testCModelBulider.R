@@ -6,7 +6,7 @@ test_that("C_newSpeciesTable creates a species table in C", {
   expect_true(.C_isSpeciesTable(test))
 })
 
-test_that("C_numSpecies reports the correct number of species", {
+test_that("C_numSpecies reports the correct number of species for a species table", {
   test <- .C_newSpeciesTable(10)
   expect_equal(.C_numSpecies(test), 10)
 })
@@ -37,4 +37,9 @@ test_that("C_newInteractionsTable creates an interaction table in C", {
   test <- .C_newInteractionsTable(10)
   expect_false(is.null(test))
   expect_true(.C_isInteractionsTable(test))
+})
+
+test_that("C_numSpecies reports the correct number of species for an interactions table", {
+  test <- .C_newInteractionsTable(10)
+  expect_equal(.C_numSpecies(test), 10)
 })
