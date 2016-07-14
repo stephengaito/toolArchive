@@ -8,21 +8,121 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+# Model equations
+
+We base the equations used for the continuous time integration on two sources, the Rosenzweig-MacArthur multi-species model as discussed McCann[^1], and Predator-Prey models as discussed by Murray[^2]. In our case we are explicitly assuming multiple trophic layers, with multiple species in each "layer".
+
+[^1]: "Food Webs" by Kevin S McCann, published by Princeton University press, 2012. See Chapter 7 "Food Chains and Omnivory", equations 7.2
+
+[^2]: "Mathematical Biology" by J. D. Murray, published by Springer-Verlag, Biomathematics Texts, 1990. See Section 3.3 "Realistic Predator-Prey Models"
+
+For any given species the rate of change of the (biomass of the) population depends on essentially four terms:
+
+  1. growth terms coming from the consumption of some external energy source,
+  2. growth terms coming from the consumption of some other species,
+  3. decay terms coming from predation by some other species.
+  4. decay terms coming from death by natural causes,
+
+$$
+\frac{dS_i}{dt} = 
+  \text{growth}_{\text{energy}} + \text{growth}_{\text{consumption}} 
+  - \text{decay}_{\text{predation}} - \text{decay}_{\text{natural}} 
+$$
+
+Let $\overline{S}$ denote the collection of all species. Let $\overline{S}^+_{S_i}$ and $\overline{S}^-_{S_i}$ denote the collection of species which are, respectively, consumed by or consume a given species $S_i$. For any base species, $S_i$, which only consumes some external energy, the set $\overline{S}^+_{S_i}$ will be empty. Conversely for a top predator, $S_j$, in any trophic consumption chain, the set $\overline{S}^-_{S_j}$ will also be empty. For any other species, these two sets will generally contain one or more species. For a given predator-prey or consumer-resource interaction between species, $S_c$ and $S_r$ respectively, we will have $S_c \in \overline{S}^-_{S_r}$ and $S_r \in \overline{S}^+_{S_c}$.
+
+Using these symbols, we can state the rate of change for a given species, $S_i$ as:
+
+$$
+\frac{dS_i}{dt} =
+  G_e(S_i) + G_c(\overline{S}^+_{S_i})
+  - D_p(\overline{S}^-_{S_i}) - D_n(S_i)
+$$
+
+For the growth from an external energy source, $G_e$, we assume a sigmoidal functional relationship with species density.  That is essentially exponential growth at low population densities with saturation at high population densities. We will assume that this sigmoidal functional relationship is given by the logistic growth equations. For decay by natural causes, $D_n$, we will assume simple linear decay. Hence, for species, $S_i$, we have the following two terms:
+
+$$
+\begin{align*}
+G_e(S_i) & = & r_i * S_i * \left( 1 - \frac{S_i}{K_i} \right) \\
+D_n(S_i) & = & m_i * S_i
+\end{align*}
+$$
+
+Where $r_i$, $K_i$ and $m_i$ are the growth rate, carrying capacity and mortalitiy rates for species $S_i$. Note that for a base species, these two terms, $G_e$ and $D_n$, can be amalgamated into a single term by suitable adjustments of the growth rate and carrying capacity parameters.
+
+Now consider a **predator species**, $S_i$. We again assume a sigmoidal functional relationship with species density, but this time we assume the saturation to be dependent upon the total density of the species the predator consumes. That is the preadtor's growth for a given attack saturates the greater the total attacks (over all prey species). So for the predator we model the $G_c$ term as:
+
+$$
+G_c(S_i) =
+  \left( \sum_{j \in \overline{S}^+_{S_i}} e_{i,j} * a_{i,j} * S_j \right)
+  * \frac{S_i}{ h_i + \sum_{j \in \overline{S}^+_{S_i}} a_{i,j} * S_j }
+$$
+
+Where $h_i$ is the half-saturation parameter for species $S_i$, and $e_{i,j}$ and $a_{i,j}$ are, respectively, the efficiency or conversion and attack rates of the predation of species $S_i$ on species $S_j$. For a given predator, the half-saturation parameter, $h_i$, can be normalized to $1$ by adjusting the efficiency or conversion rates, $e_{i,j}$ for the predator, $S_i$. We will assume that his has been done.
+
+Now consider a **prey species**, $S_i$. We assume the decay due to predation, $D_p$, depends upon all predator species which consume $S_i$:
+
+$$
+D_p(S_i) = \sum_{j \in \overline{S}^-_{S_i}} a_{i,j} * S_i
+  * \frac{S_j}{h_j + \sum_{k \in \overline{S}^+_{S_j}} a_{j,k} * S_k}
+$$
+
+Putting this all together, for a general species, $S_i$, which might be both a predator and a prey, we get:
+
+$$
+\begin{align*}
+\frac{dS_i}{dt}
+  & = & r_i * S_i * \left( 1 - \frac{S_i}{K_i} \right) \\
+  &   &  + \left( \sum_{j \in \overline{S}^+_{S_i}} e_{i,j} * a_{i,j} * S_j \right)
+          * \frac{S_i}{ h_i + \sum_{j \in \overline{S}^+_{S_i}} a_{i,j} * S_j } \\
+  &   &  - \sum_{j \in \overline{S}^-_{S_i}} a_{i,j} * S_i
+          * \frac{S_j}{h_j + \sum_{k \in \overline{S}^+_{S_j}} a_{j,k} * S_k} \\
+  &   &  - m_i * S_i
+\end{align*}
+$$
+
+This equation is usually simplified for three typical cases:
+
+For a **base species**:
+
+$$
+\begin{align*}
+\frac{dS_i}{dt}
+  & = & r_i * S_i * \left( 1 - \frac{S_i}{K_i} \right) \\
+  &   &  - \sum_{j \in \overline{S}^-_{S_i}} a_{i,j} * S_i
+          * \frac{S_j}{h_j + \sum_{k \in \overline{S}^+_{S_j}} a_{j,k} * S_k}
+\end{align*}
+$$
+
+For an **intermediate species** (both a predator and a prey) we have:
+
+$$
+\begin{align*}
+\frac{dS_i}{dt}
+  & = &  + \left( \sum_{j \in \overline{S}^+_{S_i}} e_{i,j} * a_{i,j} * S_j \right)
+          * \frac{S_i}{ h_i + \sum_{j \in \overline{S}^+_{S_i}} a_{i,j} * S_j } \\
+  &   &  - \sum_{j \in \overline{S}^-_{S_i}} a_{i,j} * S_i
+          * \frac{S_j}{h_j + \sum_{k \in \overline{S}^+_{S_j}} a_{j,k} * S_k} \\
+  &   &  - m_i * S_i
+\end{align*}
+$$
+
+For a **top predator** we have:
+
+$$
+\begin{align*}
+\frac{dS_i}{dt}
+  & = &  + \left( \sum_{j \in \overline{S}^+_{S_i}} e_{i,j} * a_{i,j} * S_j \right)
+          * \frac{S_i}{ h_i + \sum_{j \in \overline{S}^+_{S_i}} a_{i,j} * S_j } \\
+  &   &  - m_i * S_i
+\end{align*}
+$$
+
+# Specifying a model in R
 
 ```{r echo=FALSE}
 library(ecoNetworksSimulator)
 ```
-
-We base the time integration on the Logistic Equation:
-
-\[
-\begin{align}
-\frac{dR_1}{dt} & = & rR_1(t) \left(1 − \frac{R_1(t)}{k_1} \right) - \frac{aC(t)R_1(t)}{1 + a(R_1(t) + R_2(t))} \\
-\frac{dR_2}{dt} & = & rR_2(t) \left(1 − \frac{R_2(t - \tau)}{k_2} \right) - \frac{aC(t)R_2(t)}{1 + a(R_1(t) + R_2(t))} \\
-\frac{dC}{dt} & = & C(t) \left(\frac{ea(R_1(t) + R_2(t))}{1 + a(R_1(t) + R_2(t))} - m \right)
-\end{align}
-\]
-
 
 To build a given trophic model we begin by creating an empty species table and then adding the different species:
 
@@ -59,7 +159,7 @@ interactions <- addInteraction(interactions,
 interactions
 ```
 
-now we assemble the species and ineractions tables in to a model:
+now we assemble the species and interactions tables in to a model:
 
 ```{r}
 r2c1 <- newModel(species=species, interactions=interactions)
