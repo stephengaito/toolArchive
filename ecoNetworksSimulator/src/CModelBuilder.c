@@ -13,6 +13,9 @@
 #define SPECIES_HALF_SATURATION   3
 #define SPECIES_NUM_VALUES        4
 
+#define PREDATOR  1
+#define PREY      2
+
 typedef struct CInteraction_STRUCT {
   size_t speciesIndex;
   double coefficient;
@@ -55,11 +58,19 @@ int L_isAnIntegerInRange(SEXP anInt, int min, int max) {
   return TRUE;
 }
 
+int L_isIntegerVector(SEXP aVector, size_t vectorSize) {
+  if (!aVector) return FALSE;
+  if (!IS_VECTOR(aVector)) return FALSE;
+  if (!IS_INTEGER(aVector)) return FALSE;
+  if ((0 < vectorSize) && (GET_LENGTH(aVector) != vectorSize)) return FALSE;
+  return TRUE;
+}
+
 int L_isDoubleVector(SEXP aVector, size_t vectorSize) {
   if (!aVector) return FALSE;
   if (!IS_VECTOR(aVector)) return FALSE;
   if (!IS_NUMERIC(aVector)) return FALSE;
-  if (GET_LENGTH(aVector) != vectorSize) return FALSE;
+  if ((0 < vectorSize) && (GET_LENGTH(aVector) != vectorSize)) return FALSE;
   return TRUE;
 }
 
@@ -142,6 +153,7 @@ SEXP C_setSpeciesValues(SEXP cSpeciesTable, SEXP speciesNum, SEXP speciesValues)
   LOGICAL(result)[0] = FALSE;
   if (!L_isSpeciesTable(cSpeciesTable)) return result;
   CSpeciesTable *cSpeciesTablePtr = (CSpeciesTable*)R_ExternalPtrAddr(cSpeciesTable); 
+  if (!cSpeciesTablePtr) return result;
   if (!L_isAnIntegerInRange(speciesNum, 0, cSpeciesTablePtr->numSpecies)) return result;
   size_t speciesIndex = INTEGER(speciesNum)[0];
   CSpecies* speciesPtr = cSpeciesTablePtr->species + speciesIndex;
@@ -154,12 +166,114 @@ SEXP C_setSpeciesValues(SEXP cSpeciesTable, SEXP speciesNum, SEXP speciesValues)
   return result;
 }
 
+SEXP L_getPredatorPreyCoefficients(int predatorPreyType, SEXP cSpeciesTable, SEXP speciesNum) {
+  if (!L_isSpeciesTable(cSpeciesTable)) return R_NilValue;
+  CSpeciesTable *cSpeciesTablePtr =
+    (CSpeciesTable*)R_ExternalPtrAddr(cSpeciesTable);
+  if(!cSpeciesTablePtr) return R_NilValue;
+  if (!L_isAnIntegerInRange(speciesNum, 0, cSpeciesTablePtr->numSpecies)) return R_NilValue;
+  size_t speciesIndex = INTEGER(speciesNum)[0];
+  CSpecies* speciesPtr = cSpeciesTablePtr->species + speciesIndex;
+
+  size_t vecSize = 0;
+  CInteraction *interactions = NULL;
+
+  if (predatorPreyType == PREDATOR) {
+    vecSize      = speciesPtr->numPredators;
+    interactions = speciesPtr->predators;
+  } else if (predatorPreyType == PREY) {
+    vecSize      = speciesPtr->numPrey;
+    interactions = speciesPtr->prey;
+  } else return R_NilValue;
+  
+  if (vecSize < 1) return R_NilValue;
+  
+  SEXP speciesNumVec         = NEW_INTEGER(vecSize);
+  int *speciesNumData        = INTEGER(speciesNumVec);
+  SEXP speciesCoeffVec       = NEW_NUMERIC(vecSize);
+  double *speciesCoeffData   = REAL(speciesCoeffVec);
+  for(size_t i = 0; i < vecSize; i++) {
+    speciesNumData[i]   = interactions[i].speciesIndex;
+    speciesCoeffData[i] = interactions[i].coefficient;
+  }
+  SEXP result = NEW_LIST(2);
+  SET_VECTOR_ELT(result, 0, speciesNumVec);
+  SET_VECTOR_ELT(result, 1, speciesCoeffVec);
+  return result;
+}
+
+SEXP L_setPredatorPreyCoefficients(int predatorPreyType, 
+                                   SEXP cSpeciesTable, SEXP speciesNum, SEXP speciesNumVec, SEXP speciesCoeffVec) {
+  SEXP result = NEW_LOGICAL(1);
+  LOGICAL(result)[0] = FALSE;
+  if (!L_isSpeciesTable(cSpeciesTable)) return result;
+  CSpeciesTable *cSpeciesTablePtr =
+    (CSpeciesTable*)R_ExternalPtrAddr(cSpeciesTable);
+  if(!cSpeciesTablePtr) return result;
+  if (!L_isAnIntegerInRange(speciesNum, 0, cSpeciesTablePtr->numSpecies)) return result;
+  size_t speciesIndex = INTEGER(speciesNum)[0];
+  CSpecies* speciesPtr = cSpeciesTablePtr->species + speciesIndex;
+  if (!L_isIntegerVector(speciesNumVec, 0)) return result;
+  int *speciesNumData = INTEGER(speciesNumVec);
+  size_t vecSize = GET_LENGTH(speciesNumVec);
+  if (!L_isDoubleVector(speciesCoeffVec, vecSize)) return result;
+  double *speciesCoeffData = REAL(speciesCoeffVec);
+  CInteraction* interactions = (CInteraction*)Calloc(vecSize, CInteraction);
+  for(size_t i = 0; i < vecSize; i++) {
+    // check to ensure the species index is valid for this species table
+    if ((speciesNumData[i] < 0) || (cSpeciesTablePtr->numSpecies <= speciesNumData[i])) {
+      Free(interactions);
+      return result;
+    }
+    interactions[i].speciesIndex = speciesNumData[i];
+    interactions[i].coefficient  = speciesCoeffData[i];
+  }
+  if (predatorPreyType == PREDATOR) {
+    if (speciesPtr->numPredators) {
+      Free(speciesPtr->predators);
+    }
+    speciesPtr->numPredators = vecSize;
+    speciesPtr->predators    = interactions;
+  } else if (predatorPreyType == PREY) {
+    if (speciesPtr->numPrey) {
+      Free(speciesPtr->prey);
+    }
+    speciesPtr->numPrey = vecSize;
+    speciesPtr->prey    = interactions;
+  } else {
+    Free(interactions);
+    return result;
+  }
+  LOGICAL(result)[0] = TRUE;
+  return result;
+}
+
+SEXP C_getPredatorCoefficients(SEXP cSpeciesTable, SEXP speciesNum) {
+  return L_getPredatorPreyCoefficients(PREDATOR, cSpeciesTable, speciesNum);
+}
+
+SEXP C_setPredatorCoefficients(SEXP cSpeciesTable, SEXP speciesNum, SEXP speciesNumVec, SEXP speciesCoeffVec) {
+  return L_setPredatorPreyCoefficients(PREDATOR, cSpeciesTable, speciesNum, speciesNumVec, speciesCoeffVec);
+}
+
+SEXP C_getPreyCoefficients(SEXP cSpeciesTable, SEXP speciesNum) {
+  return L_getPredatorPreyCoefficients(PREY, cSpeciesTable, speciesNum);
+}
+
+SEXP C_setPreyCoefficients(SEXP cSpeciesTable, SEXP speciesNum, SEXP speciesNumVec, SEXP speciesCoeffVec) {
+  return L_setPredatorPreyCoefficients(PREY, cSpeciesTable, speciesNum, speciesNumVec, speciesCoeffVec);
+}
+
 static R_CallMethodDef CModelBuilder_callMethods[] = {
-  { "C_newSpeciesTable",      (DL_FUNC) &C_newSpeciesTable,      1},
-  { "C_isSpeciesTable",       (DL_FUNC) &C_isSpeciesTable,       1},
-  { "C_numSpecies",           (DL_FUNC) &C_numSpecies,           1},
-  { "C_getSpeciesValues",     (DL_FUNC) &C_getSpeciesValues,     2},
-  { "C_setSpeciesValues",     (DL_FUNC) &C_setSpeciesValues,     3},
+  { "C_newSpeciesTable",         (DL_FUNC) &C_newSpeciesTable,         1},
+  { "C_isSpeciesTable",          (DL_FUNC) &C_isSpeciesTable,          1},
+  { "C_numSpecies",              (DL_FUNC) &C_numSpecies,              1},
+  { "C_getSpeciesValues",        (DL_FUNC) &C_getSpeciesValues,        2},
+  { "C_setSpeciesValues",        (DL_FUNC) &C_setSpeciesValues,        3},
+  { "C_getPredatorCoefficients", (DL_FUNC) &C_getPredatorCoefficients, 2},
+  { "C_setPredatorCoefficients", (DL_FUNC) &C_setPredatorCoefficients, 4},
+  { "C_getPreyCoefficients",     (DL_FUNC) &C_getPreyCoefficients,     2},
+  { "C_setPreyCoefficients",     (DL_FUNC) &C_setPreyCoefficients,     4},
   { NULL, NULL, 0}
 };
 
