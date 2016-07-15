@@ -66,13 +66,22 @@
 # @param cSpeciesTable a cSpeciesTable
 # @param speciesNum a 0 relative index denoting the required species
 # @param speciesNumVec a vector of integer indexes into the collection of species (0 relative)
-# @param speciesCoeffVec a vector of real coeffiecients corresponding to each species in the species vector
+# @param speciesAttackVec a vector of real attack rates corresponding to each species in the species vector
+# @param speciesConversionVec a vector of real conversion rates corresponding to each species in the species vector
 # @return true if predator values have been set
 #' @export
 #' @useDynLib ecoNetworksSimulator C_setPredatorCoefficients
-.C_setPredatorCoefficients <- function(cSpeciesTable, speciesNum, speciesNumVec, speciesCoeffVec) {
+.C_setPredatorCoefficients <- function(cSpeciesTable, 
+                                       speciesNum, 
+                                       speciesNumVec, 
+                                       speciesAttackVec,
+                                       speciesConversionVec) {
   .Call("C_setPredatorCoefficients", 
-        cSpeciesTable, as.integer(speciesNum), as.integer(speciesNumVec), speciesCoeffVec,
+        cSpeciesTable, 
+        as.integer(speciesNum), 
+        as.integer(speciesNumVec), 
+        speciesAttackVec,
+        speciesConversionVec,
         PACKAGE = "ecoNetworksSimulator")
 }
 
@@ -97,9 +106,17 @@
 # @return true if prey values have been set
 #' @export
 #' @useDynLib ecoNetworksSimulator C_setPreyCoefficients
-.C_setPreyCoefficients <- function(cSpeciesTable, speciesNum, speciesNumVec, speciesCoeffVec) {
+.C_setPreyCoefficients <- function(cSpeciesTable, 
+                                   speciesNum, 
+                                   speciesNumVec, 
+                                   speciesAttackVec,
+                                   speciesConversionVec) {
   .Call("C_setPreyCoefficients", 
-        cSpeciesTable, as.integer(speciesNum), as.integer(speciesNumVec), speciesCoeffVec,
+        cSpeciesTable, 
+        as.integer(speciesNum), 
+        as.integer(speciesNumVec), 
+        speciesAttackVec,
+        speciesConversionVec,
         PACKAGE = "ecoNetworksSimulator")
 }
 

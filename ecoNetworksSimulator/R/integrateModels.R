@@ -33,10 +33,12 @@
     predatorInteractions <- interactions[interactions$predator==speciesName,]
     numPredators <- nrow(predatorInteractions)
     if (0 < numPredators) {
-      predatorCoeffs <- predatorInteractions$attackRate * predatorInteractions$conversionRate
       predators <- as.integer(lapply(predatorInteractions$prey, speciesIndex))
-      predatorNums <- predators - 1
-      .C_setPredatorCoefficients(cModel, row-1, predatorNums, predatorCoeffs)
+      .C_setPredatorCoefficients(cModel, 
+                                 row - 1, 
+                                 predators - 1, 
+                                 predatorInteractions$attackRate,
+                                 predatorInteractions$conversionRate)
     }
     #
     # work on prey
@@ -44,10 +46,12 @@
     preyInteractions     <- interactions[interactions$prey==speciesName,]
     numPrey <- nrow(preyInteractions)
     if (0 < numPrey) {
-      preyCoeffs <- preyInteractions$attackRate
       prey <- as.integer(lapply(preyInteractions$predator, speciesIndex))
-      preyNums <- prey - 1
-      .C_setPreyCoefficients(cModel, row-1, preyNums, preyCoeffs)
+      .C_setPreyCoefficients(cModel, 
+                             row - 1, 
+                             prey - 1,
+                             preyInteractions$attackRate,
+                             preyInteractions$conversionRate)
     }
   }
   cModel

@@ -18,7 +18,8 @@
 
 typedef struct CInteraction_STRUCT {
   size_t speciesIndex;
-  double coefficient;
+  double attackRate;
+  double conversionRate;
 } CInteraction;
 
 typedef struct CSpecies_STRUCT {
@@ -188,22 +189,30 @@ SEXP L_getPredatorPreyCoefficients(int predatorPreyType, SEXP cSpeciesTable, SEX
   
   if (vecSize < 1) return R_NilValue;
   
-  SEXP speciesNumVec         = NEW_INTEGER(vecSize);
-  int *speciesNumData        = INTEGER(speciesNumVec);
-  SEXP speciesCoeffVec       = NEW_NUMERIC(vecSize);
-  double *speciesCoeffData   = REAL(speciesCoeffVec);
+  SEXP speciesNumVec            = NEW_INTEGER(vecSize);
+  int *speciesNumData           = INTEGER(speciesNumVec);
+  SEXP speciesAttackVec         = NEW_NUMERIC(vecSize);
+  double *speciesAttackData     = REAL(speciesAttackVec);
+  SEXP speciesConversionVec     = NEW_NUMERIC(vecSize);
+  double *speciesConversionData = REAL(speciesConversionVec);
   for(size_t i = 0; i < vecSize; i++) {
-    speciesNumData[i]   = interactions[i].speciesIndex;
-    speciesCoeffData[i] = interactions[i].coefficient;
+    speciesNumData[i]        = interactions[i].speciesIndex;
+    speciesAttackData[i]     = interactions[i].attackRate;
+    speciesConversionData[i] = interactions[i].conversionRate;
   }
-  SEXP result = NEW_LIST(2);
+  SEXP result = NEW_LIST(3);
   SET_VECTOR_ELT(result, 0, speciesNumVec);
-  SET_VECTOR_ELT(result, 1, speciesCoeffVec);
+  SET_VECTOR_ELT(result, 1, speciesAttackVec);
+  SET_VECTOR_ELT(result, 2, speciesConversionVec);
   return result;
 }
 
 SEXP L_setPredatorPreyCoefficients(int predatorPreyType, 
-                                   SEXP cSpeciesTable, SEXP speciesNum, SEXP speciesNumVec, SEXP speciesCoeffVec) {
+                                   SEXP cSpeciesTable,
+                                   SEXP speciesNum,
+                                   SEXP speciesNumVec,
+                                   SEXP speciesAttackVec,
+                                   SEXP speciesConversionVec) {
   SEXP result = NEW_LOGICAL(1);
   LOGICAL(result)[0] = FALSE;
   if (!L_isSpeciesTable(cSpeciesTable)) return result;
@@ -216,8 +225,10 @@ SEXP L_setPredatorPreyCoefficients(int predatorPreyType,
   if (!L_isIntegerVector(speciesNumVec, 0)) return result;
   int *speciesNumData = INTEGER(speciesNumVec);
   size_t vecSize = GET_LENGTH(speciesNumVec);
-  if (!L_isDoubleVector(speciesCoeffVec, vecSize)) return result;
-  double *speciesCoeffData = REAL(speciesCoeffVec);
+  if (!L_isDoubleVector(speciesAttackVec, vecSize)) return result;
+  double *speciesAttackData = REAL(speciesAttackVec);
+  if (!L_isDoubleVector(speciesConversionVec, vecSize)) return result;
+  double *speciesConversionData = REAL(speciesConversionVec);
   CInteraction* interactions = (CInteraction*)Calloc(vecSize, CInteraction);
   for(size_t i = 0; i < vecSize; i++) {
     // check to ensure the species index is valid for this species table
@@ -225,8 +236,9 @@ SEXP L_setPredatorPreyCoefficients(int predatorPreyType,
       Free(interactions);
       return result;
     }
-    interactions[i].speciesIndex = speciesNumData[i];
-    interactions[i].coefficient  = speciesCoeffData[i];
+    interactions[i].speciesIndex   = speciesNumData[i];
+    interactions[i].attackRate     = speciesAttackData[i];
+    interactions[i].conversionRate = speciesConversionData[i];
   }
   if (predatorPreyType == PREDATOR) {
     if (speciesPtr->numPredators) {
@@ -252,16 +264,34 @@ SEXP C_getPredatorCoefficients(SEXP cSpeciesTable, SEXP speciesNum) {
   return L_getPredatorPreyCoefficients(PREDATOR, cSpeciesTable, speciesNum);
 }
 
-SEXP C_setPredatorCoefficients(SEXP cSpeciesTable, SEXP speciesNum, SEXP speciesNumVec, SEXP speciesCoeffVec) {
-  return L_setPredatorPreyCoefficients(PREDATOR, cSpeciesTable, speciesNum, speciesNumVec, speciesCoeffVec);
+SEXP C_setPredatorCoefficients(SEXP cSpeciesTable, 
+                               SEXP speciesNum,
+                               SEXP speciesNumVec,
+                               SEXP speciesAttackVec,
+                               SEXP speciesConversionVec) {
+  return L_setPredatorPreyCoefficients(PREDATOR,
+                                       cSpeciesTable,
+                                       speciesNum,
+                                       speciesNumVec,
+                                       speciesAttackVec,
+                                       speciesConversionVec);
 }
 
 SEXP C_getPreyCoefficients(SEXP cSpeciesTable, SEXP speciesNum) {
   return L_getPredatorPreyCoefficients(PREY, cSpeciesTable, speciesNum);
 }
 
-SEXP C_setPreyCoefficients(SEXP cSpeciesTable, SEXP speciesNum, SEXP speciesNumVec, SEXP speciesCoeffVec) {
-  return L_setPredatorPreyCoefficients(PREY, cSpeciesTable, speciesNum, speciesNumVec, speciesCoeffVec);
+SEXP C_setPreyCoefficients(SEXP cSpeciesTable, 
+                           SEXP speciesNum, 
+                           SEXP speciesNumVec, 
+                           SEXP speciesAttackVec,
+                           SEXP speciesConversionVec) {
+  return L_setPredatorPreyCoefficients(PREY, 
+                                       cSpeciesTable, 
+                                       speciesNum, 
+                                       speciesNumVec, 
+                                       speciesAttackVec,
+                                       speciesConversionVec);
 }
 
 static R_CallMethodDef CModelBuilder_callMethods[] = {
@@ -271,9 +301,9 @@ static R_CallMethodDef CModelBuilder_callMethods[] = {
   { "C_getSpeciesValues",        (DL_FUNC) &C_getSpeciesValues,        2},
   { "C_setSpeciesValues",        (DL_FUNC) &C_setSpeciesValues,        3},
   { "C_getPredatorCoefficients", (DL_FUNC) &C_getPredatorCoefficients, 2},
-  { "C_setPredatorCoefficients", (DL_FUNC) &C_setPredatorCoefficients, 4},
+  { "C_setPredatorCoefficients", (DL_FUNC) &C_setPredatorCoefficients, 5},
   { "C_getPreyCoefficients",     (DL_FUNC) &C_getPreyCoefficients,     2},
-  { "C_setPreyCoefficients",     (DL_FUNC) &C_setPreyCoefficients,     4},
+  { "C_setPreyCoefficients",     (DL_FUNC) &C_setPreyCoefficients,     5},
   { NULL, NULL, 0}
 };
 
