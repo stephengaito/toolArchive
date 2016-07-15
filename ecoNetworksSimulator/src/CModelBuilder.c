@@ -1,44 +1,6 @@
 // Build C structures used to simulate a model
 
-#include <R.h>
-#include <Rdefines.h>
-#include <R_ext/Rdynload.h>
-
-#define CSpeciesTable_TAG       1
-#define MAX_NUM_SPECIES         10000
-
-#define SPECIES_GROWTH_RATE       0
-#define SPECIES_CARRYING_CAPACITY 1
-#define SPECIES_MORTALITY         2
-#define SPECIES_HALF_SATURATION   3
-#define SPECIES_NUM_VALUES        4
-
-#define PREDATOR  1
-#define PREY      2
-
-typedef struct CInteraction_STRUCT {
-  size_t speciesIndex;
-  double attackRate;
-  double conversionRate;
-} CInteraction;
-
-typedef struct CSpecies_STRUCT {
-  double growthRate;
-  double carryingCapacity;
-  double mortality;
-  double halfSaturation;
-  double predationFactor;
-  size_t numPredators;
-  CInteraction *predators;
-  size_t numPrey;
-  CInteraction *prey;
-} CSpecies;
-
-typedef struct CSpeciesTable_STRUCT {
-  int tag;
-  size_t numSpecies;
-  CSpecies *species;
-} CSpeciesTable;
+#include "CModels.h"
 
 int L_isSpeciesTable(SEXP cSpeciesTable) {
   if (!cSpeciesTable) return FALSE;
@@ -56,6 +18,15 @@ int L_isAnIntegerInRange(SEXP anInt, int min, int max) {
   if (GET_LENGTH(anInt) < 1) return FALSE;
   if (INTEGER(anInt)[0] < min) return FALSE;
   if (max <= INTEGER(anInt)[0]) return FALSE;
+  return TRUE;
+}
+
+int L_isADoubleInRange(SEXP aDouble, double min, double max) {
+  if (!aDouble) return FALSE;
+  if (!IS_NUMERIC(aDouble)) return FALSE;
+  if (GET_LENGTH(aDouble) < 1) return FALSE;
+  if (REAL(aDouble)[0] < min) return FALSE;
+  if (max <= REAL(aDouble)[0]) return FALSE;
   return TRUE;
 }
 

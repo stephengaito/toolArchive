@@ -61,6 +61,8 @@
 #' 
 #' @param model the model to integrate
 #' @export
-integrateModel <- function(model) {
+integrateModel <- function(model, stepSize, maxIterations, initialValues) {
   cModel <- .R_buildCModel(model)
+  results <- matrix(NA_real_, nrow = maxIterations, ncol = nrow(model))
+  .C_integrateEuler(cModel, stepSize, maxIterations, initialValues, results)
 }
