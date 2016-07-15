@@ -93,6 +93,8 @@ test_that("we can euler integrate simple model", {
     attackRate = 0.1,
     conversionRate = 0.35)
   r1c1 <- newModel(species, interactions)
-  results <- integrateModel(r2c1, 0.01, 10000, initialValues)
-  expect_false(is.null(values))
+  numSpecies <- numSpeciesInModel(r1c1)
+  initialValues <- matrix(0.0, nrow = 1, ncol=numSpecies)
+  results <- integrateModel(r1c1, 0.01, 10000, initialValues)
+  expect_false(is.null(results))
 })

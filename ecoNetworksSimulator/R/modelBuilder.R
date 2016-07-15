@@ -25,6 +25,15 @@ isSpeciesTable <- function(speciesTable){
       c("species", "growthRate", "carryingCapacity", "mortality", "halfSaturation")
 }
 
+#' Returns the number of species in a species table
+#' 
+#' @param speciesTable the species table
+#' @return the number of species in the species table
+#' @export
+numSpeciesInTable <- function(speciesTable) {
+  nrow(speciesTable)  
+}
+
 #' Add a species to an existing species table
 #' 
 #' Adds a new row to an existing species table
@@ -150,6 +159,15 @@ isModel <- function(model) {
     stop("the model's species and interactions tables are not related")
   }
   TRUE
+}
+
+#' Returns the number of species in a species table
+#' 
+#' @param model the model
+#' @return the number of species in the model
+#' @export
+numSpeciesInModel <- function(model) {
+  nrow(model$species)  
 }
 
 #' Create a normal model

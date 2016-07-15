@@ -63,6 +63,7 @@
 #' @export
 integrateModel <- function(model, stepSize, maxIterations, initialValues) {
   cModel <- .R_buildCModel(model)
-  results <- matrix(NA_real_, nrow = maxIterations, ncol = nrow(model))
+  numSpecies <- numSpeciesInModel(model)
+  results <- matrix(NA_real_, nrow = maxIterations, ncol = numSpecies)
   .C_integrateEuler(cModel, stepSize, maxIterations, initialValues, results)
 }
