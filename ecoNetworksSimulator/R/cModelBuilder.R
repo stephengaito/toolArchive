@@ -85,7 +85,7 @@
 #' @export 
 #' @useDynLib ecoNetworksSimulator C_getPreyCoefficients
 .C_getPreyCoefficients <- function(cSpeciesTable, speciesNum) {
-  .Call("C_getPredatorCoefficients", cSpeciesTable, as.integer(speciesNum), PACKAGE = "ecoNetworksSimulator")
+  .Call("C_getPreyCoefficients", cSpeciesTable, as.integer(speciesNum), PACKAGE = "ecoNetworksSimulator")
 }
 
 # Set the species and coefficients for the prey
@@ -98,7 +98,7 @@
 #' @export
 #' @useDynLib ecoNetworksSimulator C_setPreyCoefficients
 .C_setPreyCoefficients <- function(cSpeciesTable, speciesNum, speciesNumVec, speciesCoeffVec) {
-  .Call("C_setPredatorCoefficients", 
+  .Call("C_setPreyCoefficients", 
         cSpeciesTable, as.integer(speciesNum), as.integer(speciesNumVec), speciesCoeffVec,
         PACKAGE = "ecoNetworksSimulator")
 }
