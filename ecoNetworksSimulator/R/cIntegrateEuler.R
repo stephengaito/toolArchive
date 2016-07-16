@@ -8,6 +8,7 @@
                               numSamples,
                               numSamplesBetweenInteruptChecks,
                               initialValues,
+                              workingResultsMask,
                               workingResults,
                               results) {
   .Call("C_integrateEuler",
@@ -17,6 +18,7 @@
         as.integer(numSamples),
         as.integer(numSamplesBetweenInteruptChecks),
         initialValues,
+        as.integer(workingResultsMask),
         workingResults,
         results,
         PACKAGE = "ecoNetworksSimulator")

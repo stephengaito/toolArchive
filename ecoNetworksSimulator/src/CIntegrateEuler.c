@@ -2,13 +2,14 @@
 
 #include "CModels.h"
 
-#define SpeciesPtr(speciesNum, i) (workingResults + (speciesNum)*numWorkingResults + (i))
+#define SpeciesPtr(speciesNum, i) (workingResults + (speciesNum)*numWorkingResults + ((i) & workingResultsMask))
 #define SpeciesSamplesPtr(speciesNum, i) (results + (speciesNum)*numSamples + (i))
 
 void L_rateChange(CSpeciesTable *cSpecies, 
                   double* speciesRateChanges, 
                   size_t curStep, 
                   double* workingResults, 
+                  size_t workingResultsMask,
                   size_t numWorkingResults) {
   size_t speciesNum = 0;
   size_t numSpecies = cSpecies->numSpecies;
@@ -104,7 +105,7 @@ SEXP C_integrateEuler(SEXP cModelSexp,
                       SEXP numSamplesSexp,
                       SEXP numSamplesBetweenInteruptChecksSexp,
                       SEXP initialValuesSexp,
-                      SEXP numWorkingResultsSexp,
+                      SEXP workingResultsMaskSexp,
                       SEXP workingResultsSexp,
                       SEXP resultsSexp) {
   if (!L_isSpeciesTable(cModelSexp)) return R_NilValue;
@@ -120,9 +121,10 @@ SEXP C_integrateEuler(SEXP cModelSexp,
   size_t numSamplesBetweenInteruptChecks = INTEGER(numSamplesBetweenInteruptChecksSexp)[0];
   if (!L_isDoubleVector(initialValuesSexp, numSpecies)) return R_NilValue;
   double *initialValues = REAL(initialValuesSexp);
-  if (!L_isAnIntegerInRange(numWorkingResultsSexp, 0, MAX_ITERATIONS)) return R_NilValue;
-  size_t numWorkingResults = INTEGER(numWorkingResultsSexp)[0];
-  if (!L_isDoubleVector(workingResultsSexp, (numSpecies * stepsPerSample))) return R_NilValue;
+  if (!L_isAnIntegerInRange(workingResultsMaskSexp, 0, MAX_ITERATIONS)) return R_NilValue;
+  size_t workingResultsMask = INTEGER(workingResultsMaskSexp)[0];
+  size_t numWorkingResults = workingResultsMask + 1;
+  if (!L_isDoubleVector(workingResultsSexp, (numSpecies * numWorkingResults))) return R_NilValue;
   double *workingResults = REAL(workingResultsSexp);
   if (!L_isDoubleVector(resultsSexp, (numSpecies * numSamples))) return R_NilValue;
   double *results = REAL(resultsSexp);
@@ -130,19 +132,29 @@ SEXP C_integrateEuler(SEXP cModelSexp,
   // copy the initial values into the results vector
   //
   for (size_t i = 0; i < numSpecies; i++) {
-    *(results + i*numSamples) = *(initialValues + i);
+    *(workingResults + i*numSamples) = *(initialValues + i);
   }
   //
   // do the integration
   //
   double *speciesRateChanges = initialValues; // initialValues are no longer needed so we can reuse them!
   size_t samplesFromLastInteruptCheck = 0;
-  for (size_t i = 1; i < numSamples; i++) {
-    L_rateChange(cSpecies, speciesRateChanges, i - 1, workingResults, stepsPerSample);
-    for (size_t speciesNum = 0; speciesNum < numSpecies; speciesNum++) {
-      *SpeciesPtr(speciesNum, i) = *SpeciesPtr(speciesNum, i - 1) +
-        stepSize * speciesRateChanges[speciesNum];
-      if (*SpeciesPtr(speciesNum, i) < SMALLEST_DOUBLE) *SpeciesPtr(speciesNum, i) = 0;
+  size_t curStep = 0;
+  for (size_t curSample = 0; curSample < numSamples; curSample++) {
+    for (size_t curStepPerSample = 0; curStepPerSample < stepsPerSample; curStepPerSample++ ) {
+      curStep++;
+      L_rateChange(cSpecies, speciesRateChanges, curStep - 1, workingResults, workingResultsMask, numWorkingResults);
+      for (size_t speciesNum = 0; speciesNum < numSpecies; speciesNum++) {
+        *SpeciesPtr(speciesNum, curStep) = *SpeciesPtr(speciesNum, curStep - 1) +
+          stepSize * speciesRateChanges[speciesNum];
+        if (*SpeciesPtr(speciesNum, curStep) < SMALLEST_DOUBLE) *SpeciesPtr(speciesNum, curStep) = 0;
+      }
+    }
+    //
+    // collect a sample
+    //
+    for (size_t i = 0; i < numSpecies; i++) {
+      *SpeciesSamplesPtr(i, curSample) = *SpeciesPtr(i, curStep);
     }
     //    
     // check to see if the user wants to interupt this integration.
@@ -158,7 +170,7 @@ SEXP C_integrateEuler(SEXP cModelSexp,
 }
 
 static R_CallMethodDef CIntegrateEuler_callMethods[] = {
-  { "C_integrateEuler", (DL_FUNC) &C_integrateEuler, 8},
+  { "C_integrateEuler", (DL_FUNC) &C_integrateEuler, 9},
   { NULL, NULL, 0}
 };
 

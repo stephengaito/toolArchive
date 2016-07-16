@@ -80,20 +80,23 @@ integrateModel <- function(model,
                            numSamplesBetweenInteruptChecks = 100) {
   cModel <- .R_buildCModel(model)
   numSpecies <- numSpeciesInModel(model)
-  workingResults <- matrix(NA_real_, nrow = 16, ncol = numSpecies)
+  workingResultsMask <- 15
+  numWorkingResults <- workingResultsMask + 1
+  workingResults <- matrix(NA_real_, nrow = numWorkingResults, ncol = numSpecies)
   results <- matrix(NA_real_, nrow = numSamples, ncol = numSpecies)
-  #print(tail(results))
-  if (numStepsBetweenInteruptChecks < numSamples) {
-    numStepsBetweenInteruptChecks = numSamples
+  print(tail(results))
+  if (numSamplesBetweenInteruptChecks < numSamples) {
+    numSamplesBetweenInteruptChecks = numSamples
   }
   results <- .C_integrateEuler(cModel,
                                stepSize,
                                stepsPerSample,
                                numSamples,
-                               numStepsBetweenInteruptChecks,
+                               numSamplesBetweenInteruptChecks,
                                initialValues,
+                               workingResultsMask,
                                workingResults,
                                results)
-  #print(tail(results))
+  print(tail(results))
   results
 }
