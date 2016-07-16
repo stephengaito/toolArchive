@@ -4,16 +4,20 @@
 #' @useDynLib ecoNetworksSimulator C_integrateEuler
 .C_integrateEuler <- function(cModel,
                               stepSize,
-                              maxIterations,
-                              numStepsBetweenInteruptChecks,
+                              stepsPerSample,
+                              numSamples,
+                              numSamplesBetweenInteruptChecks,
                               initialValues,
+                              workingResults,
                               results) {
   .Call("C_integrateEuler",
         cModel,
         stepSize,
-        as.integer(maxIterations),
-        as.integer(numStepsBetweenInteruptChecks),
+        as.integer(stepsPerSample),
+        as.integer(numSamples),
+        as.integer(numSamplesBetweenInteruptChecks),
         initialValues,
+        workingResults,
         results,
         PACKAGE = "ecoNetworksSimulator")
 }

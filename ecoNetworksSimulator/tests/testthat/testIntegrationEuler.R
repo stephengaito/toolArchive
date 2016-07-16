@@ -97,7 +97,7 @@ test_that("we can euler integrate simple model", {
   numSpecies <- numSpeciesInModel(r1c1)
   initialValues <- matrix( 0.0, nrow = 1, ncol=numSpecies)
   #print(initialValues)
-  results <- integrateModel(r1c1, 0.01, 100, initialValues)
+  results <- integrateModel(r1c1, 0.01, 100, 100, initialValues)
   expect_false(is.null(results))
   expect_equal(results[1,1], 0.0)
   expect_equal(results[1,2], 0.0)

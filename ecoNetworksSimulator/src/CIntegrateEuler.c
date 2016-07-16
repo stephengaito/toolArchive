@@ -2,13 +2,14 @@
 
 #include "CModels.h"
 
-#define SpeciesPtr(speciesNum, i) (results + (speciesNum)*maxIterations + (i))
+#define SpeciesPtr(speciesNum, i) (workingResults + (speciesNum)*numWorkingResults + (i))
+#define SpeciesSamplesPtr(speciesNum, i) (results + (speciesNum)*numSamples + (i))
 
 void L_rateChange(CSpeciesTable *cSpecies, 
                   double* speciesRateChanges, 
                   size_t curStep, 
-                  double* results, 
-                  size_t maxIterations) {
+                  double* workingResults, 
+                  size_t numWorkingResults) {
   size_t speciesNum = 0;
   size_t numSpecies = cSpecies->numSpecies;
   for(speciesNum = 0; speciesNum < numSpecies; speciesNum++) {
@@ -99,36 +100,45 @@ void L_rateChange(CSpeciesTable *cSpecies,
 
 SEXP C_integrateEuler(SEXP cModelSexp,
                       SEXP stepSizeSexp,
-                      SEXP maxIterationsSexp,
-                      SEXP numStepsBetweenInteruptChecksSexp,
+                      SEXP stepsPerSampleSexp,
+                      SEXP numSamplesSexp,
+                      SEXP numSamplesBetweenInteruptChecksSexp,
                       SEXP initialValuesSexp,
+                      SEXP numWorkingResultsSexp,
+                      SEXP workingResultsSexp,
                       SEXP resultsSexp) {
   if (!L_isSpeciesTable(cModelSexp)) return R_NilValue;
   CSpeciesTable* cSpecies = (CSpeciesTable*)R_ExternalPtrAddr(cModelSexp);
   size_t numSpecies = cSpecies->numSpecies;
   if (!L_isADoubleInRange(stepSizeSexp, 1e-5, 1.0)) return R_NilValue;
   double stepSize = REAL(stepSizeSexp)[0];
-  if (!L_isAnIntegerInRange(maxIterationsSexp, 0, MAX_ITERATIONS)) return R_NilValue;
-  size_t maxIterations = INTEGER(maxIterationsSexp)[0];
-  if (!L_isAnIntegerInRange(numStepsBetweenInteruptChecksSexp, 0, maxIterations+1)) return R_NilValue;
-  size_t numStepsBetweenInteruptChecks = INTEGER(numStepsBetweenInteruptChecksSexp)[0];
+  if (!L_isAnIntegerInRange(stepsPerSampleSexp, 0, MAX_ITERATIONS)) return R_NilValue;
+  size_t stepsPerSample = INTEGER(stepsPerSampleSexp)[0];
+  if (!L_isAnIntegerInRange(numSamplesSexp, 0, MAX_ITERATIONS)) return R_NilValue;
+  size_t numSamples = INTEGER(numSamplesSexp)[0];
+  if (!L_isAnIntegerInRange(numSamplesBetweenInteruptChecksSexp, 0, numSamples+1)) return R_NilValue;
+  size_t numSamplesBetweenInteruptChecks = INTEGER(numSamplesBetweenInteruptChecksSexp)[0];
   if (!L_isDoubleVector(initialValuesSexp, numSpecies)) return R_NilValue;
   double *initialValues = REAL(initialValuesSexp);
-  if (!L_isDoubleVector(resultsSexp, (numSpecies * maxIterations))) return R_NilValue;
+  if (!L_isAnIntegerInRange(numWorkingResultsSexp, 0, MAX_ITERATIONS)) return R_NilValue;
+  size_t numWorkingResults = INTEGER(numWorkingResultsSexp)[0];
+  if (!L_isDoubleVector(workingResultsSexp, (numSpecies * stepsPerSample))) return R_NilValue;
+  double *workingResults = REAL(workingResultsSexp);
+  if (!L_isDoubleVector(resultsSexp, (numSpecies * numSamples))) return R_NilValue;
   double *results = REAL(resultsSexp);
   //
   // copy the initial values into the results vector
   //
   for (size_t i = 0; i < numSpecies; i++) {
-    *(results + i*maxIterations) = *(initialValues + i);
+    *(results + i*numSamples) = *(initialValues + i);
   }
   //
   // do the integration
   //
   double *speciesRateChanges = initialValues; // initialValues are no longer needed so we can reuse them!
-  size_t stepsFromLastInteruptCheck = 0;
-  for (size_t i = 1; i < maxIterations; i++) {
-    L_rateChange(cSpecies, speciesRateChanges, i - 1, results, maxIterations);
+  size_t samplesFromLastInteruptCheck = 0;
+  for (size_t i = 1; i < numSamples; i++) {
+    L_rateChange(cSpecies, speciesRateChanges, i - 1, workingResults, stepsPerSample);
     for (size_t speciesNum = 0; speciesNum < numSpecies; speciesNum++) {
       *SpeciesPtr(speciesNum, i) = *SpeciesPtr(speciesNum, i - 1) +
         stepSize * speciesRateChanges[speciesNum];
@@ -137,18 +147,18 @@ SEXP C_integrateEuler(SEXP cModelSexp,
     //    
     // check to see if the user wants to interupt this integration.
     //
-    if (numStepsBetweenInteruptChecks < stepsFromLastInteruptCheck) {
+    if (numSamplesBetweenInteruptChecks < samplesFromLastInteruptCheck) {
       R_CheckUserInterrupt();
-      stepsFromLastInteruptCheck = 0;
+      samplesFromLastInteruptCheck = 0;
     } else {
-      stepsFromLastInteruptCheck++;
+      samplesFromLastInteruptCheck++;
     }
   }
   return resultsSexp;
 }
 
 static R_CallMethodDef CIntegrateEuler_callMethods[] = {
-  { "C_integrateEuler", (DL_FUNC) &C_integrateEuler, 5},
+  { "C_integrateEuler", (DL_FUNC) &C_integrateEuler, 8},
   { NULL, NULL, 0}
 };
 

@@ -61,32 +61,38 @@
 #' 
 #' @param model the model to integrate
 #' @param stepSize the size of a single time step
-#' @param maxIterations the number of iterations in this integration
+#' @param stepsPerSample the number of steps to compute between each sample 
+#'   collected
+#' @param numSamples the number of samples to collect in this integration
 #' @param initialValues the initial values for this integration
-#' @param numStepsBetweenInteruptChecks the number of steps between each check 
-#'   for user interupts. A small number will slow down the integration, while a
-#'   large number will inhibit the user's ability to stop a long running
-#'   integration. The default is 100 steps.
-#' @return the results of the integration as a matrix of maxIterations row and 
-#'   one colum for each species.
+#' @param numStepsBetweenInteruptChecks the number of samples collected between
+#'   each check for user interupts. A small number will slow down the
+#'   integration, while a large number will inhibit the user's ability to stop a
+#'   long running integration. The default is 100 samples.
+#' @return the results of the integration as a matrix of numSamples row and one 
+#'   colum for each species.
 #' @export
 integrateModel <- function(model, 
-                           stepSize, 
-                           maxIterations,
+                           stepSize,
+                           stepsPerSample,
+                           numSamples,
                            initialValues,
-                           numStepsBetweenInteruptChecks = 100) {
+                           numSamplesBetweenInteruptChecks = 100) {
   cModel <- .R_buildCModel(model)
   numSpecies <- numSpeciesInModel(model)
-  results <- matrix(NA_real_, nrow = maxIterations, ncol = numSpecies)
+  workingResults <- matrix(NA_real_, nrow = 16, ncol = numSpecies)
+  results <- matrix(NA_real_, nrow = numSamples, ncol = numSpecies)
   #print(tail(results))
-  if (numStepsBetweenInteruptChecks < maxIterations) {
-    numStepsBetweenInteruptChecks = maxIterations
+  if (numStepsBetweenInteruptChecks < numSamples) {
+    numStepsBetweenInteruptChecks = numSamples
   }
   results <- .C_integrateEuler(cModel,
                                stepSize,
-                               maxIterations,
+                               stepsPerSample,
+                               numSamples,
                                numStepsBetweenInteruptChecks,
                                initialValues,
+                               workingResults,
                                results)
   #print(tail(results))
   results
