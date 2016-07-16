@@ -60,10 +60,34 @@
 #' Integrate a model
 #' 
 #' @param model the model to integrate
+#' @param stepSize the size of a single time step
+#' @param maxIterations the number of iterations in this integration
+#' @param initialValues the initial values for this integration
+#' @param numStepsBetweenInteruptChecks the number of steps between each check 
+#'   for user interupts. A small number will slow down the integration, while a
+#'   large number will inhibit the user's ability to stop a long running
+#'   integration. The default is 100 steps.
+#' @return the results of the integration as a matrix of maxIterations row and 
+#'   one colum for each species.
 #' @export
-integrateModel <- function(model, stepSize, maxIterations, initialValues) {
+integrateModel <- function(model, 
+                           stepSize, 
+                           maxIterations,
+                           initialValues,
+                           numStepsBetweenInteruptChecks = 100) {
   cModel <- .R_buildCModel(model)
   numSpecies <- numSpeciesInModel(model)
   results <- matrix(NA_real_, nrow = maxIterations, ncol = numSpecies)
-  .C_integrateEuler(cModel, stepSize, maxIterations, initialValues, results)
+  #print(tail(results))
+  if (numStepsBetweenInteruptChecks < maxIterations) {
+    numStepsBetweenInteruptChecks = maxIterations
+  }
+  results <- .C_integrateEuler(cModel,
+                               stepSize,
+                               maxIterations,
+                               numStepsBetweenInteruptChecks,
+                               initialValues,
+                               results)
+  #print(tail(results))
+  results
 }

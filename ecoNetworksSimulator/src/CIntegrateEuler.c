@@ -2,9 +2,13 @@
 
 #include "CModels.h"
 
-#define SpeciesPtr(results, speciesNum, numSpecies, timeOffset) ((results) + (timeOffset)*(numSpecies) + (speciesNum))
+#define SpeciesPtr(speciesNum, i) (results + (speciesNum)*maxIterations + (i))
 
-void L_rateChange(CSpeciesTable *cSpecies, double* speciesRateChanges, double* results) {
+void L_rateChange(CSpeciesTable *cSpecies, 
+                  double* speciesRateChanges, 
+                  size_t curStep, 
+                  double* results, 
+                  size_t maxIterations) {
   size_t speciesNum = 0;
   size_t numSpecies = cSpecies->numSpecies;
   for(speciesNum = 0; speciesNum < numSpecies; speciesNum++) {
@@ -12,36 +16,41 @@ void L_rateChange(CSpeciesTable *cSpecies, double* speciesRateChanges, double* r
     // compute predation-factor
     //
     CSpecies *curSpecies = cSpecies->species + speciesNum;
-    double predationFactor = curSpecies->halfSaturation;
-    CInteraction *curPrey = curSpecies->prey;
-    CInteraction *maxPrey = curPrey + curSpecies->numPrey;
-    for(; curPrey < maxPrey; curPrey++) {
-      predationFactor += 
-        *SpeciesPtr(results, curPrey->speciesIndex, numSpecies, 0)
-        * curPrey->attackRate;
-    }
-    if (SMALLEST_DOUBLE < predationFactor) {
+    double predationFactor = 0;
+    if (!ISNAN(curSpecies->halfSaturation) && (0 < curSpecies->numPrey)) {
+      predationFactor = curSpecies->halfSaturation;
+      CInteraction *curPrey = curSpecies->prey;
+      CInteraction *maxPrey = curPrey + curSpecies->numPrey;
+      for(; curPrey < maxPrey; curPrey++) {
+        predationFactor += 
+          *SpeciesPtr(curPrey->speciesIndex, curStep)
+          * curPrey->attackRate;
+      }
+      if (SMALLEST_DOUBLE < predationFactor) predationFactor = SMALLEST_DOUBLE;
       predationFactor = 
-        *SpeciesPtr(results, speciesNum, numSpecies, 0)
+        *SpeciesPtr(speciesNum, curStep)
         / predationFactor;
-    } else {
-      predationFactor = 0;
     }
     curSpecies->predationFactor = predationFactor;
   }
   for(size_t speciesNum = 0; speciesNum < cSpecies->numSpecies; speciesNum++) {
     CSpecies *curSpecies = cSpecies->species + speciesNum;
-    double curSpeciesValue = *SpeciesPtr(results, speciesNum, numSpecies, 0);
+    double curSpeciesValue = *SpeciesPtr(speciesNum, curStep);
     double rateChange = 0;
     if (SMALLEST_DOUBLE < curSpeciesValue) {
       //
       // compute growth-external-energy
       //
-      double carryingCapacityFactor = 1.0;
-      if (SMALLEST_DOUBLE < curSpecies->carryingCapacity) {
-        carryingCapacityFactor = 1.0 - (curSpeciesValue / curSpecies->carryingCapacity);
+      if (SMALLEST_DOUBLE < curSpecies->growthRate) {
+        double carryingCapacityFactor = 1.0;
+        if (!ISNAN(curSpecies->carryingCapacity)) {
+          if (SMALLEST_DOUBLE < curSpecies->carryingCapacity) {
+            curSpecies->carryingCapacity = SMALLEST_DOUBLE;
+          }
+          carryingCapacityFactor = 1.0 - (curSpeciesValue / curSpecies->carryingCapacity);
+        }
+        rateChange += curSpecies->growthRate * curSpeciesValue * carryingCapacityFactor;
       }
-      rateChange += curSpecies->growthRate * curSpeciesValue * carryingCapacityFactor;
       //
       // compute growth-predation
       //
@@ -51,7 +60,7 @@ void L_rateChange(CSpeciesTable *cSpecies, double* speciesRateChanges, double* r
         CInteraction *maxPrey = curPrey + curSpecies->numPrey;
         for(; curPrey < maxPrey; curPrey++) {
           conversionFactor += 
-            *SpeciesPtr(results, curPrey->speciesIndex, numSpecies, 0)
+            *SpeciesPtr(curPrey->speciesIndex, curStep)
             * curPrey->attackRate * curPrey->conversionRate;
         }
         if (SMALLEST_DOUBLE < conversionFactor) {
@@ -84,6 +93,7 @@ void L_rateChange(CSpeciesTable *cSpecies, double* speciesRateChanges, double* r
 SEXP C_integrateEuler(SEXP cModelSexp,
                       SEXP stepSizeSexp,
                       SEXP maxIterationsSexp,
+                      SEXP numStepsBetweenInteruptChecksSexp,
                       SEXP initialValuesSexp,
                       SEXP resultsSexp) {
   if (!L_isSpeciesTable(cModelSexp)) return R_NilValue;
@@ -93,6 +103,8 @@ SEXP C_integrateEuler(SEXP cModelSexp,
   double stepSize = REAL(stepSizeSexp)[0];
   if (!L_isAnIntegerInRange(maxIterationsSexp, 0, MAX_ITERATIONS)) return R_NilValue;
   size_t maxIterations = INTEGER(maxIterationsSexp)[0];
+  if (!L_isAnIntegerInRange(numStepsBetweenInteruptChecksSexp, 0, maxIterations+1)) return R_NilValue;
+  size_t numStepsBetweenInteruptChecks = INTEGER(numStepsBetweenInteruptChecksSexp)[0];
   if (!L_isDoubleVector(initialValuesSexp, numSpecies)) return R_NilValue;
   double *initialValues = REAL(initialValuesSexp);
   if (!L_isDoubleVector(resultsSexp, (numSpecies * maxIterations))) return R_NilValue;
@@ -100,20 +112,30 @@ SEXP C_integrateEuler(SEXP cModelSexp,
   //
   // copy the initial values into the results vector
   //
-  for (size_t i = 0; i < numSpecies; i++) results[i] = initialValues[i];
+  for (size_t i = 0; i < numSpecies; i++) {
+    *(results + i*maxIterations) = *(initialValues + i);
+  }
   //
   // do the integration
   //
-  double *speciesRateChanges = (double*)Calloc(numSpecies, double);
-  double *oldResults = results;
-  for (size_t i = 0; i < maxIterations; i++) {
-    L_rateChange(cSpecies, speciesRateChanges, oldResults);
-    double *newResults = oldResults + numSpecies;
+  double *speciesRateChanges = initialValues; // initialValues are no longer needed so we can reuse them!
+  size_t stepsFromLastInteruptCheck = 0;
+  for (size_t i = 1; i < maxIterations; i++) {
+    L_rateChange(cSpecies, speciesRateChanges, i - 1, results, maxIterations);
     for (size_t speciesNum = 0; speciesNum < numSpecies; speciesNum++) {
-      newResults[speciesNum] = oldResults[speciesNum] + stepSize * speciesRateChanges[speciesNum];
-      if (SMALLEST_DOUBLE < newResults[speciesNum]) newResults[speciesNum] = 0;
+      *SpeciesPtr(speciesNum, i) = *SpeciesPtr(speciesNum, i - 1) +
+        stepSize * speciesRateChanges[speciesNum];
+      if (*SpeciesPtr(speciesNum, i) < SMALLEST_DOUBLE) *SpeciesPtr(speciesNum, i) = 0;
     }
-    oldResults = newResults;
+    //    
+    // check to see if the user wants to interupt this integration.
+    //
+    if (numStepsBetweenInteruptChecks < stepsFromLastInteruptCheck) {
+      R_CheckUserInterrupt();
+      stepsFromLastInteruptCheck = 0;
+    } else {
+      stepsFromLastInteruptCheck++;
+    }
   }
   return resultsSexp;
 }

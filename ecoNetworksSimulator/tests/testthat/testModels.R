@@ -14,7 +14,7 @@ test_that("addSpecies adds a species to a speciesTable", {
   expect_equal(speciesLevels[test[1, "species"]], "resource")
   expect_equal(test[1, "growthRate"], 0.1)
   expect_equal(test[1, "carryingCapacity"], 0.2)
-  expect_equal(test[1, "mortality"], NA_real_)
+  expect_equal(test[1, "mortality"], 0.0)
   expect_equal(test[1, "halfSaturation"], NA_real_)
   expect_equal(speciesLevels[test[2, "species"]], "consumer")
   expect_equal(test[2, "growthRate"], 0.0)

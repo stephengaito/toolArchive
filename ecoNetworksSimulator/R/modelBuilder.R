@@ -49,7 +49,7 @@ addSpecies <- function(speciesTable,
                        name, 
                        growthRate=0.0, 
                        carryingCapacity=NA_real_, 
-                       mortality=NA_real_,
+                       mortality=0.0,
                        halfSaturation=NA_real_){
   rbind(speciesTable, 
         data.frame(species=name,
