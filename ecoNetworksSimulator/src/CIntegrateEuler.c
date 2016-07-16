@@ -108,25 +108,33 @@ SEXP C_integrateEuler(SEXP cModelSexp,
                       SEXP workingResultsMaskSexp,
                       SEXP workingResultsSexp,
                       SEXP resultsSexp) {
-  if (!L_isSpeciesTable(cModelSexp)) return R_NilValue;
+  if (!L_isSpeciesTable(cModelSexp)) return L_returnMessage("model is not valid");
   CSpeciesTable* cSpecies = (CSpeciesTable*)R_ExternalPtrAddr(cModelSexp);
   size_t numSpecies = cSpecies->numSpecies;
-  if (!L_isADoubleInRange(stepSizeSexp, 1e-5, 1.0)) return R_NilValue;
+  if (!L_isADoubleInRange(stepSizeSexp, 1e-5, 1.0))
+    return L_returnMessage("stepSize is not between 1e-5 and 1.0");
   double stepSize = REAL(stepSizeSexp)[0];
-  if (!L_isAnIntegerInRange(stepsPerSampleSexp, 0, MAX_ITERATIONS)) return R_NilValue;
+  if (!L_isAnIntegerInRange(stepsPerSampleSexp, 0, MAX_ITERATIONS))
+    return L_returnMessage("stepsPerSample is not valid integer");
   size_t stepsPerSample = INTEGER(stepsPerSampleSexp)[0];
-  if (!L_isAnIntegerInRange(numSamplesSexp, 0, MAX_ITERATIONS)) return R_NilValue;
+  if (!L_isAnIntegerInRange(numSamplesSexp, 0, MAX_ITERATIONS))
+    return L_returnMessage("numSamples is not valid integer");
   size_t numSamples = INTEGER(numSamplesSexp)[0];
-  if (!L_isAnIntegerInRange(numSamplesBetweenInteruptChecksSexp, 0, numSamples+1)) return R_NilValue;
+  if (!L_isAnIntegerInRange(numSamplesBetweenInteruptChecksSexp, 0, numSamples+1))
+    return L_returnMessage("numSamplesBetweenInteruptChecks is not a valid integer");
   size_t numSamplesBetweenInteruptChecks = INTEGER(numSamplesBetweenInteruptChecksSexp)[0];
-  if (!L_isDoubleVector(initialValuesSexp, numSpecies)) return R_NilValue;
+  if (!L_isDoubleVector(initialValuesSexp, numSpecies))
+    return L_returnMessage("initialValues is not a valid numeric vector");
   double *initialValues = REAL(initialValuesSexp);
-  if (!L_isAnIntegerInRange(workingResultsMaskSexp, 0, MAX_ITERATIONS)) return R_NilValue;
+  if (!L_isAnIntegerInRange(workingResultsMaskSexp, 0, MAX_ITERATIONS))
+    return L_returnMessage("workingResultsMask is not a valid integer");
   size_t workingResultsMask = INTEGER(workingResultsMaskSexp)[0];
   size_t numWorkingResults = workingResultsMask + 1;
-  if (!L_isDoubleVector(workingResultsSexp, (numSpecies * numWorkingResults))) return R_NilValue;
+  if (!L_isDoubleVector(workingResultsSexp, (numSpecies * numWorkingResults)))
+    return L_returnMessage("workingResults is not a valid numeric vector/matrix");
   double *workingResults = REAL(workingResultsSexp);
-  if (!L_isDoubleVector(resultsSexp, (numSpecies * numSamples))) return R_NilValue;
+  if (!L_isDoubleVector(resultsSexp, (numSpecies * numSamples)))
+    return L_returnMessage("results is not a valid numeric vector/matrix");
   double *results = REAL(resultsSexp);
   //
   // copy the initial values into the results vector

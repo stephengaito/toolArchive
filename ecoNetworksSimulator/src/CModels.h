@@ -44,10 +44,11 @@ typedef struct CSpeciesTable_STRUCT {
   CSpecies *species;
 } CSpeciesTable;
 
-extern int L_isSpeciesTable(SEXP cSpeciesTable);
-extern int L_isAnIntegerInRange(SEXP anInt, int min, int max);
-extern int L_isADoubleInRange(SEXP aDouble, double min, double max);
-extern int L_isIntegerVector(SEXP aVector, size_t vectorSize);
-extern int L_isDoubleVector(SEXP aVector, size_t vectorSize);
+extern SEXP L_returnMessage(const char *message);
+extern int  L_isSpeciesTable(SEXP cSpeciesTable);
+extern int  L_isAnIntegerInRange(SEXP anInt, int min, int max);
+extern int  L_isADoubleInRange(SEXP aDouble, double min, double max);
+extern int  L_isIntegerVector(SEXP aVector, size_t vectorSize);
+extern int  L_isDoubleVector(SEXP aVector, size_t vectorSize);
 
 #endif

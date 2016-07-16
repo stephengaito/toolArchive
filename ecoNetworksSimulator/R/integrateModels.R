@@ -84,8 +84,8 @@ integrateModel <- function(model,
   numWorkingResults <- workingResultsMask + 1
   workingResults <- matrix(NA_real_, nrow = numWorkingResults, ncol = numSpecies)
   results <- matrix(NA_real_, nrow = numSamples, ncol = numSpecies)
-  print(tail(results))
-  if (numSamplesBetweenInteruptChecks < numSamples) {
+  #print(tail(results))
+  if (numSamples < numSamplesBetweenInteruptChecks) {
     numSamplesBetweenInteruptChecks = numSamples
   }
   results <- .C_integrateEuler(cModel,
@@ -97,6 +97,6 @@ integrateModel <- function(model,
                                workingResultsMask,
                                workingResults,
                                results)
-  print(tail(results))
+  #print(tail(results))
   results
 }

@@ -2,6 +2,14 @@
 
 #include "CModels.h"
 
+SEXP L_returnMessage(const char *message) {
+  SEXP result;
+  PROTECT(result = NEW_CHARACTER(1));
+  SET_STRING_ELT(result, 0, mkChar(message));
+  UNPROTECT(1);
+  return result;
+}
+
 int L_isSpeciesTable(SEXP cSpeciesTable) {
   if (!cSpeciesTable) return FALSE;
   if (TYPEOF(cSpeciesTable) != EXTPTRSXP) return FALSE;
@@ -62,7 +70,8 @@ void C_newSpeciesTable_Finalizer(SEXP cSpeciesTable) {
 }
 
 SEXP C_newSpeciesTable(SEXP numSpecies) {
-  if (!L_isAnIntegerInRange(numSpecies, 0, MAX_NUM_SPECIES)) return R_NilValue;
+  if (!L_isAnIntegerInRange(numSpecies, 0, MAX_NUM_SPECIES))
+    return L_returnMessage("numSpecies not an integer in correct range");
   CSpeciesTable *cSpeciesTablePtr = 
     (CSpeciesTable*)Calloc(1, CSpeciesTable);
   cSpeciesTablePtr->tag        = CSpeciesTable_TAG;
@@ -139,11 +148,12 @@ SEXP C_setSpeciesValues(SEXP cSpeciesTable, SEXP speciesNum, SEXP speciesValues)
 }
 
 SEXP L_getPredatorPreyCoefficients(int predatorPreyType, SEXP cSpeciesTable, SEXP speciesNum) {
-  if (!L_isSpeciesTable(cSpeciesTable)) return R_NilValue;
+  if (!L_isSpeciesTable(cSpeciesTable)) return L_returnMessage("cSpeciesTable provided is not valid");
   CSpeciesTable *cSpeciesTablePtr =
     (CSpeciesTable*)R_ExternalPtrAddr(cSpeciesTable);
-  if(!cSpeciesTablePtr) return R_NilValue;
-  if (!L_isAnIntegerInRange(speciesNum, 0, cSpeciesTablePtr->numSpecies)) return R_NilValue;
+  if(!cSpeciesTablePtr) return L_returnMessage("cSpeciesTable is not valid");
+  if (!L_isAnIntegerInRange(speciesNum, 0, cSpeciesTablePtr->numSpecies)) 
+    return L_returnMessage("species number is not valid");
   size_t speciesIndex = INTEGER(speciesNum)[0];
   CSpecies* speciesPtr = cSpeciesTablePtr->species + speciesIndex;
 
@@ -156,7 +166,7 @@ SEXP L_getPredatorPreyCoefficients(int predatorPreyType, SEXP cSpeciesTable, SEX
   } else if (predatorPreyType == PREY) {
     vecSize      = speciesPtr->numPrey;
     interactions = speciesPtr->prey;
-  } else return R_NilValue;
+  } else return L_returnMessage("incorrect predatorPreyType");
   
   if (vecSize < 1) return R_NilValue;
   
