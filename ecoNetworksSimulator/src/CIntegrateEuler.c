@@ -26,11 +26,13 @@ void L_rateChange(CSpeciesTable *cSpecies,
           *SpeciesPtr(curPrey->speciesIndex, curStep)
           * curPrey->attackRate;
       }
-      if (SMALLEST_DOUBLE < predationFactor) predationFactor = SMALLEST_DOUBLE;
+      if (predationFactor < SMALLEST_DOUBLE) predationFactor = SMALLEST_DOUBLE;
       predationFactor = 
         *SpeciesPtr(speciesNum, curStep)
         / predationFactor;
     }
+    //Rprintf("predationFactor[%d, %d] = %e (%e %d %d)\n", curStep, speciesNum, predationFactor,
+    //        curSpecies->halfSaturation, curSpecies->numPrey, curSpecies->numPredators);
     curSpecies->predationFactor = predationFactor;
   }
   for(size_t speciesNum = 0; speciesNum < cSpecies->numSpecies; speciesNum++) {
@@ -44,13 +46,15 @@ void L_rateChange(CSpeciesTable *cSpecies,
       if (SMALLEST_DOUBLE < curSpecies->growthRate) {
         double carryingCapacityFactor = 1.0;
         if (!ISNAN(curSpecies->carryingCapacity)) {
-          if (SMALLEST_DOUBLE < curSpecies->carryingCapacity) {
+          if (curSpecies->carryingCapacity < SMALLEST_DOUBLE) {
             curSpecies->carryingCapacity = SMALLEST_DOUBLE;
           }
           carryingCapacityFactor = 1.0 - (curSpeciesValue / curSpecies->carryingCapacity);
         }
+        //Rprintf("carryingCapacityFactor = %e (%e)\n", carryingCapacityFactor, curSpecies->carryingCapacity);
         rateChange += curSpecies->growthRate * curSpeciesValue * carryingCapacityFactor;
       }
+      //Rprintf("Ge rateChange[%d, %d] = %e\n", curStep, speciesNum, rateChange);
       //
       // compute growth-predation
       //
@@ -67,6 +71,7 @@ void L_rateChange(CSpeciesTable *cSpecies,
           rateChange += conversionFactor * curSpecies->predationFactor;
         }
       }
+      //Rprintf("Gp rateChange[%d, %d] = %e\n", curStep, speciesNum, rateChange);
       //
       // compute decay-predation
       //
@@ -79,12 +84,14 @@ void L_rateChange(CSpeciesTable *cSpecies,
       if (SMALLEST_DOUBLE < decayFactor) {
         rateChange += - curSpeciesValue * decayFactor;
       }
+      //Rprintf("Dp rateChange[%d, %d] = %e\n", curStep, speciesNum, rateChange);
       //
       // compute decay-natural-causes
       //
       if (SMALLEST_DOUBLE < curSpecies->mortality) {
         rateChange += - curSpecies->mortality * curSpeciesValue;
       }
+      //Rprintf("total rateChange[%d, %d] = %e\n", curStep, speciesNum, rateChange);
       speciesRateChanges[speciesNum] = rateChange;
     }
   }

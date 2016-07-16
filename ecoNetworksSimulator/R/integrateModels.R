@@ -28,12 +28,12 @@
     .C_setSpeciesValues(cModel, row-1, aRow)
     speciesName <- species[row,"species"]
     #
-    # work on predators
+    # work on predators (who eats ME?)
     #
-    predatorInteractions <- interactions[interactions$predator==speciesName,]
+    predatorInteractions <- interactions[interactions$prey==speciesName,]
     numPredators <- nrow(predatorInteractions)
     if (0 < numPredators) {
-      predators <- as.integer(lapply(predatorInteractions$prey, speciesIndex))
+      predators <- as.integer(lapply(predatorInteractions$predator, speciesIndex))
       .C_setPredatorCoefficients(cModel, 
                                  row - 1, 
                                  predators - 1, 
@@ -41,12 +41,12 @@
                                  predatorInteractions$conversionRate)
     }
     #
-    # work on prey
+    # work on prey (who do I eat?)
     #
-    preyInteractions     <- interactions[interactions$prey==speciesName,]
+    preyInteractions     <- interactions[interactions$predator==speciesName,]
     numPrey <- nrow(preyInteractions)
     if (0 < numPrey) {
-      prey <- as.integer(lapply(preyInteractions$predator, speciesIndex))
+      prey <- as.integer(lapply(preyInteractions$prey, speciesIndex))
       .C_setPreyCoefficients(cModel, 
                              row - 1, 
                              prey - 1,
