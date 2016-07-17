@@ -39,32 +39,32 @@ $$
   - D_p(\hat{S}^-_i) - D_n(S_i)
 $$
 
-For the growth from an external energy source, $G_e$, we assume a sigmoidal functional relationship with species density.  That is essentially exponential growth at low population densities with saturation at high population densities. We will assume that this sigmoidal functional relationship is given by the logistic growth equations. For decay by natural causes, $D_n$, we will assume simple linear decay. Hence, for species, $S_i$, we have the following two terms:
+For the growth from an external energy source, $G_e$, we assume a sigmoidal functional relationship with a time delayed species density.  That is essentially exponential growth at low population densities with saturation at high population densities. We will assume that this sigmoidal functional relationship is given by the logistic growth equations. For decay by natural causes, $D_n$, we will assume simple linear decay. Hence, for species, $S_i$, we have the following two terms:
 
 $$
 \begin{align*}
-G_e(S_i) & = & r_i * S_i * \left( 1 - \frac{S_i}{K_i} \right) \\
-D_n(S_i) & = & m_i * S_i
+G_e(S_i) & = & r_i * S_i(t) * \left( 1 - \frac{S_i(t - \tau_i)}{K_i} \right) \\
+D_n(S_i) & = & m_i * S_i(t)
 \end{align*}
 $$
 
-Where $r_i$, $K_i$ and $m_i$ are the growth rate, carrying capacity and mortalitiy rates for species $S_i$. Note that for a base species, these two terms, $G_e$ and $D_n$, can be amalgamated into a single term by suitable adjustments of the growth rate and carrying capacity parameters.
+Where $r_i$, $K_i$, $\tau_i$ and $m_i$ are the growth rate, carrying capacity, time delay and mortalitiy rates for species $S_i$. Note that for a base species, these two terms, $G_e$ and $D_n$, can be amalgamated into a single term by suitable adjustments of the growth rate and carrying capacity parameters.
 
-Now consider a **predator species**, $S_i$. We again assume a sigmoidal functional relationship with species density, but this time we assume the saturation to be dependent upon the total density of the species the predator consumes. That is the preadtor's growth for a given attack saturates the greater the total attacks (over all prey species). So for the predator we model the $G_c$ term as:
+Now consider a **predator species**, $S_i$. We again assume a sigmoidal functional relationship with species density, but this time we assume the saturation to be dependent upon the total density of the species the predator consumes. That is the preadtor's growth for a given attack saturates the greater the total attacks (over all prey species). We also assume that a given predator may attack its prey with a particular time delay. So for the predator we model the $G_c$ term as:
 
 $$
 G_c(S_i) =
-  \left( \sum_{j \in \hat{S}^+_i} e_{i,j} * a_{i,j} * S_j \right)
-  * \frac{S_i}{ h_i + \sum_{j \in \hat{S}^+_i} a_{i,j} * S_j }
+  \left( \sum_{j \in \hat{S}^+_i} e_{i,j} * a_{i,j} * S_j(t - \tau_{i,j}) \right)
+  * \frac{S_i(t)}{ h_i + \sum_{j \in \hat{S}^+_i} a_{i,j} * S_j(t - \tau_{i,j}) }
 $$
 
-Where $h_i$ is the half-saturation parameter for species $S_i$, and $e_{i,j}$ and $a_{i,j}$ are, respectively, the efficiency or conversion and attack rates of the predation of species $S_i$ on species $S_j$. For a given predator, the half-saturation parameter, $h_i$, can be normalized to $1$ by adjusting the efficiency or conversion rates, $e_{i,j}$ for the predator, $S_i$.
+Where $h_i$ is the half-saturation parameter for species $S_i$, and $e_{i,j}$, $a_{i,j}$ and $\tau_{i,j}$ are, respectively, the efficiency or conversion and attack rates and time delay of the predation of species $S_i$ on species $S_j$. For a given predator, the half-saturation parameter, $h_i$, can be normalized to $1$ by adjusting the efficiency or conversion rates, $e_{i,j}$ for the predator, $S_i$.
 
 Now consider a **prey species**, $S_i$. We assume the decay due to predation, $D_p$, depends upon all predator species which consume $S_i$:
 
 $$
-D_p(S_i) = \sum_{j \in \hat{S}^-_i} a_{i,j} * S_i
-  * \frac{S_j}{h_j + \sum_{k \in \hat{S}^+_j} a_{j,k} * S_k}
+D_p(S_i) = \sum_{j \in \hat{S}^-_i} a_{j,i} * S_i(t - \tau_{j,i})
+  * \frac{S_j}{h_j + \sum_{k \in \hat{S}^+_j} a_{j,k} * S_k(t - \tau_{j,k})}
 $$
 
 Putting this all together, for a general species, $S_i$, which might be both a predator and a prey, we get:
@@ -72,12 +72,12 @@ Putting this all together, for a general species, $S_i$, which might be both a p
 $$
 \begin{align*}
 \frac{dS_i}{dt}
-  & = & r_i * S_i * \left( 1 - \frac{S_i}{K_i} \right) \\
-  &   &  + \left( \sum_{j \in \hat{S}^+_i} e_{i,j} * a_{i,j} * S_j \right)
-          * \frac{S_i}{ h_i + \sum_{j \in \hat{S}^+_i} a_{i,j} * S_j } \\
-  &   &  - \sum_{j \in \hat{S}^-_i} a_{i,j} * S_i
-          * \frac{S_j}{h_j + \sum_{k \in \hat{S}^+_j} a_{j,k} * S_k} \\
-  &   &  - m_i * S_i
+  & = & r_i * S_i(t) * \left( 1 - \frac{S_i(t - \tau_i)}{K_i} \right) \\
+  &   &  + \left( \sum_{j \in \hat{S}^+_i} e_{i,j} * a_{i,j} * S_j(t - \tau_{i,j}) \right)
+          * \frac{S_i(t)}{ h_i + \sum_{j \in \hat{S}^+_i} a_{i,j} * S_j(t - \tau_{i,j}) } \\
+  &   &  - \sum_{j \in \hat{S}^-_i} a_{j,i} * S_i(t - \tau_{j,i})
+          * \frac{S_j(t)}{h_j + \sum_{k \in \hat{S}^+_j} a_{j,k} * S_k(t - \tau_{j,k})} \\
+  &   &  - m_i * S_i(t)
 \end{align*}
 $$
 
@@ -88,9 +88,9 @@ For a **base species**:
 $$
 \begin{align*}
 \frac{dS_i}{dt}
-  & = & r_i * S_i * \left( 1 - \frac{S_i}{K_i} \right) \\
-  &   &  - \sum_{j \in \hat{S}^-_i} a_{i,j} * S_i
-          * \frac{S_j}{h_j + \sum_{k \in \hat{S}^+_j} a_{j,k} * S_k}
+  & = & r_i * S_i(t) * \left( 1 - \frac{S_i(t - \tau_i)}{K_i} \right) \\
+  &   &  - \sum_{j \in \hat{S}^-_i} a_{j,i} * S_i(t - \tau_{j,i})
+          * \frac{S_j(t)}{h_j + \sum_{k \in \hat{S}^+_j} a_{j,k} * S_k(t - \tau_{j,k})} 
 \end{align*}
 $$
 
@@ -99,11 +99,11 @@ For an **intermediate species** (both a predator and a prey) we have:
 $$
 \begin{align*}
 \frac{dS_i}{dt}
-  & = &  + \left( \sum_{j \in \hat{S}^+_i} e_{i,j} * a_{i,j} * S_j \right)
-          * \frac{S_i}{ h_i + \sum_{j \in \hat{S}^+_i} a_{i,j} * S_j } \\
-  &   &  - \sum_{j \in \hat{S}^-_i} a_{i,j} * S_i
-          * \frac{S_j}{h_j + \sum_{k \in \hat{S}^+_j} a_{j,k} * S_k} \\
-  &   &  - m_i * S_i
+  & = &  + \left( \sum_{j \in \hat{S}^+_i} e_{i,j} * a_{i,j} * S_j(t - \tau_{i,j}) \right)
+          * \frac{S_i(t)}{ h_i + \sum_{j \in \hat{S}^+_i} a_{i,j} * S_j(t - \tau_{i,j}) } \\
+  &   &  - \sum_{j \in \hat{S}^-_i} a_{j,i} * S_i(t - \tau_{j,i})
+          * \frac{S_j(t)}{h_j + \sum_{k \in \hat{S}^+_j} a_{j,k} * S_k(t - \tau_{j,k})} \\
+  &   &  - m_i * S_i(t)
 \end{align*}
 $$
 
@@ -112,9 +112,9 @@ For a **top predator** we have:
 $$
 \begin{align*}
 \frac{dS_i}{dt}
-  & = &  + \left( \sum_{j \in \hat{S}^+_i} e_{i,j} * a_{i,j} * S_j \right)
-          * \frac{S_i}{ h_i + \sum_{j \in \hat{S}^+_i} a_{i,j} * S_j } \\
-  &   &  - m_i * S_i
+  &   &  + \left( \sum_{j \in \hat{S}^+_i} e_{i,j} * a_{i,j} * S_j(t - \tau_{i,j}) \right)
+          * \frac{S_i(t)}{ h_i + \sum_{j \in \hat{S}^+_i} a_{i,j} * S_j(t - \tau_{i,j}) } \\
+  &   &  - m_i * S_i(t)
 \end{align*}
 $$
 
@@ -131,11 +131,13 @@ species <- newSpeciesTable()
 species <- addSpecies(species, 
   "resource1",
   growthRate=0.2,
-  carryingCapacity=25)
+  carryingCapacity=25,
+  timeLag = 0.0)
 species <- addSpecies(species, 
   "resource2",
   growthRate=0.2,
-  carryingCapacity=25)
+  carryingCapacity=25,
+  timeLag = 3.5)
 species <- addSpecies(species, 
   "consumer",
   mortality=0.2,
@@ -151,12 +153,14 @@ interactions <- addInteraction(interactions,
   predator="consumer",
   prey="resource1",
   attackRate=0.1,
-  conversionRate=0.35)
+  conversionRate=0.35,
+  timeLag = 0.0)
 interactions <- addInteraction(interactions,
   predator="consumer",
   prey="resource2",
   attackRate=0.1,
-  conversionRate=0.35)
+  conversionRate=0.35,
+  timeLag = 2.3)
 interactions
 ```
 
@@ -186,11 +190,13 @@ speciesStd <- newSpeciesTable()
 speciesStd <- addSpecies(speciesStd, 
   name="resource1",
   growthRate=0.01,
-  carryingCapacity=5)
+  carryingCapacity=5,
+  timeLag = 0.01)
 speciesStd <- addSpecies(speciesStd, 
   name="resource2",
   growthRate=0.01,
-  carryingCapacity=5)
+  carryingCapacity=5,
+  timeLag = 0.1)
 speciesStd <- addSpecies(speciesStd, 
   name="consumer",
   mortality=0.01,
@@ -206,12 +212,14 @@ interactionsStd <- addInteraction(interactionsStd,
   predator="consumer",
   prey="resource1",
   attackRate=0.01,
-  conversionRate=0.1)
+  conversionRate=0.1,
+  timeLag = 0.01)
 interactionsStd <- addInteraction(interactionsStd,
   predator="consumer",
   prey="resource2",
   attackRate=0.01,
-  conversionRate=0.1)
+  conversionRate=0.1,
+  timeLag = 0.1)
 interactionsStd
 ```
 
