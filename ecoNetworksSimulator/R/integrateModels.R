@@ -82,8 +82,19 @@ integrateModel <- function(model,
                            numSamplesBetweenInteruptChecks = 100) {
   cModel <- .R_buildCModel(model)
   numSpecies <- numSpeciesInModel(model)
-  workingResultsMask <- 15
-  numWorkingResults <- workingResultsMask + 1
+  maxTimeLag <- maximumTimeLag(model)
+  #print(maxTimeLag)
+  maxTimeLagSteps <- maxTimeLag / stepSize
+  #print(maxTimeLagSteps)
+  if (2^16 < maxTimeLagSteps) {
+    stop("maximumTimeLag / stepSize is too large")
+  }
+  numWorkingResults <- 4
+  while(numWorkingResults < maxTimeLagSteps) {
+    numWorkingResults <- numWorkingResults * 2
+  }
+  workingResultsMask <- numWorkingResults - 1
+  #print(workingResultsMask)
   workingResults <- matrix(NA_real_, nrow = numWorkingResults, ncol = numSpecies)
   results <- matrix(NA_real_, nrow = numSamples, ncol = numSpecies)
   #print(tail(results))

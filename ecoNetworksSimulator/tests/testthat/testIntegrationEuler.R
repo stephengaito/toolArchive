@@ -19,6 +19,7 @@ test_that("we can build a C-model from an R-model", {
                                  conversionRate = 0.40,
                                  timeLag = 4)
   r2c1 <- newModel(species, interactions)
+  expect_equal(maximumTimeLag(r2c1), 4)
   cModel <- .R_buildCModel(r2c1)
   numSpecies <- .C_numSpecies(cModel)
   expect_equal(numSpecies, 3)
@@ -96,14 +97,15 @@ test_that("we can build a C-model from an R-model", {
 
 test_that("we can euler integrate simple model", {
   species <- newSpeciesTable()
-  species <- addSpecies(species, "resource", growthRate = 0.2, carryingCapacity = 25)
+  species <- addSpecies(species, "resource", growthRate = 0.2, carryingCapacity = 25, timeLag = 15)
   species <- addSpecies(species, "consumer", mortality = 0.2, halfSaturation = 25)
   interactions <- newInteractionsTable()
   interactions <- addInteraction(interactions,
     predator = "consumer",
     prey = "resource",
     attackRate = 0.1,
-    conversionRate = 0.35)
+    conversionRate = 0.35,
+    timeLag = 0.3)
   r1c1 <- newModel(species, interactions)
   #print(r1c1)
   numSpecies <- numSpeciesInModel(r1c1)

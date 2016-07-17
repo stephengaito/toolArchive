@@ -178,6 +178,15 @@ numSpeciesInModel <- function(model) {
   nrow(model$species)  
 }
 
+#' Returns the maximum time lag in the model
+#' 
+#' @param  aModel the model
+#' @return the maximum time lag in the model
+#' @export
+maximumTimeLag <- function(aModel) {
+  max( max(aModel$species$timeLag), max(aModel$interactions$timeLag) )
+}
+
 #' Create a normal model
 #' 
 #' A normal model is a list of tables which includes both means and standard
