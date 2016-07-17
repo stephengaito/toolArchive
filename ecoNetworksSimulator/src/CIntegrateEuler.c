@@ -97,7 +97,7 @@ void L_rateChange(CSpeciesTable *cSpecies,
       CInteraction *maxPredator = curPredator + curSpecies->numPredators;
       for(; curPredator < maxPredator; curPredator++) {
         decayFactor += *SpeciesPtr(speciesNum, TimeLag(curPredator->timeLag))
-          * curPredator->attackRate * cSpecies->species[speciesNum].predationFactor;
+          * curPredator->attackRate * cSpecies->species[curPredator->speciesIndex].predationFactor;
       }
       if (SMALLEST_DOUBLE < decayFactor) {
         rateChange += - decayFactor;

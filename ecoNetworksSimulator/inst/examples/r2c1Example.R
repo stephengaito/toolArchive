@@ -25,6 +25,6 @@ interactions <- addInteraction(interactions,
 r2c1 <- newModel(species, interactions)
 print(r2c1)
 numSpecies <- numSpeciesInModel(r2c1)
-initialValues <- matrix( c(100.1, 100.0, 1.0), nrow = 1, ncol=numSpecies)
+initialValues <- matrix( c(11, 10, 10), nrow = 1, ncol=numSpecies)
 print(initialValues)
-results <- integrateModel(r1c1, 0.1, 10, 1000, initialValues)
+results <- integrateModel(r2c1, 0.1, 10, 1000, initialValues)
