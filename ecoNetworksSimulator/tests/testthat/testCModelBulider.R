@@ -13,7 +13,7 @@ test_that("C_numSpecies reports the correct number of species for a species tabl
 
 test_that("C_getSpeciesValues gets the correct values", {
   test <- .C_newSpeciesTable(10)
-  expect_false(.C_setSpeciesValues(test, 50, c(0.1, 0.2, 1.0, 0.3, 0.4)))
+  expect_error(.C_setSpeciesValues(test, 50, c(0.1, 0.2, 1.0, 0.3, 0.4)))
   expect_true(.C_setSpeciesValues(test, 5, c(0.1, 0.2, 1.0, 0.4, 0.5)))
   expect_true(.C_setSpeciesValues(test, 6, c(0.1, NA_real_, 0.0, 0.4, 0.5)))
   values <- .C_getSpeciesValues(test, 2)
@@ -41,8 +41,8 @@ test_that("C_getSpeciesValues gets the correct values", {
 
 test_that("we can get/set Predator/Prey Coefficients", {
   test <- .C_newSpeciesTable(15)
-  expect_false(.C_setPredatorCoefficients(test, 50, c(1, 2), c(0.1, 0.2), c(1.1, 1.2), c(0, 1)))
-  expect_false(.C_setPreyCoefficients(test, 50, c(3, 4), c(0.3, 0.4), c(1.3, 1.4), c(10, 11)))
+  expect_error(.C_setPredatorCoefficients(test, 50, c(1, 2), c(0.1, 0.2), c(1.1, 1.2), c(0, 1)))
+  expect_error(.C_setPreyCoefficients(test, 50, c(3, 4), c(0.3, 0.4), c(1.3, 1.4), c(10, 11)))
   #
   expect_false(.C_setPredatorCoefficients(test, 2, c(101, 2), c(10.1, 10.2), c(11.1, 11.2), c(20, 21)))
   expect_false(.C_setPreyCoefficients(test, 2, c(103, 4), c(1.3, 1.4), c(2.3, 2.4), c(30, 31)))

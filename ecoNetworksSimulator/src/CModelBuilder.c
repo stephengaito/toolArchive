@@ -2,58 +2,6 @@
 
 #include "CModels.h"
 
-SEXP L_returnMessage(const char *message) {
-  SEXP result;
-  PROTECT(result = NEW_CHARACTER(1));
-  SET_STRING_ELT(result, 0, mkChar(message));
-  UNPROTECT(1);
-  return result;
-}
-
-int L_isSpeciesTable(SEXP cSpeciesTable) {
-  if (!cSpeciesTable) return FALSE;
-  if (TYPEOF(cSpeciesTable) != EXTPTRSXP) return FALSE;
-  CSpeciesTable *cSpeciesTablePtr = 
-    (CSpeciesTable*)R_ExternalPtrAddr(cSpeciesTable);
-  if (!cSpeciesTablePtr) return FALSE;
-  if (cSpeciesTablePtr->tag != CSpeciesTable_TAG) return FALSE;
-  return TRUE;
-}
-
-int L_isAnIntegerInRange(SEXP anInt, int min, int max) {
-  if (!anInt) return FALSE;
-  if (!IS_INTEGER(anInt)) return FALSE;
-  if (GET_LENGTH(anInt) < 1) return FALSE;
-  if (INTEGER(anInt)[0] < min) return FALSE;
-  if (max <= INTEGER(anInt)[0]) return FALSE;
-  return TRUE;
-}
-
-int L_isADoubleInRange(SEXP aDouble, double min, double max) {
-  if (!aDouble) return FALSE;
-  if (!IS_NUMERIC(aDouble)) return FALSE;
-  if (GET_LENGTH(aDouble) < 1) return FALSE;
-  if (REAL(aDouble)[0] < min) return FALSE;
-  if (max <= REAL(aDouble)[0]) return FALSE;
-  return TRUE;
-}
-
-int L_isIntegerVector(SEXP aVector, size_t vectorSize) {
-  if (!aVector) return FALSE;
-  if (!IS_VECTOR(aVector)) return FALSE;
-  if (!IS_INTEGER(aVector)) return FALSE;
-  if ((0 < vectorSize) && (GET_LENGTH(aVector) != vectorSize)) return FALSE;
-  return TRUE;
-}
-
-int L_isDoubleVector(SEXP aVector, size_t vectorSize) {
-  if (!aVector) return FALSE;
-  if (!IS_VECTOR(aVector)) return FALSE;
-  if (!IS_NUMERIC(aVector)) return FALSE;
-  if ((0 < vectorSize) && (GET_LENGTH(aVector) != vectorSize)) return FALSE;
-  return TRUE;
-}
-
 void C_newSpeciesTable_Finalizer(SEXP cSpeciesTable) {
   if (L_isSpeciesTable(cSpeciesTable)) {
     CSpeciesTable *cSpeciesTablePtr =
@@ -70,8 +18,7 @@ void C_newSpeciesTable_Finalizer(SEXP cSpeciesTable) {
 }
 
 SEXP C_newSpeciesTable(SEXP numSpecies) {
-  if (!L_isAnIntegerInRange(numSpecies, 0, MAX_NUM_SPECIES))
-    return L_returnMessage("numSpecies not an integer in correct range");
+  L_assertAnIntegerInRange("numSpecies", numSpecies, 0, MAX_NUM_SPECIES);
   CSpeciesTable *cSpeciesTablePtr = 
     (CSpeciesTable*)Calloc(1, CSpeciesTable);
   cSpeciesTablePtr->tag        = CSpeciesTable_TAG;
@@ -113,17 +60,13 @@ SEXP C_numSpecies(SEXP cTable) {
 }
 
 SEXP C_getSpeciesValues(SEXP cSpeciesTable, SEXP speciesNum) {
-  SEXP result = NEW_NUMERIC(SPECIES_NUM_VALUES);
-  REAL(result)[SPECIES_GROWTH_RATE]       = NA_REAL;
-  REAL(result)[SPECIES_CARRYING_CAPACITY] = NA_REAL;
-  REAL(result)[SPECIES_TIME_LAG]          = NA_REAL;
-  REAL(result)[SPECIES_MORTALITY]         = NA_REAL;
-  REAL(result)[SPECIES_HALF_SATURATION]   = NA_REAL;
-  if (!L_isSpeciesTable(cSpeciesTable)) return result;
+  L_assertSpeciesTable("cSpeciesTable", cSpeciesTable);
   CSpeciesTable *cSpeciesTablePtr = (CSpeciesTable*)R_ExternalPtrAddr(cSpeciesTable); 
-  if (!L_isAnIntegerInRange(speciesNum, 0, cSpeciesTablePtr->numSpecies)) return result;
+  L_assertNotNull("cSpeciesTablePtr", cSpeciesTablePtr);
+  L_assertAnIntegerInRange("speciesNum", speciesNum, 0, cSpeciesTablePtr->numSpecies);
   size_t speciesIndex = INTEGER(speciesNum)[0];
   CSpecies* speciesPtr = cSpeciesTablePtr->species + speciesIndex;
+  SEXP result = NEW_NUMERIC(SPECIES_NUM_VALUES);
   REAL(result)[SPECIES_GROWTH_RATE]       = speciesPtr->growthRate;
   REAL(result)[SPECIES_CARRYING_CAPACITY] = speciesPtr->carryingCapacity;
   REAL(result)[SPECIES_TIME_LAG]          = (double)speciesPtr->timeLag;
@@ -135,13 +78,13 @@ SEXP C_getSpeciesValues(SEXP cSpeciesTable, SEXP speciesNum) {
 SEXP C_setSpeciesValues(SEXP cSpeciesTable, SEXP speciesNum, SEXP speciesValues) {
   SEXP result = NEW_LOGICAL(1);
   LOGICAL(result)[0] = FALSE;
-  if (!L_isSpeciesTable(cSpeciesTable)) return result;
+  L_assertSpeciesTable("cSpeciedTable", cSpeciesTable);
   CSpeciesTable *cSpeciesTablePtr = (CSpeciesTable*)R_ExternalPtrAddr(cSpeciesTable); 
-  if (!cSpeciesTablePtr) return result;
-  if (!L_isAnIntegerInRange(speciesNum, 0, cSpeciesTablePtr->numSpecies)) return result;
+  L_assertNotNull("cSpeciesTablePtr", cSpeciesTablePtr);
+  L_assertAnIntegerInRange("speciesNum", speciesNum, 0, cSpeciesTablePtr->numSpecies);
   size_t speciesIndex = INTEGER(speciesNum)[0];
   CSpecies* speciesPtr = cSpeciesTablePtr->species + speciesIndex;
-  if (!L_isDoubleVector(speciesValues, SPECIES_NUM_VALUES)) return result;
+  L_assertDoubleVector("speciesValues", speciesValues, SPECIES_NUM_VALUES);
   speciesPtr->growthRate       = REAL(speciesValues)[SPECIES_GROWTH_RATE];
   speciesPtr->carryingCapacity = REAL(speciesValues)[SPECIES_CARRYING_CAPACITY];
   speciesPtr->timeLag          = (int) (REAL(speciesValues)[SPECIES_TIME_LAG] + SMALLEST_DOUBLE);
@@ -152,12 +95,11 @@ SEXP C_setSpeciesValues(SEXP cSpeciesTable, SEXP speciesNum, SEXP speciesValues)
 }
 
 SEXP L_getPredatorPreyCoefficients(int predatorPreyType, SEXP cSpeciesTable, SEXP speciesNum) {
-  if (!L_isSpeciesTable(cSpeciesTable)) return L_returnMessage("cSpeciesTable provided is not valid");
+  L_assertSpeciesTable("cSpeciesTable", cSpeciesTable);
   CSpeciesTable *cSpeciesTablePtr =
     (CSpeciesTable*)R_ExternalPtrAddr(cSpeciesTable);
-  if(!cSpeciesTablePtr) return L_returnMessage("cSpeciesTable is not valid");
-  if (!L_isAnIntegerInRange(speciesNum, 0, cSpeciesTablePtr->numSpecies)) 
-    return L_returnMessage("species number is not valid");
+  L_assertNotNull("cSpeciesTablePtr", cSpeciesTablePtr);
+  L_assertAnIntegerInRange("speciesNum", speciesNum, 0, cSpeciesTablePtr->numSpecies);
   size_t speciesIndex = INTEGER(speciesNum)[0];
   CSpecies* speciesPtr = cSpeciesTablePtr->species + speciesIndex;
 
@@ -205,21 +147,21 @@ SEXP L_setPredatorPreyCoefficients(int predatorPreyType,
                                    SEXP speciesTimeLagVec) {
   SEXP result = NEW_LOGICAL(1);
   LOGICAL(result)[0] = FALSE;
-  if (!L_isSpeciesTable(cSpeciesTable)) return result;
+  L_assertSpeciesTable("cSpeciesTable", cSpeciesTable);
   CSpeciesTable *cSpeciesTablePtr =
     (CSpeciesTable*)R_ExternalPtrAddr(cSpeciesTable);
-  if(!cSpeciesTablePtr) return result;
-  if (!L_isAnIntegerInRange(speciesNum, 0, cSpeciesTablePtr->numSpecies)) return result;
+  L_assertNotNull("cSpeciesTablePtr", cSpeciesTablePtr);
+  L_assertAnIntegerInRange("speciesNum", speciesNum, 0, cSpeciesTablePtr->numSpecies);
   size_t speciesIndex = INTEGER(speciesNum)[0];
   CSpecies* speciesPtr = cSpeciesTablePtr->species + speciesIndex;
-  if (!L_isIntegerVector(speciesNumVec, 0)) return result;
+  L_assertIntegerVector("speciesNum", speciesNumVec, 0);
   int *speciesNumData = INTEGER(speciesNumVec);
   size_t vecSize = GET_LENGTH(speciesNumVec);
-  if (!L_isDoubleVector(speciesAttackVec, vecSize)) return result;
+  L_assertDoubleVector("speciesAttack", speciesAttackVec, vecSize);
   double *speciesAttackData = REAL(speciesAttackVec);
-  if (!L_isDoubleVector(speciesConversionVec, vecSize)) return result;
+  L_assertDoubleVector("speciesConversion", speciesConversionVec, vecSize);
   double *speciesConversionData = REAL(speciesConversionVec);
-  if (!L_isIntegerVector(speciesTimeLagVec, vecSize)) return result;
+  L_assertIntegerVector("speciesTimeLag", speciesTimeLagVec, vecSize);
   int *speciesTimeLagData = INTEGER(speciesTimeLagVec);
   CInteraction* interactions = (CInteraction*)Calloc(vecSize, CInteraction);
   for(size_t i = 0; i < vecSize; i++) {

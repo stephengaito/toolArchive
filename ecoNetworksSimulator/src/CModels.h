@@ -48,10 +48,12 @@ typedef struct CSpeciesTable_STRUCT {
 } CSpeciesTable;
 
 extern SEXP L_returnMessage(const char *message);
-extern int  L_isSpeciesTable(SEXP cSpeciesTable);
-extern int  L_isAnIntegerInRange(SEXP anInt, int min, int max);
-extern int  L_isADoubleInRange(SEXP aDouble, double min, double max);
-extern int  L_isIntegerVector(SEXP aVector, size_t vectorSize);
-extern int  L_isDoubleVector(SEXP aVector, size_t vectorSize);
+extern int  L_isSpeciesTable(SEXP cSpeciesTable); // used by finalizer -- need to be kept simple
+extern void L_assertSpeciesTable(const char* objName, SEXP cSpeciesTable);
+extern void L_assertNotNull(const char* objName, void* aPointer);
+extern void L_assertAnIntegerInRange(const char* objName, SEXP anInt, int min, int max);
+extern void L_assertADoubleInRange(const char* objName, SEXP aDouble, double min, double max);
+extern void L_assertIntegerVector(const char* objName, SEXP aVector, size_t vectorSize);
+extern void L_assertDoubleVector(const char* objName, SEXP aVector, size_t vectorSize);
 
 #endif
