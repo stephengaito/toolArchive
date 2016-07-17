@@ -65,7 +65,7 @@
 #'   collected
 #' @param numSamples the number of samples to collect in this integration
 #' @param initialValues the initial values for this integration
-#' @param numStepsBetweenInteruptChecks the number of samples collected between
+#' @param numSamplesBetweenInteruptChecks the number of samples collected between
 #'   each check for user interupts. A small number will slow down the
 #'   integration, while a large number will inhibit the user's ability to stop a
 #'   long running integration. The default is 100 samples.
