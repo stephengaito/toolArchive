@@ -10,6 +10,7 @@ newSpeciesTable <- function() {
   data.frame(species=character(),
              growthRate=numeric(),
              carryingCapacity=numeric(),
+             timeLag=numeric(),
              mortality=numeric(),
              halfSaturation=numeric())
 }
@@ -22,7 +23,7 @@ newSpeciesTable <- function() {
 isSpeciesTable <- function(speciesTable){
   is.data.frame(speciesTable) && 
     colnames(speciesTable) == 
-      c("species", "growthRate", "carryingCapacity", "mortality", "halfSaturation")
+      c("species", "growthRate", "carryingCapacity", "timeLag", "mortality", "halfSaturation")
 }
 
 #' Returns the number of species in a species table
@@ -42,6 +43,7 @@ numSpeciesInTable <- function(speciesTable) {
 #' @param name the name of the species
 #' @param growthRate the growth rate of the species (could be 0.0)
 #' @param carryingCapacity the carrying capacity of the species (could be NA)
+#' @param timeLag the time lag for the carrying capacity term
 #' @param mortality the mortality of the species (could be NA)
 #' @param halfSaturation the half saturation point for the predator's predation
 #' @export
@@ -49,12 +51,14 @@ addSpecies <- function(speciesTable,
                        name, 
                        growthRate=0.0, 
                        carryingCapacity=NA_real_, 
+                       timeLag=0.0,
                        mortality=0.0,
                        halfSaturation=NA_real_){
   rbind(speciesTable, 
         data.frame(species=name,
                    growthRate=growthRate,
                    carryingCapacity=carryingCapacity,
+                   timeLag=timeLag,
                    mortality=mortality,
                    halfSaturation=halfSaturation))
 }
@@ -72,7 +76,8 @@ newInteractionsTable <- function() {
   data.frame(predator=character(),
              prey=character(),
              attackRate=numeric(),
-             conversionRate=numeric())
+             conversionRate=numeric(),
+             timeLag=numeric())
 }
 
 #' Check that a table is a interactions table
@@ -83,7 +88,7 @@ newInteractionsTable <- function() {
 isInteractionsTable <- function(interactionsTable){
   is.data.frame(interactionsTable) && 
     colnames(interactionsTable) == 
-      c("predator", "prey", "attackRate", "conversionRate")
+      c("predator", "prey", "attackRate", "conversionRate", "timeLag")
 }
 
 #' Add a species interaction to an existing interactions table
@@ -97,17 +102,20 @@ isInteractionsTable <- function(interactionsTable){
 #' @param attackRate the rate at which the predator attacks the prey
 #' @param conversionRate the rate at which the predator converts its prey into
 #'   itself
+#' @param timeLag the time lag for the prey species
 #' @export
 addInteraction <- function(interactionsTable, 
                        predator, 
                        prey,
                        attackRate=0.0, 
-                       conversionRate=0.0) {
+                       conversionRate=0.0,
+                       timeLag=0.0) {
   rbind(interactionsTable, 
         data.frame(predator=predator,
                    prey=prey,
                    attackRate=attackRate,
-                   conversionRate=conversionRate))
+                   conversionRate=conversionRate,
+                   timeLag=timeLag))
 }
 
 #' Check that a speciesTable and a given interactionsTable are related.
