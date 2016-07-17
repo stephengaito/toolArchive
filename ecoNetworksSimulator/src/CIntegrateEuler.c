@@ -10,6 +10,7 @@
 #define DEBUG(...)
 #endif
 
+#define TimeLag(timeLag) (((((int)curStep) - ((int)(timeLag))) < 1) ? 0 : (curStep - (timeLag)))
 #define SpeciesPtr(speciesNum, i) (workingResults + (speciesNum)*numWorkingResults + ((i) & workingResultsMask))
 #define SpeciesSamplesPtr(speciesNum, i) (results + (speciesNum)*numSamples + (i))
 
@@ -37,7 +38,7 @@ void L_rateChange(CSpeciesTable *cSpecies,
       CInteraction *maxPrey = curPrey + curSpecies->numPrey;
       for(; curPrey < maxPrey; curPrey++) {
         predationFactor += 
-          *SpeciesPtr(curPrey->speciesIndex, curStep)
+          *SpeciesPtr(curPrey->speciesIndex, TimeLag(curPrey->timeLag))
           * curPrey->attackRate;
       }
       DEBUG("predationSum = %e\n", predationFactor);
@@ -64,7 +65,8 @@ void L_rateChange(CSpeciesTable *cSpecies,
           if (curSpecies->carryingCapacity < SMALLEST_DOUBLE) {
             curSpecies->carryingCapacity = SMALLEST_DOUBLE;
           }
-          carryingCapacityFactor = 1.0 - (curSpeciesValue / curSpecies->carryingCapacity);
+          carryingCapacityFactor = 1.0 -
+            ((*SpeciesPtr(speciesNum, TimeLag(curSpecies->timeLag))) / curSpecies->carryingCapacity);
         }
         DEBUG("carryingCapacityFactor = %e (%e)\n", carryingCapacityFactor, curSpecies->carryingCapacity);
         rateChange += curSpecies->growthRate * curSpeciesValue * carryingCapacityFactor;
@@ -79,7 +81,7 @@ void L_rateChange(CSpeciesTable *cSpecies,
         CInteraction *maxPrey = curPrey + curSpecies->numPrey;
         for(; curPrey < maxPrey; curPrey++) {
           conversionFactor += 
-            *SpeciesPtr(curPrey->speciesIndex, curStep)
+            *SpeciesPtr(curPrey->speciesIndex, TimeLag(curPrey->timeLag))
             * curPrey->attackRate * curPrey->conversionRate;
         }
         if (SMALLEST_DOUBLE < conversionFactor) {
@@ -94,10 +96,11 @@ void L_rateChange(CSpeciesTable *cSpecies,
       CInteraction *curPredator = curSpecies->predators;
       CInteraction *maxPredator = curPredator + curSpecies->numPredators;
       for(; curPredator < maxPredator; curPredator++) {
-        decayFactor += curPredator->attackRate * cSpecies->species[speciesNum].predationFactor;
+        decayFactor += *SpeciesPtr(speciesNum, TimeLag(curPredator->timeLag))
+          * curPredator->attackRate * cSpecies->species[speciesNum].predationFactor;
       }
       if (SMALLEST_DOUBLE < decayFactor) {
-        rateChange += - curSpeciesValue * decayFactor;
+        rateChange += - decayFactor;
       }
       DEBUG("Dp rateChange[%d, %d] = %e\n", curStep, speciesNum, rateChange);
       //
