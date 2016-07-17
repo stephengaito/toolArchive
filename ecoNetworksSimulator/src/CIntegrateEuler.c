@@ -2,6 +2,14 @@
 
 #include "CModels.h"
 
+// To turn off debug output... comment out the next line
+//#define DEBUG_OUTPUT
+#ifdef  DEBUG_OUTPUT
+#define DEBUG(...)  Rprintf(__VA_ARGS__)
+#else
+#define DEBUG(...)
+#endif
+
 #define SpeciesPtr(speciesNum, i) (workingResults + (speciesNum)*numWorkingResults + ((i) & workingResultsMask))
 #define SpeciesSamplesPtr(speciesNum, i) (results + (speciesNum)*numSamples + (i))
 
@@ -13,7 +21,10 @@ void L_rateChange(CSpeciesTable *cSpecies,
                   size_t numWorkingResults) {
   size_t speciesNum = 0;
   size_t numSpecies = cSpecies->numSpecies;
+  DEBUG("\ncurStep = %d workingResults = %p numWorkingResults = %d workingResultsMask = 0x%X\n",
+                curStep, workingResults, numWorkingResults, workingResultsMask);
   for(speciesNum = 0; speciesNum < numSpecies; speciesNum++) {
+    DEBUG("species[%d, %d] = %e\n", speciesNum, curStep, *SpeciesPtr(speciesNum, curStep));
     //
     // compute predation-factor
     //
@@ -21,6 +32,7 @@ void L_rateChange(CSpeciesTable *cSpecies,
     double predationFactor = 0;
     if (!ISNAN(curSpecies->halfSaturation) && (0 < curSpecies->numPrey)) {
       predationFactor = curSpecies->halfSaturation;
+      DEBUG("halfSaturation = %e\n", curSpecies->halfSaturation);
       CInteraction *curPrey = curSpecies->prey;
       CInteraction *maxPrey = curPrey + curSpecies->numPrey;
       for(; curPrey < maxPrey; curPrey++) {
@@ -28,13 +40,14 @@ void L_rateChange(CSpeciesTable *cSpecies,
           *SpeciesPtr(curPrey->speciesIndex, curStep)
           * curPrey->attackRate;
       }
+      DEBUG("predationSum = %e\n", predationFactor);
       if (predationFactor < SMALLEST_DOUBLE) predationFactor = SMALLEST_DOUBLE;
       predationFactor = 
         *SpeciesPtr(speciesNum, curStep)
         / predationFactor;
     }
-    //Rprintf("predationFactor[%d, %d] = %e (%e %d %d)\n", curStep, speciesNum, predationFactor,
-    //        curSpecies->halfSaturation, curSpecies->numPrey, curSpecies->numPredators);
+    DEBUG("predationFactor[%d, %d] = %e (%e %d %d)\n", curStep, speciesNum, predationFactor,
+        curSpecies->halfSaturation, curSpecies->numPrey, curSpecies->numPredators);
     curSpecies->predationFactor = predationFactor;
   }
   for(size_t speciesNum = 0; speciesNum < cSpecies->numSpecies; speciesNum++) {
@@ -53,10 +66,10 @@ void L_rateChange(CSpeciesTable *cSpecies,
           }
           carryingCapacityFactor = 1.0 - (curSpeciesValue / curSpecies->carryingCapacity);
         }
-        //Rprintf("carryingCapacityFactor = %e (%e)\n", carryingCapacityFactor, curSpecies->carryingCapacity);
+        DEBUG("carryingCapacityFactor = %e (%e)\n", carryingCapacityFactor, curSpecies->carryingCapacity);
         rateChange += curSpecies->growthRate * curSpeciesValue * carryingCapacityFactor;
       }
-      //Rprintf("Ge rateChange[%d, %d] = %e\n", curStep, speciesNum, rateChange);
+      DEBUG("Ge rateChange[%d, %d] = %e\n", curStep, speciesNum, rateChange);
       //
       // compute growth-predation
       //
@@ -73,7 +86,7 @@ void L_rateChange(CSpeciesTable *cSpecies,
           rateChange += conversionFactor * curSpecies->predationFactor;
         }
       }
-      //Rprintf("Gp rateChange[%d, %d] = %e\n", curStep, speciesNum, rateChange);
+      DEBUG("Gp rateChange[%d, %d] = %e\n", curStep, speciesNum, rateChange);
       //
       // compute decay-predation
       //
@@ -86,14 +99,14 @@ void L_rateChange(CSpeciesTable *cSpecies,
       if (SMALLEST_DOUBLE < decayFactor) {
         rateChange += - curSpeciesValue * decayFactor;
       }
-      //Rprintf("Dp rateChange[%d, %d] = %e\n", curStep, speciesNum, rateChange);
+      DEBUG("Dp rateChange[%d, %d] = %e\n", curStep, speciesNum, rateChange);
       //
       // compute decay-natural-causes
       //
       if (SMALLEST_DOUBLE < curSpecies->mortality) {
         rateChange += - curSpecies->mortality * curSpeciesValue;
       }
-      //Rprintf("total rateChange[%d, %d] = %e\n", curStep, speciesNum, rateChange);
+      DEBUG("total rateChange[%d, %d] = %e\n", curStep, speciesNum, rateChange);
       speciesRateChanges[speciesNum] = rateChange;
     }
   }
@@ -108,6 +121,7 @@ SEXP C_integrateEuler(SEXP cModelSexp,
                       SEXP workingResultsMaskSexp,
                       SEXP workingResultsSexp,
                       SEXP resultsSexp) {
+  DEBUG("\nC_intgrateEuler\n");
   if (!L_isSpeciesTable(cModelSexp)) return L_returnMessage("model is not valid");
   CSpeciesTable* cSpecies = (CSpeciesTable*)R_ExternalPtrAddr(cModelSexp);
   size_t numSpecies = cSpecies->numSpecies;
@@ -129,10 +143,13 @@ SEXP C_integrateEuler(SEXP cModelSexp,
   if (!L_isAnIntegerInRange(workingResultsMaskSexp, 0, MAX_ITERATIONS))
     return L_returnMessage("workingResultsMask is not a valid integer");
   size_t workingResultsMask = INTEGER(workingResultsMaskSexp)[0];
+  DEBUG("  workingResultsMask = 0x%X\n", workingResultsMask);
   size_t numWorkingResults = workingResultsMask + 1;
+  DEBUG("  numWorkingResults = %d\n", numWorkingResults);
   if (!L_isDoubleVector(workingResultsSexp, (numSpecies * numWorkingResults)))
     return L_returnMessage("workingResults is not a valid numeric vector/matrix");
   double *workingResults = REAL(workingResultsSexp);
+  DEBUG("  workingResults = %p length = %d\n", workingResults, GET_LENGTH(workingResultsSexp));
   if (!L_isDoubleVector(resultsSexp, (numSpecies * numSamples)))
     return L_returnMessage("results is not a valid numeric vector/matrix");
   double *results = REAL(resultsSexp);
@@ -140,7 +157,7 @@ SEXP C_integrateEuler(SEXP cModelSexp,
   // copy the initial values into the results vector
   //
   for (size_t i = 0; i < numSpecies; i++) {
-    *(workingResults + i*numSamples) = *(initialValues + i);
+    *SpeciesPtr(i, 0) = *(initialValues + i);
   }
   //
   // do the integration
