@@ -23,7 +23,7 @@
   numSpecies <- nrow(species)
   cModel <- .C_newSpeciesTable(numSpecies)
   for (row in 1:numSpecies) {
-    aRow <- species[row,c("growthRate", "carryingCapacity", "mortality", "halfSaturation")]
+    aRow <- species[row,c("growthRate", "carryingCapacity", "timeLag", "mortality", "halfSaturation")]
     aRow <- as.numeric(aRow)
     .C_setSpeciesValues(cModel, row-1, aRow)
     speciesName <- species[row,"species"]
@@ -38,7 +38,8 @@
                                  row - 1, 
                                  predators - 1, 
                                  predatorInteractions$attackRate,
-                                 predatorInteractions$conversionRate)
+                                 predatorInteractions$conversionRate,
+                                 predatorInteractions$timeLag)
     }
     #
     # work on prey (who do I eat?)
@@ -51,7 +52,8 @@
                              row - 1, 
                              prey - 1,
                              preyInteractions$attackRate,
-                             preyInteractions$conversionRate)
+                             preyInteractions$conversionRate,
+                             preyInteractions$timeLag)
     }
   }
   cModel

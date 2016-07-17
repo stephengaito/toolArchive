@@ -13,9 +13,10 @@
 
 #define SPECIES_GROWTH_RATE       0
 #define SPECIES_CARRYING_CAPACITY 1
-#define SPECIES_MORTALITY         2
-#define SPECIES_HALF_SATURATION   3
-#define SPECIES_NUM_VALUES        4
+#define SPECIES_TIME_LAG          2
+#define SPECIES_MORTALITY         3
+#define SPECIES_HALF_SATURATION   4
+#define SPECIES_NUM_VALUES        5
 
 #define PREDATOR  1
 #define PREY      2
@@ -24,11 +25,13 @@ typedef struct CInteraction_STRUCT {
   size_t speciesIndex;
   double attackRate;
   double conversionRate;
+  size_t timeLag;
 } CInteraction;
 
 typedef struct CSpecies_STRUCT {
   double growthRate;
   double carryingCapacity;
+  size_t timeLag;
   double mortality;
   double halfSaturation;
   double predationFactor;
