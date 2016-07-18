@@ -13,7 +13,7 @@
 # @param model the model to convert
 # @return the C-model
 #' @export
-.R_buildCModel <- function(model) {
+.R_buildCModel <- function(model, stepSize) {
   if (!isModel(model)) {
     stop("the model provided is not valid")
   }
@@ -24,6 +24,7 @@
   cModel <- .C_newSpeciesTable(numSpecies)
   for (row in 1:numSpecies) {
     aRow <- species[row,c("growthRate", "carryingCapacity", "timeLag", "mortality", "halfSaturation")]
+    aRow$timeLag <- aRow$timeLag/stepSize
     aRow <- as.numeric(aRow)
     .C_setSpeciesValues(cModel, row-1, aRow)
     speciesName <- species[row,"species"]
@@ -39,7 +40,7 @@
                                  predators - 1, 
                                  predatorInteractions$attackRate,
                                  predatorInteractions$conversionRate,
-                                 predatorInteractions$timeLag)
+                                 predatorInteractions$timeLag/stepSize)
     }
     #
     # work on prey (who do I eat?)
@@ -53,7 +54,7 @@
                              prey - 1,
                              preyInteractions$attackRate,
                              preyInteractions$conversionRate,
-                             preyInteractions$timeLag)
+                             preyInteractions$timeLag/stepSize)
     }
   }
   cModel
@@ -80,7 +81,7 @@ integrateModel <- function(model,
                            numSamples,
                            initialValues,
                            numSamplesBetweenInteruptChecks = 100) {
-  cModel <- .R_buildCModel(model)
+  cModel <- .R_buildCModel(model, stepSize)
   numSpecies <- numSpeciesInModel(model)
   maxTimeLag <- maximumTimeLag(model)
   #print(maxTimeLag)
