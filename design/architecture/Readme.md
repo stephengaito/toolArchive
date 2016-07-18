@@ -63,3 +63,6 @@ We will use [devtools](https://github.com/hadley/devtools)
 
 [MathJaX](https://www.mathjax.org/) [TeX and LaTeX 
 support](http://docs.mathjax.org/en/latest/tex.html#tex-support)
+
+For [ways to find turning points (maxima/minima) 
+](http://stackoverflow.com/questions/6836409/finding-local-maxima-and-minima)
