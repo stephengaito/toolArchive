@@ -2,6 +2,7 @@
 
 * Started: 2016-07-08
 * Ends: 2016-07-15
+* Closed: 2016-07-18 (a bit late)
 
 ## Problem
 
@@ -37,3 +38,4 @@ spatial and time integration scales.
 ## Wrap-up
 
 Spatially extended models will be the subject of some future sprints.
+
