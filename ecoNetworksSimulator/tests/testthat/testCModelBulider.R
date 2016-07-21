@@ -1,17 +1,20 @@
 context("Test the model bulding interface between R and C")
 
 test_that("C_newSpeciesTable creates a species table in C", {
+  skip("not testing CModels yet")
   test <- .C_newSpeciesTable(10)
   expect_false(is.null(test))
   expect_true(.C_isSpeciesTable(test))
 })
 
 test_that("C_numSpecies reports the correct number of species for a species table", {
+  skip("not testing CModels yet")
   test <- .C_newSpeciesTable(10)
   expect_equal(.C_numSpecies(test), 10)
 })
 
 test_that("C_getSpeciesValues gets the correct values", {
+  skip("not testing CModels yet")
   test <- .C_newSpeciesTable(10)
   expect_error(.C_setSpeciesValues(test, 50, c(0.1, 0.2, 1.0, 0.3, 0.4)))
   expect_true(.C_setSpeciesValues(test, 5, c(0.1, 0.2, 1.0, 0.4, 0.5)))
@@ -40,6 +43,7 @@ test_that("C_getSpeciesValues gets the correct values", {
 })
 
 test_that("we can get/set Predator/Prey Coefficients", {
+  skip("not testing CModels yet")
   test <- .C_newSpeciesTable(15)
   expect_error(.C_setPredatorCoefficients(test, 50, c(1, 2), c(0.1, 0.2), c(1.1, 1.2), c(0, 1)))
   expect_error(.C_setPreyCoefficients(test, 50, c(3, 4), c(0.3, 0.4), c(1.3, 1.4), c(10, 11)))

@@ -1,6 +1,7 @@
 context("Test integration")
 
 test_that("we can build a C-model from an R-model", {
+  skip("not testing integration yet")
   species <- newSpeciesTable()
   species <- addSpecies(species, "resource1", growthRate = 0.2, carryingCapacity = 25, timeLag = 1)
   species <- addSpecies(species, "resource2", growthRate = 0.3, carryingCapacity = 26, timeLag = 2)
@@ -96,6 +97,7 @@ test_that("we can build a C-model from an R-model", {
 })
 
 test_that("we can euler integrate simple model", {
+  skip("not testing integration yet")
   species <- newSpeciesTable()
   species <- addSpecies(species, "resource", growthRate = 0.2, carryingCapacity = 25, timeLag = 15)
   species <- addSpecies(species, "consumer", mortality = 0.2, halfSaturation = 25)
