@@ -14,7 +14,7 @@
 # @return the C-model
 #' @export
 .R_buildCModel <- function(model, stepSize) {
-  if (!isModel(model)) {
+  if (!isTrophicModel(model)) {
     stop("the model provided is not valid")
   }
   species <- .R_defactor(model$species)

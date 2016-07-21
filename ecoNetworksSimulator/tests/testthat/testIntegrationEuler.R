@@ -1,25 +1,22 @@
 context("Test integration")
 
 test_that("we can build a C-model from an R-model", {
-  skip("not testing integration yet")
-  species <- newSpeciesTable()
-  species <- addSpecies(species, "resource1", growthRate = 0.2, carryingCapacity = 25, timeLag = 1)
-  species <- addSpecies(species, "resource2", growthRate = 0.3, carryingCapacity = 26, timeLag = 2)
-  species <- addSpecies(species, "consumer", mortality = 0.4, halfSaturation = 27)
-  interactions <- newInteractionsTable()
-  interactions <- addInteraction(interactions,
-                                 predator = "consumer",
-                                 prey = "resource1",
-                                 attackRate = 0.5,
-                                 conversionRate = 0.35,
-                                 timeLag = 3)
-  interactions <- addInteraction(interactions,
-                                 predator = "consumer",
-                                 prey = "resource2",
-                                 attackRate = 0.6,
-                                 conversionRate = 0.40,
-                                 timeLag = 4)
-  r2c1 <- newModel(species, interactions)
+  r2c1 <- newTrophicModel()
+  r2c1 <- addSpecies(r2c1, "resource1", growthRate = 0.2, carryingCapacity = 25, timeLag = 1)
+  r2c1 <- addSpecies(r2c1, "resource2", growthRate = 0.3, carryingCapacity = 26, timeLag = 2)
+  r2c1 <- addSpecies(r2c1, "consumer", mortality = 0.4, halfSaturation = 27)
+  r2c1 <- addInteraction(r2c1,
+                          predator = "consumer",
+                          prey = "resource1",
+                          attackRate = 0.5,
+                          conversionRate = 0.35,
+                          timeLag = 3)
+  r2c1 <- addInteraction(r2c1,
+                          predator = "consumer",
+                          prey = "resource2",
+                          attackRate = 0.6,
+                          conversionRate = 0.40,
+                          timeLag = 4)
   expect_equal(maximumTimeLag(r2c1), 4)
   cModel <- .R_buildCModel(r2c1, 0.01)
   numSpecies <- .C_numSpecies(cModel)
@@ -97,18 +94,15 @@ test_that("we can build a C-model from an R-model", {
 })
 
 test_that("we can euler integrate simple model", {
-  skip("not testing integration yet")
-  species <- newSpeciesTable()
-  species <- addSpecies(species, "resource", growthRate = 0.2, carryingCapacity = 25, timeLag = 15)
-  species <- addSpecies(species, "consumer", mortality = 0.2, halfSaturation = 25)
-  interactions <- newInteractionsTable()
-  interactions <- addInteraction(interactions,
+  r1c1 <- newTrophicModel()
+  r1c1 <- addSpecies(r1c1, "resource", growthRate = 0.2, carryingCapacity = 25, timeLag = 15)
+  r1c1 <- addSpecies(r1c1, "consumer", mortality = 0.2, halfSaturation = 25)
+  r1c1 <- addInteraction(r1c1,
     predator = "consumer",
     prey = "resource",
     attackRate = 0.1,
     conversionRate = 0.35,
     timeLag = 0.3)
-  r1c1 <- newModel(species, interactions)
   #print(r1c1)
   numSpecies <- numSpeciesInModel(r1c1)
   initialValues <- matrix( 0.0, nrow = 1, ncol=numSpecies)
