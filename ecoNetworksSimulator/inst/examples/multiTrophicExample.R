@@ -30,11 +30,13 @@ for (predTrophicLevel in 2:5) {
   for (predSpecies in 1:5) {
     predSpeciesName <- buildSpeciesName(predTrophicLevel, predSpecies)
     for (preySpecies in 1:5) {
-      preySpeciesName <- buildSpeciesName(preyTrophicLevel, preySpecies)
-      rndModel <- addInteraction(   rndModel, predSpeciesName, preySpeciesName,
-                                    attackRate = 0.2, conversionRate = 0.35, timeLag = 5)
-      rndModel <- addInteractionStd(rndModel, predSpeciesName, preySpeciesName,
-                                    attackRate = 0.1, conversionRate = 0.05, timeLag = 1)
+      if (predSpecies != preySpecies) {
+        preySpeciesName <- buildSpeciesName(preyTrophicLevel, preySpecies)
+        rndModel <- addInteraction(   rndModel, predSpeciesName, preySpeciesName,
+                                      attackRate = 0.2, conversionRate = 0.35, timeLag = 5)
+        rndModel <- addInteractionStd(rndModel, predSpeciesName, preySpeciesName,
+                                      attackRate = 0.1, conversionRate = 0.05, timeLag = 1)
+      }
     }
   }
 }
