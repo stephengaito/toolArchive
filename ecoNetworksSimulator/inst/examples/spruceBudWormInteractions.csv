@@ -1,0 +1,45 @@
+# This is a complex Spruce Budworm model as suggested by the paper
+#
+#   "Fluctuations in Density of an Outbreak Species Drive Diversity Cascades in Food Webs"
+#   by: Eldon S. Eveleigh, Kevin S. McCann, Peter C. McCarthy, Steven J. Pollock,
+#     Christopher J. Lucarotti, Benoit Morin, George A. McDougall, Douglas B. Strongman, 
+#     John T. Huber, James Umbanhowar and Lucas D. B. Faria
+#   in: Proceedings of the National Academy of Sciences of the United States of America,
+#     Vol. 104, No. 43 (Oct. 23, 2007), pp. 16976-16981
+#
+# See figure 1.{A,B,C} 
+#
+# Species code:
+#
+#  Trophic level 1
+#     Bf Balsam fir
+#
+#  Trophic level 2
+#     Ca Coleotechnites atrupictella
+#     Cp Coleotechnites picaella
+#     Av Acleris variana
+#     Cf Choristoneura fumiferana
+#     Er Epinota radicana
+#     Cr Choristoneura rosaceana
+#
+# Parameter code:
+#  aR    attack rate
+#  aRstd attach rate standard deviation
+#  cR    conversion rate
+#  cRstd conversion rate standard deviation
+#  tL    time lag
+#  tLstd time lag standard deviation
+#
+# all parameters must be positive, negative numbers denote NA_real_
+
+"predator", "prey", "aR", "aRstd",  "cR", "cRstd", "tL", "tLstd"
+#
+# Trophic level 2
+#
+      "Ca",   "Bf",  0.2,     0.1,  0.35,    0.01,    2,      1
+      "Cp",   "Bf",  0.2,     0.1,  0.35,    0.01,    2,      1
+      "Av",   "Bf",  0.2,     0.1,  0.35,    0.01,    2,      1
+      "Cf",   "Bf",  0.2,     0.1,  0.35,    0.01,    2,      1
+      "Er",   "Bf",  0.2,     0.1,  0.35,    0.01,    2,      1
+      "Cr",   "Bf",  0.2,     0.1,  0.35,    0.01,    2,      1
+
