@@ -20,7 +20,7 @@ test_that("we can build a C-model from an R-model", {
                                  timeLag = 4)
   r2c1 <- newModel(species, interactions)
   expect_equal(maximumTimeLag(r2c1), 4)
-  cModel <- .R_buildCModel(r2c1)
+  cModel <- .R_buildCModel(r2c1, 0.01)
   numSpecies <- .C_numSpecies(cModel)
   expect_equal(numSpecies, 3)
   #
@@ -30,7 +30,7 @@ test_that("we can build a C-model from an R-model", {
   expect_equal(length(values), 5)
   expect_equal(values[1], 0.2)
   expect_equal(values[2], 25.0)
-  expect_equal(values[3], 1.0)
+  expect_equal(values[3], 100.0)
   expect_equal(values[4], 0.0)
   expect_equal(values[5], NA_real_)
   preyValues <- .C_getPreyCoefficients(cModel, 0)
@@ -44,7 +44,7 @@ test_that("we can build a C-model from an R-model", {
   expect_equal(length(predatorValues[[3]]), 1)
   expect_equal(predatorValues[[3]][1], 0.35)
   expect_equal(length(predatorValues[[4]]), 1)
-  expect_equal(predatorValues[[4]][1], 3)
+  expect_equal(predatorValues[[4]][1], 300)
   #
   # resource2
   #
@@ -52,7 +52,7 @@ test_that("we can build a C-model from an R-model", {
   expect_equal(length(values), 5)
   expect_equal(values[1], 0.3)
   expect_equal(values[2], 26.0)
-  expect_equal(values[3], 2.0)
+  expect_equal(values[3], 200.0)
   expect_equal(values[4], 0.0)
   expect_equal(values[5], NA_real_)
   preyValues <- .C_getPreyCoefficients(cModel, 1)
@@ -66,7 +66,7 @@ test_that("we can build a C-model from an R-model", {
   expect_equal(length(predatorValues[[3]]), 1)
   expect_equal(predatorValues[[3]][1], 0.40)
   expect_equal(length(predatorValues[[4]]), 1)
-  expect_equal(predatorValues[[4]][1], 4)
+  expect_equal(predatorValues[[4]][1], 400)
   #
   # consumer
   #
@@ -89,8 +89,8 @@ test_that("we can build a C-model from an R-model", {
   expect_equal(preyValues[[3]][1], 0.35)
   expect_equal(preyValues[[3]][2], 0.40)
   expect_equal(length(preyValues[[4]]), 2)
-  expect_equal(preyValues[[4]][1], 3)
-  expect_equal(preyValues[[4]][2], 4)
+  expect_equal(preyValues[[4]][1], 300)
+  expect_equal(preyValues[[4]][2], 400)
   predatorValues <- .C_getPredatorCoefficients(cModel, 2)
   expect_equal(length(predatorValues), 0)
 })

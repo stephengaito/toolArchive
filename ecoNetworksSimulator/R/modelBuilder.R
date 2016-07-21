@@ -155,6 +155,7 @@ newModel <- function(speciesTable, interactionsTable) {
 #' Check that a model is valid
 #' 
 #' @param model the model to verify
+#' @return true if the model is valid
 #' @export
 isModel <- function(model) {
   if (!isSpeciesTable(model$species)) {
@@ -216,4 +217,90 @@ newNormalModel <- function(speciesMeans, speciesStd,
   }  
   list(species=speciesMeans, speciesStd=speciesStd,
        interactions=interactionMeans, interactionStds=interactionStds)
+}
+
+#' Check that a normal model is valid
+#' 
+#' 
+#' @param normal mode to verify
+#' @return true if the normal model is valid
+#' @export
+isNormalModel <- function(model) {
+  if (!isSpeciesTable(model$species)) {
+    stop("the table of species means provided is incorrectly formated")
+  }
+  if (!isSpeciesTable(model$speciesStd)) {
+    stop("the table of species standard deviations provided is incorrectly formated")
+  }
+  if (!isInteractionsTable(model$interactions)) {
+    stop("the table of interaction means provided is incorrectly formated")
+  }
+  if (!isInteractionsTable(model$interactionStds)) {
+    stop("the table of interaction standard deviations provided is incorrectly formated")
+  }
+  if (!areRelated(model$species, model$interactions)) {
+    stop("some of the predator or prey species in the interations table are not defined in the species table")
+  }
+  TRUE
+}
+
+#' Choose a normally distrubuted random number as a parameter
+#' 
+#' @param aMean
+#' @param aStd
+#' @return a normally distributed random number with mean aMean and standard
+#'   deviation aStd, OR aMean if either aMean or aStd is not a numeric or is NA
+#' @export
+varyParameter <- function(aMean, aStd) {
+  if (is.numeric(aMean) & is.numeric(aStd) &
+      !is.na(aMean) & !is.na(aStd)) {
+    result = rnorm(1, mean = aMean, sd = aStd)
+    if (result < 0) {
+      result = 0.0
+    }
+    result
+  } else {
+    aMean
+  }
+}
+
+#' Create a new model by randomly chosing parameters from a corresponding normal
+#' model
+#' 
+#' @param normalModel the model of means and standard deviations to be used to 
+#'   randomly choose a specific model.
+#' @return a specific model whose parameters have been randomly chosen from the
+#'   corresponding normal model
+#' @export
+varyModel <- function(normalModel) {
+  if (!isNormalModel(normalModel)) {
+    stop("the normal model provided is not valid")
+  }
+  speciesMeans  <- normalModel$species
+  speciesStds   <- normalModel$speciesStd
+  numSpecies    <- nrow(speciesMeans)
+  speciesCols   <- names(speciesMeans)[-1]
+  newSpecies    <- newSpeciesTable()
+  for ( curRow in 1:numSpecies ) {
+    newSpecies <- addSpecies(newSpecies, speciesMeans[curRow, "species"])
+    for ( curCol in speciesCols ) {
+      newSpecies[curRow, curCol] <- varyParameter(speciesMeans[curRow, curCol],
+                                                  speciesStds[curRow, curCol])
+    }
+  }
+  interactionMeans <- normalModel$interactions
+  interactionStds  <- normalModel$interactionStds
+  numinteractions  <- nrow(interactionMeans)
+  interactionCols  <- names(interactionMeans)[-c(1:2)]
+  newInterations   <- newInteractionsTable()
+  for (curRow in numinteractions) {
+    newInterations <- addInteraction(newInterations, 
+                                     interactionMeans[curRow, "predator"],
+                                     interactionMeans[curRow, "prey"])
+    for (curCol in interactionCols) {
+      newInterations[curRow, curCol] <- varyParameter(interactionMeans[curRow, curCol],
+                                                      interactionStds[curRow, curCol])
+    }
+  }
+  newModel(newSpecies, newInterations)
 }

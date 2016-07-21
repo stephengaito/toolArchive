@@ -58,3 +58,35 @@ test_that("areRelated correctly identifies if two tables are related", {
                                       attackRate = 0.1, conversionRate = 0.2, timeLag = 0.3)
   expect_false(areRelated(speciesTable, interactionsTable))
 })
+
+test_that("varyParameter returns a positive random number OR echos strings", {
+  expect_equal(varyParameter("resource","anOtherString"), "resource")
+  expect_lte(0.0, varyParameter(0.1, 0.1))
+  expect_equal(0.0, varyParameter(-100, 1))
+})
+
+test_that("varyModel works", {
+  speciesTable <- newSpeciesTable()
+  speciesTable <- addSpecies(speciesTable, "resource", growthRate=0.1, carryingCapacity=0.2, timeLag = 0.3)
+  speciesTable <- addSpecies(speciesTable, "consumer", mortality=0.4)
+  speciesStd <- newSpeciesTable()
+  speciesStd <- addSpecies(speciesStd, "resource", growthRate=0.01, carryingCapacity=0.02, timeLag = 0.03)
+  speciesStd <- addSpecies(speciesStd, "consumer", mortality=0.04)
+
+  interactionsTable <- newInteractionsTable()
+  interactionsTable <- addInteraction(interactionsTable, 
+                                      "consumer", "resource", attackRate = 0.1, conversionRate = 0.2, timeLag = 0.3)
+  interactionsStd <- newInteractionsTable()
+  interactionsStd <- addInteraction(interactionsStd, 
+                                      "consumer", "resource", attackRate = 0.01, conversionRate = 0.02, timeLag = 0.03)
+  
+  normalModel <- newNormalModel(speciesTable, speciesStd, interactionsTable, interactionsStd)
+  expect_equal(normalModel$species[1, "growthRate"], 0.1)
+  expect_equal(normalModel$speciesStd[1, "growthRate"], 0.01)
+  expect_equal(normalModel$interactions[1, "attackRate"], 0.1)
+  expect_equal(normalModel$interactionStds[1, "attackRate"], 0.01)
+  aModel <- varyModel(normalModel)
+  expect_equal(nrow(aModel$species), 2)
+  expect_equal(nrow(aModel$interactions), 1)
+
+})
