@@ -52,13 +52,17 @@ bIV <- c(bIV,   2.5,   2.5,   2.5,   2.5,   2.5) # tl3
 bIV <- c(bIV,  1.25,  1.25,  1.25,  1.25,  1.25) # tl4
 bIV <- c(bIV, 0.625, 0.625, 0.625, 0.625, 0.625) # tl5
 
-numRuns <- 10000
+numRuns <- 99999
 fileNameFormat <- "multiTrophic/r%05dtl%d"
 stepSize <- 0.1
 stepsPerSample <- 10
 numSamples <- 1000
 
-for (curRun in 1:numRuns) {
+system("rm -rf multiTrophic")
+system("mkdir -p multiTrophic")
+
+
+for (curRun in 0:numRuns) {
   print(curRun)
   model <- varyModel(rndModel)
   modelSpecies <- model$species
