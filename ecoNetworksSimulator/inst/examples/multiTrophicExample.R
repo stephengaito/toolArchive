@@ -1,5 +1,8 @@
 # This is a complex multi trophic model 
 #
+
+library("ecoNetworksSimulator")
+
 buildSpeciesName <- function(trophicLevel, speciesNum) {
   paste("tl", trophicLevel, "s", speciesNum, sep = "")
 }
@@ -41,4 +44,45 @@ for (predTrophicLevel in 2:5) {
   }
 }
 
-print(rndModel)
+#print(rndModel)
+
+bIV <- c(        10,    10,    10,    10,    10) # tl1
+bIV <- c(bIV,     5,     5,     5,     5,     5) # tl2
+bIV <- c(bIV,   2.5,   2.5,   2.5,   2.5,   2.5) # tl3
+bIV <- c(bIV,  1.25,  1.25,  1.25,  1.25,  1.25) # tl4
+bIV <- c(bIV, 0.625, 0.625, 0.625, 0.625, 0.625) # tl5
+
+numRuns <- 10000
+fileNameFormat <- "multiTrophic/r%05dtl%d"
+stepSize <- 0.1
+stepsPerSample <- 10
+numSamples <- 1000
+
+for (curRun in 1:numRuns) {
+  print(curRun)
+  model <- varyModel(rndModel)
+  modelSpecies <- model$species
+  initialValues <- newInitialValues(model, bIV)
+  #print(initialValues)
+  results <- integrateModel(
+    model, stepSize, stepsPerSample, numSamples, initialValues)
+  for (trophicLevel in 2:5) {
+    baseSpeciesNum <- (trophicLevel - 1) * 5
+    sum <- 0.0
+    for (species in 1:5) {
+      speciesNum <- baseSpeciesNum + species
+      sum <- sum +
+        modelSpecies[[speciesNum, "mortality"]] * results[numSamples, speciesNum]
+    }
+    if (sum < 1e-5) {
+      break
+    }
+    fileNameBase <- sprintf(
+      fileNameFormat, as.integer(curRun), as.integer(trophicLevel)) 
+    print(fileNameBase)
+    write.csv(model$species, paste(fileNameBase, "-species.csv", sep = ""))
+    write.csv(model$interactions, paste(fileNameBase, "-interactions.csv", sep = ""))
+    write.csv(results, paste(fileNameBase, "-results.csv", sep = ""))
+    #print(tail(results))
+  }
+}

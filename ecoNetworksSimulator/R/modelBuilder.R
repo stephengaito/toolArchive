@@ -335,9 +335,9 @@ varyModel <- function(normalModel) {
   }
   interactionMeans <- normalModel$interactions
   interactionStds  <- normalModel$interactionStds
-  numinteractions  <- nrow(interactionMeans)
+  numInteractions  <- nrow(interactionMeans)
   interactionCols  <- names(interactionMeans)[-c(1:2)]
-  for (curRow in numinteractions) {
+  for (curRow in 1:numInteractions) {
     newModel <- addInteraction(newModel, 
                                interactionMeans[curRow, "predator"],
                                interactionMeans[curRow, "prey"])

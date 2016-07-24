@@ -60,6 +60,16 @@
   cModel
 }
 
+#' Create a matrix of initial values
+#' 
+#' @param model the model for which to create initial values
+#' @param initialValueVec a vector or list of initial values
+#' @return a matrix of initial values with the correct dimensions
+#' @export
+newInitialValues <- function(model, initialValueVec) {
+  matrix( initialValueVec, nrow = 1, ncol=numSpeciesInModel(model))  
+}
+
 #' Integrate a model
 #' 
 #' @param model the model to integrate
@@ -84,9 +94,7 @@ integrateModel <- function(model,
   cModel <- .R_buildCModel(model, stepSize)
   numSpecies <- numSpeciesInModel(model)
   maxTimeLag <- maximumTimeLag(model)
-  #print(maxTimeLag)
   maxTimeLagSteps <- maxTimeLag / stepSize
-  #print(maxTimeLagSteps)
   if (2^16 < maxTimeLagSteps) {
     stop("maximumTimeLag / stepSize is too large")
   }

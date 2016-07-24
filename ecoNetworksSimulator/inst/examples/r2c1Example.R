@@ -20,7 +20,6 @@ r2c1 <- addInteraction(r2c1,
                        conversionRate = 0.35,
                        timeLag = 0)
 print(r2c1)
-numSpecies <- numSpeciesInModel(r2c1)
-initialValues <- matrix( c(11, 10, 10), nrow = 1, ncol=numSpecies)
+initialValues <- newInitialValues(r2c1, c(11, 10, 10))
 print(initialValues)
 results <- integrateModel(r2c1, 0.1, 10, 1000, initialValues)
