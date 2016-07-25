@@ -28,16 +28,17 @@ SEXP C_newSpeciesTable(SEXP numSpecies) {
   CSpecies* species = cSpeciesTablePtr->species;
   CSpecies* maxSpecies = species + cSpeciesTablePtr->numSpecies;
   for(; species < maxSpecies; species++) {
-    species->growthRate       = NA_REAL;
-    species->carryingCapacity = NA_REAL;
-    species->timeLag          = 0;
-    species->mortality        = NA_REAL;
-    species->halfSaturation   = NA_REAL;
-    species->predationFactor  = 0.0;
-    species->numPredators     = 0;
-    species->predators        = NULL;
-    species->numPrey          = 0;
-    species->prey             = NULL;
+    species->growthRate         = NA_REAL;
+    species->carryingCapacity   = NA_REAL;
+    species->timeLag            = 0;
+    species->mortality          = NA_REAL;
+    species->halfSaturation     = NA_REAL;
+    species->reintroductionRate = 0.0;
+    species->predationFactor    = 0.0;
+    species->numPredators       = 0;
+    species->predators          = NULL;
+    species->numPrey            = 0;
+    species->prey               = NULL;
   }
   SEXP cSpeciesTable = R_MakeExternalPtr(cSpeciesTablePtr, R_NilValue, R_NilValue);
   R_RegisterCFinalizerEx(cSpeciesTable, (R_CFinalizer_t) &C_newSpeciesTable_Finalizer, TRUE);
@@ -67,11 +68,12 @@ SEXP C_getSpeciesValues(SEXP cSpeciesTable, SEXP speciesNum) {
   size_t speciesIndex = INTEGER(speciesNum)[0];
   CSpecies* speciesPtr = cSpeciesTablePtr->species + speciesIndex;
   SEXP result = NEW_NUMERIC(SPECIES_NUM_VALUES);
-  REAL(result)[SPECIES_GROWTH_RATE]       = speciesPtr->growthRate;
-  REAL(result)[SPECIES_CARRYING_CAPACITY] = speciesPtr->carryingCapacity;
-  REAL(result)[SPECIES_TIME_LAG]          = (double)speciesPtr->timeLag;
-  REAL(result)[SPECIES_MORTALITY]         = speciesPtr->mortality;
-  REAL(result)[SPECIES_HALF_SATURATION]   = speciesPtr->halfSaturation;
+  REAL(result)[SPECIES_GROWTH_RATE]         = speciesPtr->growthRate;
+  REAL(result)[SPECIES_CARRYING_CAPACITY]   = speciesPtr->carryingCapacity;
+  REAL(result)[SPECIES_TIME_LAG]            = (double)speciesPtr->timeLag;
+  REAL(result)[SPECIES_MORTALITY]           = speciesPtr->mortality;
+  REAL(result)[SPECIES_HALF_SATURATION]     = speciesPtr->halfSaturation;
+  REAL(result)[SPECIES_REINTRODUCTION_RATE] = speciesPtr->reintroductionRate;
   return result;
 }
 
@@ -85,11 +87,12 @@ SEXP C_setSpeciesValues(SEXP cSpeciesTable, SEXP speciesNum, SEXP speciesValues)
   size_t speciesIndex = INTEGER(speciesNum)[0];
   CSpecies* speciesPtr = cSpeciesTablePtr->species + speciesIndex;
   L_assertDoubleVector("speciesValues", speciesValues, SPECIES_NUM_VALUES);
-  speciesPtr->growthRate       = REAL(speciesValues)[SPECIES_GROWTH_RATE];
-  speciesPtr->carryingCapacity = REAL(speciesValues)[SPECIES_CARRYING_CAPACITY];
-  speciesPtr->timeLag          = (int) (REAL(speciesValues)[SPECIES_TIME_LAG] + SMALLEST_DOUBLE);
-  speciesPtr->mortality        = REAL(speciesValues)[SPECIES_MORTALITY];
-  speciesPtr->halfSaturation   = REAL(speciesValues)[SPECIES_HALF_SATURATION];
+  speciesPtr->growthRate         = REAL(speciesValues)[SPECIES_GROWTH_RATE];
+  speciesPtr->carryingCapacity   = REAL(speciesValues)[SPECIES_CARRYING_CAPACITY];
+  speciesPtr->timeLag            = (int) (REAL(speciesValues)[SPECIES_TIME_LAG] + SMALLEST_DOUBLE);
+  speciesPtr->mortality          = REAL(speciesValues)[SPECIES_MORTALITY];
+  speciesPtr->halfSaturation     = REAL(speciesValues)[SPECIES_HALF_SATURATION];
+  speciesPtr->reintroductionRate = REAL(speciesValues)[SPECIES_REINTRODUCTION_RATE];
   LOGICAL(result)[0] = TRUE;
   return result;
 }

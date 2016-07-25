@@ -11,12 +11,13 @@
 #define CSpeciesTable_TAG       1
 #define MAX_NUM_SPECIES         10000
 
-#define SPECIES_GROWTH_RATE       0
-#define SPECIES_CARRYING_CAPACITY 1
-#define SPECIES_TIME_LAG          2
-#define SPECIES_MORTALITY         3
-#define SPECIES_HALF_SATURATION   4
-#define SPECIES_NUM_VALUES        5
+#define SPECIES_GROWTH_RATE         0
+#define SPECIES_CARRYING_CAPACITY   1
+#define SPECIES_TIME_LAG            2
+#define SPECIES_MORTALITY           3
+#define SPECIES_HALF_SATURATION     4
+#define SPECIES_REINTRODUCTION_RATE 5
+#define SPECIES_NUM_VALUES          6
 
 #define PREDATOR  1
 #define PREY      2
@@ -34,6 +35,7 @@ typedef struct CSpecies_STRUCT {
   size_t timeLag;
   double mortality;
   double halfSaturation;
+  double reintroductionRate;
   double predationFactor;
   size_t numPredators;
   CInteraction *predators;

@@ -23,7 +23,7 @@
   numSpecies <- nrow(species)
   cModel <- .C_newSpeciesTable(numSpecies)
   for (row in 1:numSpecies) {
-    aRow <- species[row,c("growthRate", "carryingCapacity", "timeLag", "mortality", "halfSaturation")]
+    aRow <- species[row,c("growthRate", "carryingCapacity", "timeLag", "mortality", "halfSaturation", "reintroductionRate")]
     aRow$timeLag <- aRow$timeLag/stepSize
     aRow <- as.numeric(aRow)
     .C_setSpeciesValues(cModel, row-1, aRow)

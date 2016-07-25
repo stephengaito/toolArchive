@@ -12,7 +12,8 @@
              carryingCapacity=numeric(),
              timeLag=numeric(),
              mortality=numeric(),
-             halfSaturation=numeric())
+             halfSaturation=numeric(),
+             reintroductionRate=numeric())
 }
 
 # Check that a table is a species table
@@ -23,7 +24,7 @@
 .R_isSpeciesTable <- function(speciesTable){
   is.data.frame(speciesTable) && 
     colnames(speciesTable) == 
-      c("species", "growthRate", "carryingCapacity", "timeLag", "mortality", "halfSaturation")
+      c("species", "growthRate", "carryingCapacity", "timeLag", "mortality", "halfSaturation", "reintroductionRate")
 }
 
 # Returns the number of species in a species table
@@ -51,7 +52,8 @@ addSpecies <- function(model,
                        carryingCapacity=NA_real_, 
                        timeLag=0.0,
                        mortality=0.0,
-                       halfSaturation=NA_real_){
+                       halfSaturation=NA_real_,
+                       reintroductionRate=0.0){
   model$species <- 
     rbind(model$species, 
           data.frame(species=name,
@@ -59,7 +61,8 @@ addSpecies <- function(model,
                      carryingCapacity=carryingCapacity,
                      timeLag=timeLag,
                      mortality=mortality,
-                     halfSaturation=halfSaturation))
+                     halfSaturation=halfSaturation,
+                     reintroductionRate=reintroductionRate))
   model
 }
 
@@ -79,7 +82,8 @@ addSpeciesStd <- function(model,
                           carryingCapacity=NA_real_, 
                           timeLag=0.0,
                           mortality=0.0,
-                          halfSaturation=NA_real_){
+                          halfSaturation=NA_real_,
+                          reintroductionRate=0.0){
   speciesStd <- model$speciesStd
   if (is.null(speciesStd)) { speciesStd <- .R_newSpeciesTable()}
   model$speciesStd <- 
@@ -89,7 +93,8 @@ addSpeciesStd <- function(model,
                      carryingCapacity=carryingCapacity,
                      timeLag=timeLag,
                      mortality=mortality,
-                     halfSaturation=halfSaturation))
+                     halfSaturation=halfSaturation,
+                     reintroductionRate=reintroductionRate))
   model
 }
 
