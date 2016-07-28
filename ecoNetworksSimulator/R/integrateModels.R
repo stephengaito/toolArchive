@@ -22,6 +22,7 @@
   interactions <- .R_defactor(model$interactions)
   numSpecies <- nrow(species)
   cModel <- .C_newSpeciesTable(numSpecies)
+  .C_initRNGState(cModel, 2, 100)
   for (row in 1:numSpecies) {
     aRow <- species[row,c("growthRate", "carryingCapacity", "timeLag",
                           "mortality", "halfSaturation",

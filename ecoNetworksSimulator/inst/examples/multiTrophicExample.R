@@ -12,8 +12,13 @@ rndModel <- newTrophicModel()
 #
 for (species in 1:5) {
   speciesName <- buildSpeciesName(1, species)
-  rndModel <- addSpecies(   rndModel, speciesName, growthRate = 0.2, carryingCapacity = 25, timeLag = 5)
-  rndModel <- addSpeciesStd(rndModel, speciesName, growthRate = 0.1,  carryingCapacity = 5, timeLag = 1)
+  rndModel <- addSpecies(   rndModel, speciesName,
+                            growthRate = 0.2, carryingCapacity = 25, timeLag = 5,
+                            reintroductionProb = 0.9, reintroductionSize = 1
+                            )
+  rndModel <- addSpeciesStd(rndModel, speciesName,
+                            growthRate = 0.1,  carryingCapacity = 5, timeLag = 1,
+                            reintroductionProb = 0.1, reintroductionSize = 0.1)
 }
 #
 # Build all other trophic levels (consumers)
@@ -21,8 +26,13 @@ for (species in 1:5) {
 for (trophicLevel in 2:5) {
   for (species in 1:5) {
     speciesName <- buildSpeciesName(trophicLevel, species)
-    rndModel <- addSpecies(   rndModel, speciesName, mortality = 0.2, halfSaturation = 40)
-    rndModel <- addSpeciesStd(rndModel, speciesName, mortality = 0.1, halfSaturation = 5)
+    rndModel <- addSpecies(   rndModel, speciesName,
+                              mortality = 0.2, halfSaturation = 40,
+                              reintroductionProb = (6 - trophicLevel) * 0.1,
+                              reintroductionSize = (6 - trophicLevel) * 0.1)
+    rndModel <- addSpeciesStd(rndModel, speciesName,
+                              mortality = 0.1, halfSaturation = 5,
+                              reintroductionProb = 0.1, reintroductionSize = 0.1)
   }
 }
 #
@@ -52,7 +62,8 @@ bIV <- c(bIV,   2.5,   2.5,   2.5,   2.5,   2.5) # tl3
 bIV <- c(bIV,  1.25,  1.25,  1.25,  1.25,  1.25) # tl4
 bIV <- c(bIV, 0.625, 0.625, 0.625, 0.625, 0.625) # tl5
 
-numRuns <- 99999
+#numRuns <- 99999
+numRuns <- 9
 fileNameFormat <- "multiTrophic/r%05dtl%d"
 stepSize <- 0.1
 stepsPerSample <- 10
