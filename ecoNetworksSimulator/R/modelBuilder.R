@@ -45,6 +45,8 @@
 #' @param timeLag the time lag for the carrying capacity term
 #' @param mortality the mortality of the species (could be NA)
 #' @param halfSaturation the half saturation point for the predator's predation
+#' @param reintroductionRate the probability that a species with zero biomass
+#'   will get reintroduced at a small value
 #' @export
 addSpecies <- function(model, 
                        name, 
@@ -75,6 +77,8 @@ addSpecies <- function(model,
 #' @param timeLag the time lag for the carrying capacity term
 #' @param mortality the mortality of the species (could be NA)
 #' @param halfSaturation the half saturation point for the predator's predation
+#' @param reintroductionRate the probability that a species with zero biomass
+#'   will get reintroduced at a small value
 #' @export
 addSpeciesStd <- function(model, 
                           name, 
@@ -295,6 +299,7 @@ isNormalTrophicModel <- function(model) {
 # @param aStd
 # @return a normally distributed random number with mean aMean and standard
 #   deviation aStd, OR aMean if either aMean or aStd is not a numeric or is NA
+#' @importFrom stats rnorm
 #' @export
 .R_varyParameter <- function(aMean, aStd) {
   if (is.numeric(aMean) & is.numeric(aStd) &
