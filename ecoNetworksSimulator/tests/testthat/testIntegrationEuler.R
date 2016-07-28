@@ -2,9 +2,12 @@ context("Test integration")
 
 test_that("we can build a C-model from an R-model", {
   r2c1 <- newTrophicModel()
-  r2c1 <- addSpecies(r2c1, "resource1", growthRate = 0.2, carryingCapacity = 25, timeLag = 1, reintroductionRate = 0.8)
-  r2c1 <- addSpecies(r2c1, "resource2", growthRate = 0.3, carryingCapacity = 26, timeLag = 2, reintroductionRate = 0.8)
-  r2c1 <- addSpecies(r2c1, "consumer", mortality = 0.4, halfSaturation = 27, reintroductionRate = 0.3)
+  r2c1 <- addSpecies(r2c1, "resource1", growthRate = 0.2, carryingCapacity = 25, timeLag = 1,
+                     reintroductionProb = 0.8, reintroductionSize=0.9)
+  r2c1 <- addSpecies(r2c1, "resource2", growthRate = 0.3, carryingCapacity = 26, timeLag = 2,
+                     reintroductionProb = 0.8, reintroductionSize=0.9)
+  r2c1 <- addSpecies(r2c1, "consumer", mortality = 0.4, halfSaturation = 27,
+                     reintroductionProb = 0.3, reintroductionSize=0.4)
   r2c1 <- addInteraction(r2c1,
                           predator = "consumer",
                           prey = "resource1",
@@ -25,13 +28,14 @@ test_that("we can build a C-model from an R-model", {
   # resource1
   #
   values <- .C_getSpeciesValues(cModel, 0)
-  expect_equal(length(values), 6)
+  expect_equal(length(values), 7)
   expect_equal(values[1], 0.2)
   expect_equal(values[2], 25.0)
   expect_equal(values[3], 100.0)
   expect_equal(values[4], 0.0)
   expect_equal(values[5], NA_real_)
   expect_equal(values[6], 0.8)
+  expect_equal(values[7], 0.9)
   preyValues <- .C_getPreyCoefficients(cModel, 0)
   expect_equal(length(preyValues), 0)
   predatorValues <- .C_getPredatorCoefficients(cModel, 0)
@@ -48,13 +52,14 @@ test_that("we can build a C-model from an R-model", {
   # resource2
   #
   values <- .C_getSpeciesValues(cModel, 1)
-  expect_equal(length(values), 6)
+  expect_equal(length(values), 7)
   expect_equal(values[1], 0.3)
   expect_equal(values[2], 26.0)
   expect_equal(values[3], 200.0)
   expect_equal(values[4], 0.0)
   expect_equal(values[5], NA_real_)
   expect_equal(values[6], 0.8)
+  expect_equal(values[7], 0.9)
   preyValues <- .C_getPreyCoefficients(cModel, 1)
   expect_equal(length(preyValues), 0)
   predatorValues <- .C_getPredatorCoefficients(cModel, 1)
@@ -71,13 +76,14 @@ test_that("we can build a C-model from an R-model", {
   # consumer
   #
   values <- .C_getSpeciesValues(cModel, 2)
-  expect_equal(length(values), 6)
+  expect_equal(length(values), 7)
   expect_equal(values[1], 0)
   expect_equal(values[2], NA_real_)
   expect_equal(values[3], 0.0)
   expect_equal(values[4], 0.4)
   expect_equal(values[5], 27.0)
   expect_equal(values[6], 0.3)
+  expect_equal(values[7], 0.4)
   preyValues <- .C_getPreyCoefficients(cModel, 2)
   expect_equal(length(preyValues), 4)
   expect_equal(length(preyValues[[1]]), 2)

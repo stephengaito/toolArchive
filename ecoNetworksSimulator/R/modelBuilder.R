@@ -13,7 +13,8 @@
              timeLag=numeric(),
              mortality=numeric(),
              halfSaturation=numeric(),
-             reintroductionRate=numeric())
+             reintroductionProb=numeric(),
+             reintroductionSize=numeric())
 }
 
 # Check that a table is a species table
@@ -24,7 +25,9 @@
 .R_isSpeciesTable <- function(speciesTable){
   is.data.frame(speciesTable) && 
     colnames(speciesTable) == 
-      c("species", "growthRate", "carryingCapacity", "timeLag", "mortality", "halfSaturation", "reintroductionRate")
+      c("species", "growthRate", "carryingCapacity", "timeLag", 
+        "mortality", "halfSaturation", 
+        "reintroductionProb", "reintroducitonSize")
 }
 
 # Returns the number of species in a species table
@@ -45,8 +48,9 @@
 #' @param timeLag the time lag for the carrying capacity term
 #' @param mortality the mortality of the species (could be NA)
 #' @param halfSaturation the half saturation point for the predator's predation
-#' @param reintroductionRate the probability that a species with zero biomass
+#' @param reintroductionProb the probability that a species with zero biomass
 #'   will get reintroduced at a small value
+#' @param reintroductionSize the amount of biomass reintroduced
 #' @export
 addSpecies <- function(model, 
                        name, 
@@ -55,7 +59,8 @@ addSpecies <- function(model,
                        timeLag=0.0,
                        mortality=0.0,
                        halfSaturation=NA_real_,
-                       reintroductionRate=0.0){
+                       reintroductionProb=0.0,
+                       reintroductionSize=0.0){
   model$species <- 
     rbind(model$species, 
           data.frame(species=name,
@@ -64,7 +69,8 @@ addSpecies <- function(model,
                      timeLag=timeLag,
                      mortality=mortality,
                      halfSaturation=halfSaturation,
-                     reintroductionRate=reintroductionRate))
+                     reintroductionProb=reintroductionProb,
+                     reintroductionSize=reintroductionSize))
   model
 }
 
@@ -77,8 +83,9 @@ addSpecies <- function(model,
 #' @param timeLag the time lag for the carrying capacity term
 #' @param mortality the mortality of the species (could be NA)
 #' @param halfSaturation the half saturation point for the predator's predation
-#' @param reintroductionRate the probability that a species with zero biomass
+#' @param reintroductionProb the probability that a species with zero biomass
 #'   will get reintroduced at a small value
+#' @param reintroductionSize the amount of biomass reintroduced
 #' @export
 addSpeciesStd <- function(model, 
                           name, 
@@ -87,7 +94,8 @@ addSpeciesStd <- function(model,
                           timeLag=0.0,
                           mortality=0.0,
                           halfSaturation=NA_real_,
-                          reintroductionRate=0.0){
+                          reintroductionProb=0.0,
+                          reintroductionSize=0.0){
   speciesStd <- model$speciesStd
   if (is.null(speciesStd)) { speciesStd <- .R_newSpeciesTable()}
   model$speciesStd <- 
@@ -98,7 +106,8 @@ addSpeciesStd <- function(model,
                      timeLag=timeLag,
                      mortality=mortality,
                      halfSaturation=halfSaturation,
-                     reintroductionRate=reintroductionRate))
+                     reintroductionProb=reintroductionProb,
+                     reintroductionSize=reintroductionSize))
   model
 }
 

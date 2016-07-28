@@ -35,7 +35,8 @@ SEXP C_newSpeciesTable(SEXP numSpecies) {
     species->timeLag            = 0;
     species->mortality          = NA_REAL;
     species->halfSaturation     = NA_REAL;
-    species->reintroductionRate = 0.0;
+    species->reintroductionProb = 0.0;
+    species->reintroductionSize = 0.0;
     species->predationFactor    = 0.0;
     species->numPredators       = 0;
     species->predators          = NULL;
@@ -75,7 +76,8 @@ SEXP C_getSpeciesValues(SEXP cSpeciesTable, SEXP speciesNum) {
   REAL(result)[SPECIES_TIME_LAG]            = (double)speciesPtr->timeLag;
   REAL(result)[SPECIES_MORTALITY]           = speciesPtr->mortality;
   REAL(result)[SPECIES_HALF_SATURATION]     = speciesPtr->halfSaturation;
-  REAL(result)[SPECIES_REINTRODUCTION_RATE] = speciesPtr->reintroductionRate;
+  REAL(result)[SPECIES_REINTRODUCTION_PROB] = speciesPtr->reintroductionProb;
+  REAL(result)[SPECIES_REINTRODUCTION_SIZE] = speciesPtr->reintroductionSize;
   return result;
 }
 
@@ -94,7 +96,8 @@ SEXP C_setSpeciesValues(SEXP cSpeciesTable, SEXP speciesNum, SEXP speciesValues)
   speciesPtr->timeLag            = (int) (REAL(speciesValues)[SPECIES_TIME_LAG] + SMALLEST_DOUBLE);
   speciesPtr->mortality          = REAL(speciesValues)[SPECIES_MORTALITY];
   speciesPtr->halfSaturation     = REAL(speciesValues)[SPECIES_HALF_SATURATION];
-  speciesPtr->reintroductionRate = REAL(speciesValues)[SPECIES_REINTRODUCTION_RATE];
+  speciesPtr->reintroductionProb = REAL(speciesValues)[SPECIES_REINTRODUCTION_PROB];
+  speciesPtr->reintroductionSize = REAL(speciesValues)[SPECIES_REINTRODUCTION_SIZE];
   LOGICAL(result)[0] = TRUE;
   return result;
 }

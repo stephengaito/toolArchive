@@ -17,8 +17,9 @@
 #define SPECIES_TIME_LAG            2
 #define SPECIES_MORTALITY           3
 #define SPECIES_HALF_SATURATION     4
-#define SPECIES_REINTRODUCTION_RATE 5
-#define SPECIES_NUM_VALUES          6
+#define SPECIES_REINTRODUCTION_PROB 5
+#define SPECIES_REINTRODUCTION_SIZE 6
+#define SPECIES_NUM_VALUES          7
 
 #define PREDATOR  1
 #define PREY      2
@@ -36,7 +37,8 @@ typedef struct CSpecies_STRUCT {
   size_t timeLag;
   double mortality;
   double halfSaturation;
-  double reintroductionRate;
+  double reintroductionProb;
+  double reintroductionSize;
   double predationFactor;
 
   size_t numPredators;

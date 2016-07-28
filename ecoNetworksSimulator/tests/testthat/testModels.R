@@ -8,8 +8,10 @@ test_that("newTrophicModel creates a trophic model", {
 
 test_that("addSpecies adds a species to a speciesTable", {
   model <- newTrophicModel()
-  model <- addSpecies(model, "resource", growthRate=0.1, carryingCapacity=0.2, timeLag = 0.3, reintroductionRate = 0.4)
-  model <- addSpecies(model, "consumer", mortality=0.5, halfSaturation=0.6, reintroductionRate = 0.7)
+  model <- addSpecies(model, "resource", growthRate=0.1, carryingCapacity=0.2, timeLag = 0.3,
+                      reintroductionProb = 0.4, reintroductionSize = 0.5)
+  model <- addSpecies(model, "consumer", mortality=0.5, halfSaturation=0.6,
+                      reintroductionProb = 0.7, reintroductionSize = 0.8)
   species <- model$species
   speciesLevels <- levels(species$species)
   expect_true(isTrophicModel(model))
@@ -21,14 +23,16 @@ test_that("addSpecies adds a species to a speciesTable", {
   expect_equal(species[1, "timeLag"], 0.3)
   expect_equal(species[1, "mortality"], 0.0)
   expect_equal(species[1, "halfSaturation"], NA_real_)
-  expect_equal(species[1, "reintroductionRate"], 0.4)
+  expect_equal(species[1, "reintroductionProb"], 0.4)
+  expect_equal(species[1, "reintroductionSize"], 0.5)
   expect_equal(speciesLevels[species[2, "species"]], "consumer")
   expect_equal(species[2, "growthRate"], 0.0)
   expect_equal(species[2, "carryingCapacity"], NA_real_)
   expect_equal(species[2, "timeLag"], 0.0)
   expect_equal(species[2, "mortality"], 0.5)
   expect_equal(species[2, "halfSaturation"], 0.6)
-  expect_equal(species[2, "reintroductionRate"], 0.7)
+  expect_equal(species[2, "reintroductionProb"], 0.7)
+  expect_equal(species[2, "reintroductionSize"], 0.8)
 })
 
 test_that("addInteraction adds an interaction between two species", {
