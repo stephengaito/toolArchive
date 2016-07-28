@@ -1,6 +1,7 @@
 #ifndef C_MODELS_H
 #define C_MODELS_H
 
+#include <stdint.h>
 #include <R.h>
 #include <Rdefines.h>
 #include <R_ext/Rdynload.h>
@@ -37,14 +38,32 @@ typedef struct CSpecies_STRUCT {
   double halfSaturation;
   double reintroductionRate;
   double predationFactor;
+
   size_t numPredators;
   CInteraction *predators;
   size_t numPrey;
   CInteraction *prey;
 } CSpecies;
 
+typedef union RNGStateItem_UNION {
+  uint64_t s64;
+  int      sInt[2];
+} RNGStateItem;
+
+typedef union RNGValue_UNION {
+  uint64_t v64;
+  double   vDbl;
+} RNGValue;
+
 typedef struct CSpeciesTable_STRUCT {
   int tag;
+  //
+  // The Random Number Generator (RNG) state
+  // must be seeded so that it is not everywhere zero.
+  //
+  uint64_t rngState[16];
+  int      rngP;
+  //
   size_t numSpecies;
   CSpecies *species;
 } CSpeciesTable;

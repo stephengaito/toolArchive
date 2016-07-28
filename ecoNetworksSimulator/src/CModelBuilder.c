@@ -22,6 +22,8 @@ SEXP C_newSpeciesTable(SEXP numSpecies) {
   CSpeciesTable *cSpeciesTablePtr = 
     (CSpeciesTable*)Calloc(1, CSpeciesTable);
   cSpeciesTablePtr->tag        = CSpeciesTable_TAG;
+  cSpeciesTablePtr->rngP       = 0;
+  for (size_t i = 0; i < 16; i++) cSpeciesTablePtr->rngState[i] = 0;
   cSpeciesTablePtr->numSpecies = INTEGER(numSpecies)[0];
   cSpeciesTablePtr->species       = 
     (CSpecies*)Calloc(cSpeciesTablePtr->numSpecies, CSpecies);
