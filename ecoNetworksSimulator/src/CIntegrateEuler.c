@@ -168,7 +168,14 @@ SEXP C_integrateEuler(SEXP cModelSexp,
       for (size_t speciesNum = 0; speciesNum < numSpecies; speciesNum++) {
         *SpeciesPtr(speciesNum, curStep) = *SpeciesPtr(speciesNum, curStep - 1) +
           stepSize * speciesRateChanges[speciesNum];
-        if (*SpeciesPtr(speciesNum, curStep) < SMALLEST_DOUBLE) *SpeciesPtr(speciesNum, curStep) = 0;
+        if (*SpeciesPtr(speciesNum, curStep) < SMALLEST_DOUBLE) {
+          double biomass = 0.0;
+          CSpecies *curSpecies = cSpecies->species + speciesNum;
+          if (L_getARandomNumber(cSpecies) < curSpecies->reintroductionProb) {
+           biomass = curSpecies->reintroductionSize;
+          }
+          *SpeciesPtr(speciesNum, curStep) = biomass;
+        }
       }
     }
     //

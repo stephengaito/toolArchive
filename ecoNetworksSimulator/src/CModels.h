@@ -79,4 +79,5 @@ extern void L_assertADoubleInRange(const char* objName, SEXP aDouble, double min
 extern void L_assertIntegerVector(const char* objName, SEXP aVector, size_t vectorSize);
 extern void L_assertDoubleVector(const char* objName, SEXP aVector, size_t vectorSize);
 
+extern double L_getARandomNumber(CSpeciesTable *cSpeciesTable);
 #endif
