@@ -50,13 +50,14 @@ SEXP C_initRNGState(SEXP cSpeciesTable, SEXP initType, SEXP initialRun) {
   } else {
     // we do not yet implement initType == 0
     cSpeciesTablePtr->rngP = 0;
-    srandom(time(NULL));
+    GetRNGstate();
     for(size_t i = 0; i < 16; i++) {
       RNGStateItem value;
-      value.sInt[0] = random();
-      value.sInt[1] = random();
+      value.sInt[0] = unif_rand() * 0xFFFFFFF; // multiply double (0,1) by large int32 to get int32
+      value.sInt[1] = unif_rand() * 0xFFFFFFF; // multiply double (0,1) by large int32 to get int32
       cSpeciesTablePtr->rngState[i] = value.s64;
     }
+    PutRNGstate();
   }
   for (size_t i = 0; i < initialRunValue; i++) L_getARandomNumber(cSpeciesTablePtr);
   SEXP result = NEW_LOGICAL(1);

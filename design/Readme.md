@@ -23,3 +23,5 @@ trophic structure.
 
 # Resources
 
+[rgl: 3D Visualization Using 
+OpenGL](https://cran.r-project.org/web/packages/rgl/index.html)

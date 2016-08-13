@@ -21,19 +21,32 @@ for (species in 1:5) {
                             reintroductionProb = 0.1, reintroductionSize = 0.1)
 }
 #
-# Build all other trophic levels (consumers)
+# Build middle trophic levels (consumers/resources)
 #
-for (trophicLevel in 2:5) {
+for (trophicLevel in 2:4) {
   for (species in 1:5) {
     speciesName <- buildSpeciesName(trophicLevel, species)
     rndModel <- addSpecies(   rndModel, speciesName,
-                              mortality = 0.2, halfSaturation = 40,
+                              halfSaturation = 40,
                               reintroductionProb = (6 - trophicLevel) * 0.1,
                               reintroductionSize = (6 - trophicLevel) * 0.1)
     rndModel <- addSpeciesStd(rndModel, speciesName,
-                              mortality = 0.1, halfSaturation = 5,
+                              halfSaturation = 5,
                               reintroductionProb = 0.1, reintroductionSize = 0.1)
   }
+}
+#
+# Build trophic level 5 (top-predators)
+#
+for (species in 1:5) {
+  speciesName <- buildSpeciesName(5, species)
+  rndModel <- addSpecies(   rndModel, speciesName,
+                            mortality = 10, halfSaturation = 40,
+                            reintroductionProb = 0.9, reintroductionSize = 0.1
+  )
+  rndModel <- addSpeciesStd(rndModel, speciesName,
+                            mortality = 0.1, halfSaturation = 5,
+                            reintroductionProb = 0.1, reintroductionSize = 0.1)
 }
 #
 # Add interactions
@@ -46,9 +59,9 @@ for (predTrophicLevel in 2:5) {
       if (predSpecies != preySpecies) {
         preySpeciesName <- buildSpeciesName(preyTrophicLevel, preySpecies)
         rndModel <- addInteraction(   rndModel, predSpeciesName, preySpeciesName,
-                                      attackRate = 0.2, conversionRate = 0.35, timeLag = 5)
+                                      attackRate = 0.01, conversionRate = 0.5, timeLag = 5)
         rndModel <- addInteractionStd(rndModel, predSpeciesName, preySpeciesName,
-                                      attackRate = 0.1, conversionRate = 0.05, timeLag = 1)
+                                      attackRate = 0.005, conversionRate = 0.05, timeLag = 1)
       }
     }
   }
@@ -56,11 +69,11 @@ for (predTrophicLevel in 2:5) {
 
 #print(rndModel)
 
-bIV <- c(        10,    10,    10,    10,    10) # tl1
-bIV <- c(bIV,     5,     5,     5,     5,     5) # tl2
-bIV <- c(bIV,   2.5,   2.5,   2.5,   2.5,   2.5) # tl3
-bIV <- c(bIV,  1.25,  1.25,  1.25,  1.25,  1.25) # tl4
-bIV <- c(bIV, 0.625, 0.625, 0.625, 0.625, 0.625) # tl5
+bIV <- c(         10,     10,     10,     10,     10) # tl1
+bIV <- c(bIV,    0.5,    0.5,    0.5,    0.5,    0.5) # tl2
+bIV <- c(bIV,   0.25,   0.25,   0.25,   0.25,   0.25) # tl3
+bIV <- c(bIV,  0.125,  0.125,  0.125,  0.125,  0.125) # tl4
+bIV <- c(bIV, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625) # tl5
 
 #numRuns <- 99999
 numRuns <- 9
@@ -76,6 +89,7 @@ system("mkdir -p multiTrophic")
 for (curRun in 0:numRuns) {
   print(curRun)
   model <- varyModel(rndModel)
+  print(model)
   modelSpecies <- model$species
   initialValues <- newInitialValues(model, bIV)
   #print(initialValues)

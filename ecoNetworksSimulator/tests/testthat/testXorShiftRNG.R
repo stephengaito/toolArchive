@@ -24,6 +24,7 @@ test_that(".C_initRNGState can initialize RNG state", {
       expectedValue <- 0
     }
   }
+  set.seed(42)
   expect_true(.C_initRNGState(cModel, 2, 0))
   rngState <- .C_getRNGState(cModel)
   expect_equal(rngState[1], 0)

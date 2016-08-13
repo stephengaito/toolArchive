@@ -107,7 +107,7 @@ void L_rateChange(CSpeciesTable *cSpecies,
       // compute decay-natural-causes
       //
       if (SMALLEST_DOUBLE < curSpecies->mortality) {
-        rateChange += - curSpecies->mortality * curSpeciesValue;
+        rateChange += - curSpecies->mortality * curSpeciesValue * curSpeciesValue;
       }
       DEBUG("total rateChange[%d, %d] = %e\n", curStep, speciesNum, rateChange);
       speciesRateChanges[speciesNum] = rateChange;
@@ -171,8 +171,9 @@ SEXP C_integrateEuler(SEXP cModelSexp,
         if (*SpeciesPtr(speciesNum, curStep) < SMALLEST_DOUBLE) {
           double biomass = 0.0;
           CSpecies *curSpecies = cSpecies->species + speciesNum;
-          if (L_getARandomNumber(cSpecies) < curSpecies->reintroductionProb) {
-           biomass = curSpecies->reintroductionSize;
+          double rndNum = L_getARandomNumber(cSpecies);
+          if (rndNum < curSpecies->reintroductionProb) {
+           biomass = rndNum * (curSpecies->reintroductionSize);
           }
           *SpeciesPtr(speciesNum, curStep) = biomass;
         }
