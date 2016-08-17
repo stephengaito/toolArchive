@@ -37,7 +37,8 @@ test_that("addSpecies adds a species to a speciesTable", {
 
 test_that("addInteraction adds an interaction between two species", {
   model <- newTrophicModel()
-  model <- addInteraction(model, "consumer", "resource", attackRate = 0.1, conversionRate = 0.2, timeLag = 0.3)
+  model <- addInteraction(model, "consumer", "resource",
+                          attackRate = 0.1, conversionRate = 0.2, deathRate = 0.3, timeLag = 0.4)
   interactions <- model$interactions
   expect_true(.R_isInteractionsTable(interactions))
   predatorLevels <- levels(interactions$predator)
@@ -46,7 +47,8 @@ test_that("addInteraction adds an interaction between two species", {
   expect_equal(preyLevels[interactions[1, "prey"]], "resource")
   expect_equal(interactions[1, "attackRate"], 0.1)
   expect_equal(interactions[1, "conversionRate"], 0.2)
-  expect_equal(interactions[1, "timeLag"], 0.3)
+  expect_equal(interactions[1, "deathRate"], 0.3)
+  expect_equal(interactions[1, "timeLag"], 0.4)
 })
 
 test_that(".R_areRelated correctly identifies if two tables are related", {
@@ -54,11 +56,12 @@ test_that(".R_areRelated correctly identifies if two tables are related", {
   model <- addSpecies(model, "resource", growthRate=0.1, carryingCapacity=0.2, timeLag = 0.3)
   model <- addSpecies(model, "consumer", mortality=0.4)
   
-  model <- addInteraction(model, "consumer", "resource", attackRate = 0.1, conversionRate = 0.2, timeLag = 0.3)
+  model <- addInteraction(model, "consumer", "resource",
+                          attackRate = 0.1, conversionRate = 0.2, deathRate = 0.3, timeLag = 0.4)
   expect_true(.R_areRelated(model$species, model$interactions))
   
   model <- addInteraction(model, "unknownConsumer", "unknownResource", 
-                                 attackRate = 0.1, conversionRate = 0.2, timeLag = 0.3)
+                                 attackRate = 0.1, conversionRate = 0.2, deathRate = 0.3, timeLag = 0.4)
   expect_false(.R_areRelated(model$species, model$interactions))
 })
 
@@ -75,8 +78,10 @@ test_that("varyModel works", {
   model <- addSpecies(model, "consumer", mortality=0.4)
   model <- addSpeciesStd(model, "consumer", mortality=0.04)
 
-  model <- addInteraction(   model, "consumer", "resource", attackRate = 0.1, conversionRate = 0.2, timeLag = 0.3)
-  model <- addInteractionStd(model, "consumer", "resource", attackRate = 0.01, conversionRate = 0.02, timeLag = 0.03)
+  model <- addInteraction(   model, "consumer", "resource",
+                             attackRate = 0.1, conversionRate = 0.2, deathRate = 0.3, timeLag = 0.4)
+  model <- addInteractionStd(model, "consumer", "resource",
+                             attackRate = 0.01, conversionRate = 0.02, deathRate = 0.03, timeLag = 0.04)
   
   expect_equal(model$species[1, "growthRate"], 0.1)
   expect_equal(model$speciesStd[1, "growthRate"], 0.01)

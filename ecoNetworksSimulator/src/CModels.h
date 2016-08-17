@@ -28,6 +28,7 @@ typedef struct CInteraction_STRUCT {
   size_t speciesIndex;
   double attackRate;
   double conversionRate;
+  double deathRate;
   size_t timeLag;
 } CInteraction;
 

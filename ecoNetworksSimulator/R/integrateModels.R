@@ -43,6 +43,7 @@
                                  predators - 1, 
                                  predatorInteractions$attackRate,
                                  predatorInteractions$conversionRate,
+                                 predatorInteractions$deathRate,
                                  predatorInteractions$timeLag/stepSize)
     }
     #
@@ -57,6 +58,7 @@
                              prey - 1,
                              preyInteractions$attackRate,
                              preyInteractions$conversionRate,
+                             preyInteractions$deathRate,
                              preyInteractions$timeLag/stepSize)
     }
   }

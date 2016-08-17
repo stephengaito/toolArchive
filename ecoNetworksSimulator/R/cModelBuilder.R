@@ -76,6 +76,7 @@
                                        speciesNumVec, 
                                        speciesAttackVec,
                                        speciesConversionVec,
+                                       speciesDeathRateVec,
                                        speciesTimeLagVec) {
   .Call("C_setPredatorCoefficients", 
         cSpeciesTable, 
@@ -83,6 +84,7 @@
         as.integer(speciesNumVec), 
         speciesAttackVec,
         speciesConversionVec,
+        speciesDeathRateVec,
         as.integer(speciesTimeLagVec),
         PACKAGE = "ecoNetworksSimulator")
 }
@@ -113,6 +115,7 @@
                                    speciesNumVec, 
                                    speciesAttackVec,
                                    speciesConversionVec,
+                                   speciesDeathRateVec,
                                    speciesTimeLagVec) {
   .Call("C_setPreyCoefficients", 
         cSpeciesTable, 
@@ -120,6 +123,7 @@
         as.integer(speciesNumVec), 
         speciesAttackVec,
         speciesConversionVec,
+        speciesDeathRateVec,
         as.integer(speciesTimeLagVec),
         PACKAGE = "ecoNetworksSimulator")
 }

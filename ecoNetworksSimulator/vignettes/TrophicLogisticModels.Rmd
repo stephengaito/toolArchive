@@ -208,12 +208,14 @@ r2c1 <- addInteraction(r2c1,
   prey="resource1",
   attackRate=0.1,
   conversionRate=0.35,
+  deathRate = 1.0,
   timeLag = 0.0)
 r2c1 <- addInteraction(r2c1,
   predator="consumer",
   prey="resource2",
   attackRate=0.1,
   conversionRate=0.35,
+  deathRate = 1.0,
   timeLag = 2.3)
 r2c1
 ```
@@ -258,12 +260,14 @@ r2c1 <- addInteractionStd(r2c1,
   prey="resource1",
   attackRate=0.01,
   conversionRate=0.1,
+  deathRate = 0.01,
   timeLag = 0.01)
 r2c1 <- addInteractionStd(r2c1,
   predator="consumer",
   prey="resource2",
   attackRate=0.01,
   conversionRate=0.1,
+  deathRate = 0.01,
   timeLag = 0.1)
 r2c1
 ```

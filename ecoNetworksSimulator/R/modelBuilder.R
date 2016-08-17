@@ -125,6 +125,7 @@ addSpeciesStd <- function(model,
              prey=character(),
              attackRate=numeric(),
              conversionRate=numeric(),
+             deathRate=numeric(),
              timeLag=numeric())
 }
 
@@ -136,7 +137,7 @@ addSpeciesStd <- function(model,
 .R_isInteractionsTable <- function(interactionsTable){
   is.data.frame(interactionsTable) && 
     colnames(interactionsTable) == 
-      c("predator", "prey", "attackRate", "conversionRate", "timeLag")
+      c("predator", "prey", "attackRate", "conversionRate", "deathRate", "timeLag")
 }
 
 #' Add a species interaction to an existing trophic model
@@ -147,6 +148,7 @@ addSpeciesStd <- function(model,
 #' @param attackRate the rate at which the predator attacks the prey
 #' @param conversionRate the rate at which the predator converts its prey into
 #'   itself
+#' @param deathRate the rate at which the prey dies due to predator's predation
 #' @param timeLag the time lag for the prey species
 #' @export
 addInteraction <- function(model, 
@@ -154,6 +156,7 @@ addInteraction <- function(model,
                            prey,
                            attackRate=0.0, 
                            conversionRate=0.0,
+                           deathRate=1.0,
                            timeLag=0.0) {
   model$interactions <- 
     rbind(model$interactions, 
@@ -161,6 +164,7 @@ addInteraction <- function(model,
                      prey=prey,
                      attackRate=attackRate,
                      conversionRate=conversionRate,
+                     deathRate=deathRate,
                      timeLag=timeLag))
   model
 }
@@ -172,6 +176,7 @@ addInteraction <- function(model,
 #' @param attackRate the rate at which the predator attacks the prey
 #' @param conversionRate the rate at which the predator converts its prey into
 #'   itself
+#' @param deathRate the rate at which the prey dies due to predator's predation
 #' @param timeLag the time lag for the prey species
 #' @export
 addInteractionStd <- function(model, 
@@ -179,6 +184,7 @@ addInteractionStd <- function(model,
                               prey,
                               attackRate=0.0, 
                               conversionRate=0.0,
+                              deathRate=1.0,
                               timeLag=0.0) {
   interactionStds <- model$interactionStds
   if (is.null(interactionStds)) { interactionStds <- .R_newInteractionsTable()}
@@ -188,6 +194,7 @@ addInteractionStd <- function(model,
                      prey=prey,
                      attackRate=attackRate,
                      conversionRate=conversionRate,
+                     deathRate=deathRate,
                      timeLag=timeLag))
   model
 }

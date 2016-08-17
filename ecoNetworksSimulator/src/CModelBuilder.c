@@ -130,19 +130,23 @@ SEXP L_getPredatorPreyCoefficients(int predatorPreyType, SEXP cSpeciesTable, SEX
   double *speciesAttackData     = REAL(speciesAttackVec);
   SEXP speciesConversionVec     = NEW_NUMERIC(vecSize);
   double *speciesConversionData = REAL(speciesConversionVec);
+  SEXP speciesDeathRateVec      = NEW_NUMERIC(vecSize);
+  double *speciesDeathRateData  = REAL(speciesDeathRateVec);
   SEXP speciesTimeLagVec        = NEW_INTEGER(vecSize);
   int *speciesTimeLagData       = INTEGER(speciesTimeLagVec);
   for(size_t i = 0; i < vecSize; i++) {
     speciesNumData[i]        = interactions[i].speciesIndex;
     speciesAttackData[i]     = interactions[i].attackRate;
     speciesConversionData[i] = interactions[i].conversionRate;
+    speciesDeathRateData[i]  = interactions[i].deathRate;
     speciesTimeLagData[i]    = interactions[i].timeLag;
   }
-  SEXP result = NEW_LIST(4);
+  SEXP result = NEW_LIST(5);
   SET_VECTOR_ELT(result, 0, speciesNumVec);
   SET_VECTOR_ELT(result, 1, speciesAttackVec);
   SET_VECTOR_ELT(result, 2, speciesConversionVec);
-  SET_VECTOR_ELT(result, 3, speciesTimeLagVec);
+  SET_VECTOR_ELT(result, 3, speciesDeathRateVec);
+  SET_VECTOR_ELT(result, 4, speciesTimeLagVec);
   return result;
 }
 
@@ -152,6 +156,7 @@ SEXP L_setPredatorPreyCoefficients(int predatorPreyType,
                                    SEXP speciesNumVec,
                                    SEXP speciesAttackVec,
                                    SEXP speciesConversionVec,
+                                   SEXP speciesDeathRateVec,
                                    SEXP speciesTimeLagVec) {
   SEXP result = NEW_LOGICAL(1);
   LOGICAL(result)[0] = FALSE;
@@ -169,6 +174,8 @@ SEXP L_setPredatorPreyCoefficients(int predatorPreyType,
   double *speciesAttackData = REAL(speciesAttackVec);
   L_assertDoubleVector("speciesConversion", speciesConversionVec, vecSize);
   double *speciesConversionData = REAL(speciesConversionVec);
+  L_assertDoubleVector("speciesDeathRate", speciesDeathRateVec, vecSize);
+  double *speciesDeathRateData = REAL(speciesDeathRateVec);
   L_assertIntegerVector("speciesTimeLag", speciesTimeLagVec, vecSize);
   int *speciesTimeLagData = INTEGER(speciesTimeLagVec);
   CInteraction* interactions = (CInteraction*)Calloc(vecSize, CInteraction);
@@ -181,6 +188,7 @@ SEXP L_setPredatorPreyCoefficients(int predatorPreyType,
     interactions[i].speciesIndex   = speciesNumData[i];
     interactions[i].attackRate     = speciesAttackData[i];
     interactions[i].conversionRate = speciesConversionData[i];
+    interactions[i].deathRate      = speciesDeathRateData[i];
     interactions[i].timeLag        = speciesTimeLagData[i];
   }
   if (predatorPreyType == PREDATOR) {
@@ -212,6 +220,7 @@ SEXP C_setPredatorCoefficients(SEXP cSpeciesTable,
                                SEXP speciesNumVec,
                                SEXP speciesAttackVec,
                                SEXP speciesConversionVec,
+                               SEXP speciesDeathRateVec,
                                SEXP speciesTimeLagVec) {
   return L_setPredatorPreyCoefficients(PREDATOR,
                                        cSpeciesTable,
@@ -219,6 +228,7 @@ SEXP C_setPredatorCoefficients(SEXP cSpeciesTable,
                                        speciesNumVec,
                                        speciesAttackVec,
                                        speciesConversionVec,
+                                       speciesDeathRateVec,
                                        speciesTimeLagVec);
 }
 
@@ -231,6 +241,7 @@ SEXP C_setPreyCoefficients(SEXP cSpeciesTable,
                            SEXP speciesNumVec, 
                            SEXP speciesAttackVec,
                            SEXP speciesConversionVec,
+                           SEXP speciesDeathRateVec,
                            SEXP speciesTimeLagVec) {
   return L_setPredatorPreyCoefficients(PREY, 
                                        cSpeciesTable, 
@@ -238,6 +249,7 @@ SEXP C_setPreyCoefficients(SEXP cSpeciesTable,
                                        speciesNumVec, 
                                        speciesAttackVec,
                                        speciesConversionVec,
+                                       speciesDeathRateVec,
                                        speciesTimeLagVec);
 }
 
@@ -248,9 +260,9 @@ static R_CallMethodDef CModelBuilder_callMethods[] = {
   { "C_getSpeciesValues",        (DL_FUNC) &C_getSpeciesValues,        2},
   { "C_setSpeciesValues",        (DL_FUNC) &C_setSpeciesValues,        3},
   { "C_getPredatorCoefficients", (DL_FUNC) &C_getPredatorCoefficients, 2},
-  { "C_setPredatorCoefficients", (DL_FUNC) &C_setPredatorCoefficients, 6},
+  { "C_setPredatorCoefficients", (DL_FUNC) &C_setPredatorCoefficients, 7},
   { "C_getPreyCoefficients",     (DL_FUNC) &C_getPreyCoefficients,     2},
-  { "C_setPreyCoefficients",     (DL_FUNC) &C_setPreyCoefficients,     6},
+  { "C_setPreyCoefficients",     (DL_FUNC) &C_setPreyCoefficients,     7},
   { NULL, NULL, 0}
 };
 

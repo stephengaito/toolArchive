@@ -9,17 +9,19 @@ test_that("we can build a C-model from an R-model", {
   r2c1 <- addSpecies(r2c1, "consumer", mortality = 0.4, halfSaturation = 27,
                      reintroductionProb = 0.3, reintroductionSize=0.4)
   r2c1 <- addInteraction(r2c1,
-                          predator = "consumer",
-                          prey = "resource1",
-                          attackRate = 0.5,
-                          conversionRate = 0.35,
-                          timeLag = 3)
+                         predator = "consumer",
+                         prey = "resource1",
+                         attackRate = 0.5,
+                         conversionRate = 0.35,
+                         deathRate = 0.32, 
+                         timeLag = 3)
   r2c1 <- addInteraction(r2c1,
-                          predator = "consumer",
-                          prey = "resource2",
-                          attackRate = 0.6,
-                          conversionRate = 0.40,
-                          timeLag = 4)
+                         predator = "consumer",
+                         prey = "resource2",
+                         attackRate = 0.6,
+                         conversionRate = 0.40,
+                         deathRate = 0.42,
+                         timeLag = 4)
   expect_equal(maximumTimeLag(r2c1), 4)
   cModel <- .R_buildCModel(r2c1, 0.01)
   numSpecies <- .C_numSpecies(cModel)
@@ -39,7 +41,7 @@ test_that("we can build a C-model from an R-model", {
   preyValues <- .C_getPreyCoefficients(cModel, 0)
   expect_equal(length(preyValues), 0)
   predatorValues <- .C_getPredatorCoefficients(cModel, 0)
-  expect_equal(length(predatorValues), 4)
+  expect_equal(length(predatorValues), 5)
   expect_equal(length(predatorValues[[1]]), 1)
   expect_equal(predatorValues[[1]][1], 2)
   expect_equal(length(predatorValues[[2]]), 1)
@@ -47,7 +49,9 @@ test_that("we can build a C-model from an R-model", {
   expect_equal(length(predatorValues[[3]]), 1)
   expect_equal(predatorValues[[3]][1], 0.35)
   expect_equal(length(predatorValues[[4]]), 1)
-  expect_equal(predatorValues[[4]][1], 300)
+  expect_equal(predatorValues[[4]][1], 0.32)
+  expect_equal(length(predatorValues[[5]]), 1)
+  expect_equal(predatorValues[[5]][1], 300)
   #
   # resource2
   #
@@ -63,7 +67,7 @@ test_that("we can build a C-model from an R-model", {
   preyValues <- .C_getPreyCoefficients(cModel, 1)
   expect_equal(length(preyValues), 0)
   predatorValues <- .C_getPredatorCoefficients(cModel, 1)
-  expect_equal(length(predatorValues), 4)
+  expect_equal(length(predatorValues), 5)
   expect_equal(length(predatorValues[[1]]), 1)
   expect_equal(predatorValues[[1]][1], 2)
   expect_equal(length(predatorValues[[2]]), 1)
@@ -71,7 +75,9 @@ test_that("we can build a C-model from an R-model", {
   expect_equal(length(predatorValues[[3]]), 1)
   expect_equal(predatorValues[[3]][1], 0.40)
   expect_equal(length(predatorValues[[4]]), 1)
-  expect_equal(predatorValues[[4]][1], 400)
+  expect_equal(predatorValues[[4]][1], 0.42)
+  expect_equal(length(predatorValues[[5]]), 1)
+  expect_equal(predatorValues[[5]][1], 400)
   #
   # consumer
   #
@@ -85,7 +91,7 @@ test_that("we can build a C-model from an R-model", {
   expect_equal(values[6], 0.3)
   expect_equal(values[7], 0.4)
   preyValues <- .C_getPreyCoefficients(cModel, 2)
-  expect_equal(length(preyValues), 4)
+  expect_equal(length(preyValues), 5)
   expect_equal(length(preyValues[[1]]), 2)
   expect_equal(preyValues[[1]][1], 0)
   expect_equal(preyValues[[1]][2], 1)
@@ -96,8 +102,11 @@ test_that("we can build a C-model from an R-model", {
   expect_equal(preyValues[[3]][1], 0.35)
   expect_equal(preyValues[[3]][2], 0.40)
   expect_equal(length(preyValues[[4]]), 2)
-  expect_equal(preyValues[[4]][1], 300)
-  expect_equal(preyValues[[4]][2], 400)
+  expect_equal(preyValues[[4]][1], 0.32)
+  expect_equal(preyValues[[4]][2], 0.42)
+  expect_equal(length(preyValues[[5]]), 2)
+  expect_equal(preyValues[[5]][1], 300)
+  expect_equal(preyValues[[5]][2], 400)
   predatorValues <- .C_getPredatorCoefficients(cModel, 2)
   expect_equal(length(predatorValues), 0)
 })
