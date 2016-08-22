@@ -12,6 +12,7 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+
 ```{r setup, echo=FALSE,  results="asis"}
 options(rgl.useNULL=TRUE)
 library(rgl)
@@ -20,7 +21,6 @@ library(dynSysToolKit)
 
 setupKnitr() # contains an implicit rgl.open()?
 
-rgl.bg(color="white")
 ```
 
 ## Model equations
@@ -47,9 +47,37 @@ $$
 \end{align*}
 $$
 
-```{r lorenzEqs, echo=FALSE}
+```{r lorenzEqs, webgl=TRUE, rgl.newwindow=TRUE, echo=FALSE}
+shortResults <- integrateLorenz(stepsPerSample = 1, numSamples = 100)
 results <- integrateLorenz(stepsPerSample = 1, numSamples = 10000)
-rgl.linestrips(results[,1], results[,2], results[,3], color = "blue")
-subid <- currentSubscene3d()
-rglwidget(elementId = "lorenzEq")
+#rgl.linestrips(results[,1], results[,2], results[,3], color = "blue")
+x <- results[,1]
+y <- results[,2]
+z <- results[,3]
+#plot3d(x, y, z, type='l', col="blue")
+lorenzID <- lines3d(x,y,z, col="blue", radius=0.1)
+shortID  <- lines3d(shortResults[,1], shortResults[,2], shortResults[,3], col="red")
+axisID   <- decorate3d()
+subid    <- currentSubscene3d()
+#rglwidget(elementId = "lorenzEqs")
+```
+
+<script type="text/javascript">
+var myTranslate = function(xDist, yDist) {
+  var rgl = document.getElementById("lorenzEqsdiv").rglinstance;
+  var zoom = rgl.getObj(`r subid`).par3d.zoom;
+  rgl.getObj(`r subid`).par3d.userMatrix.translate( xDist*zoom, yDist*zoom, 0);
+  rgl.drawScene();
+};
+</script>
+
+<button type="button" onclick="myTranslate(-10, 0)">Left</button>
+<button type="button" onclick="myTranslate(10, 0)">Right</button>
+<button type="button" onclick="myTranslate(0, 10)">Up</button>
+<button type="button" onclick="myTranslate(0, -10)">Down</button>
+
+```{r results="asis", echo=FALSE}
+toggleButton(lorenzID, label = "full",    prefix = "lorenzEqs", subscene = subid)
+toggleButton(shortID,  label = "initial", prefix = "lorenzEqs", subscene = subid)
+toggleButton(axisID,   label = "axis",    prefix = "lorenzEqs", subscene = subid)
 ```

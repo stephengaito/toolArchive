@@ -4,7 +4,7 @@ author: "Stephen Gaito"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Trophic Logistic Model}
+  %\VignetteIndexEntry{Trophic Logistic Models}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -16,7 +16,7 @@ We base the equations used for the continuous time integration on two sources, t
 
 [^2]: "Mathematical Biology" by J. D. Murray, published by Springer-Verlag, Biomathematics Texts, 1990. See Section 3.3 "Realistic Predator-Prey Models"
 
-For any given species the rate of change of the (biomass of the) population depends on essentially four terms:
+For any given species, $S_i$, the rate of change of the (biomass of the) population depends on essentially four terms:
 
   1. growth terms coming from the consumption of some external energy source,
   2. growth terms coming from the consumption of some other species,
@@ -35,19 +35,19 @@ Using these symbols, we can state the rate of change for a given species, $S_i$ 
 
 $$
 \frac{dS_i}{dt} =
-  G_e(S_i) + G_c(\hat{S}^+_i)
-  - D_p(\hat{S}^-_i) - D_n(S_i)
+  G_e(S_i) + G_c(S_i, \hat{S}^+_i)
+  - D_p(S_i, \hat{S}) - D_n(S_i)
 $$
 
-In order to perform a unit analysis of the above, we need to agree the fundamental time unit. The most common, terrestrial, multi-trophic level ecological system will typically be based on insects. For these typical insect centric ecologies, the most important time interval will be based upon the time a given instar takes to develop. For example species in the high-arctic might have a large multiple of instars each of which develop over a year. For the, temperate forest, Spruce Budworm, there are essentially two instars, the (non-reproductive) catepillar which over-winters and the adult (reproductive) moth. So for the Spruce Budworm we might consider a "normal" instar to take place over a half year. For complex ecological systems, we need to choose a basic time unit roughly common to each species. For a typical temperate insect based system, this will likely be "months". Having chosen a basic time unit, months, we can then perform a unit analysis as follows:
+In order to perform a unit analysis of the above, we need to agree the fundamental time unit. The most common, terrestrial, multi-trophic level ecological system will typically be based on insects. For these typical insect centric ecologies, the most important time interval will be based upon the time a given instar takes to develop. For example species in the high-arctic might have a large multiple of instars each of which develop over a year. For the, temperate forest, Spruce Budworm, there are essentially two instars, the (non-reproductive) catepillar which over-winters and the adult (reproductive) moth. So for the Spruce Budworm we might consider a "normal" instar to take place over a half year. For complex ecological systems, we need to choose a basic time unit roughly common to each species. For a typical temperate insect based system, this will likely be "months". Having chosen a basic time unit of months, we can then perform a unit analysis as follows:
 
 $$
 \begin{align*}
 \left[ S_i \right] & = & \text{biomass}_i \\
 \left[ \frac{dS_i}{dt} \right]
 & = & \left[ G_e(S_i) \right] \\
-& = & \left[ G_c(\hat{S}^+_i) \right] \\
-& = & \left[ D_p(\hat{S}^-_i) \right] \\
+& = & \left[ G_c(S_i, \hat{S}^+_i) \right] \\
+& = & \left[ D_p(S_i, \hat{S}) \right] \\
 & = & \left[ D_n(S_i) \right] \\
 & = & \frac{\text{biomass}_i}{\text{month}}
 \end{align*}
@@ -81,12 +81,12 @@ $$
 \left[ m_i \right] = \frac{\text{biomass}_i}{\text{biomass}_i * \text{month}}
 $$
 
-Note that for a base species, these two terms, $G_e$ and $D_n$, can be amalgamated into a single term by suitable adjustments of the growth rate and carrying capacity parameters.
+Note that for a base species, these two terms, $G_e$ and $D_n$, can be amalgamated into a single term by suitable adjustments of the growth rate, mortality rate and carrying capacity parameters.
 
 Now consider a **predator species**, $S_i$. We again assume a sigmoidal functional relationship with species density, but this time we assume the saturation to be dependent upon the total density of the species the predator consumes. That is the preadtor's growth for a given attack saturates the greater the total attacks (over all prey species). We also assume that a given predator may attack its prey with a particular time delay. So for the predator we model the $G_c$ term as:
 
 $$
-G_c(S_i) =
+G_c(S_i, \hat{S}^+_i) =
   \left( \sum_{j \in \hat{S}^+_i} e_{i,j} * a_{i,j} * S_j(t - \tau_{i,j}) \right)
   * \frac{S_i(t)}{ h_i + \sum_{j \in \hat{S}^+_i} a_{i,j} * S_j(t - \tau_{i,j}) }
 $$
@@ -116,11 +116,11 @@ $$
 Now consider a **prey species**, $S_i$. We assume the decay due to predation, $D_p$, depends upon all predator species which consume $S_i$:
 
 $$
-D_p(S_i) = \sum_{j \in \hat{S}^-_i} d_{i,j} * a_{j,i} * S_i(t - \tau_{j,i})
+D_p(S_i, \hat{S}) = \sum_{j \in \hat{S}^-_i} d_{j,i} * a_{j,i} * S_i(t - \tau_{j,i})
   * \frac{S_j}{h_j + \sum_{k \in \hat{S}^+_j} a_{j,k} * S_k(t - \tau_{j,k})}
 $$
 
-where $d_{i,j}$ is the death rate of species $S_i$ due to predation by species $S_j$. Since the units of the terms, $\left[ a_{j,i} * S_i(t - \tau_{j,i}) \right]$ are $\text{biomass}_j$, the units of $\left[ d_{i,j} \right]$ are $\frac{\text{biomass}_i}{\text{biomass}_j * \text{month}}$. Typically these death rates are assumed to have the value $1$ and are usually ignored. However the unit analysis requires the use of these parameters to ensure the three different uses of the terms, $a_{j,i} * S_i(t - \tau_{j,i})$ in the death, $d_{i,j}$, conversion, $e_{i,j}$ and half saturation, $h_i$, contexts are properly decoupled.
+where $d_{j,i}$ is the death rate of species $S_i$ due to predation by species $S_j$. Since the units of the terms, $\left[ a_{j,i} * S_i(t - \tau_{j,i}) \right]$ are $\text{biomass}_j$, the units of $\left[ d_{j,i} \right]$ are $\frac{\text{biomass}_i}{\text{biomass}_j * \text{month}}$. Typically these death rates are assumed to have the value $1$ and are usually ignored. However the unit analysis requires the use of these parameters to ensure the three different uses of the terms, $a_{j,i} * S_i(t - \tau_{j,i})$ in the death, $d_{i,j}$, conversion, $e_{i,j}$ and half saturation, $h_i$, contexts are properly decoupled.
 
 Putting this all together, for a general species, $S_i$, which might be both a predator and a prey, we get:
 
@@ -130,7 +130,7 @@ $$
   & = & r_i * S_i(t) * \left( 1 - \frac{S_i(t - \tau_i)}{K_i} \right) \\
   &   &  + \left( \sum_{j \in \hat{S}^+_i} e_{i,j} * a_{i,j} * S_j(t - \tau_{i,j}) \right)
           * \frac{S_i(t)}{ h_i + \sum_{j \in \hat{S}^+_i} a_{i,j} * S_j(t - \tau_{i,j}) } \\
-  &   &  - \sum_{j \in \hat{S}^-_i} d_{i,j} * a_{j,i} * S_i(t - \tau_{j,i})
+  &   &  - \sum_{j \in \hat{S}^-_i} d_{j,i} * a_{j,i} * S_i(t - \tau_{j,i})
           * \frac{S_j(t)}{h_j + \sum_{k \in \hat{S}^+_j} a_{j,k} * S_k(t - \tau_{j,k})} \\
   &   &  - m_i * S_i(t)
 \end{align*}
@@ -144,7 +144,7 @@ $$
 \begin{align*}
 \frac{dS_i}{dt}
   & = & r_i * S_i(t) * \left( 1 - \frac{S_i(t - \tau_i)}{K_i} \right) \\
-  &   &  - \sum_{j \in \hat{S}^-_i} d_{i,j} * a_{j,i} * S_i(t - \tau_{j,i})
+  &   &  - \sum_{j \in \hat{S}^-_i} d_{j,i} * a_{j,i} * S_i(t - \tau_{j,i})
           * \frac{S_j(t)}{h_j + \sum_{k \in \hat{S}^+_j} a_{j,k} * S_k(t - \tau_{j,k})} 
 \end{align*}
 $$
@@ -156,7 +156,7 @@ $$
 \frac{dS_i}{dt}
   & = &  + \left( \sum_{j \in \hat{S}^+_i} e_{i,j} * a_{i,j} * S_j(t - \tau_{i,j}) \right)
           * \frac{S_i(t)}{ h_i + \sum_{j \in \hat{S}^+_i} a_{i,j} * S_j(t - \tau_{i,j}) } \\
-  &   &  - \sum_{j \in \hat{S}^-_i} d_{i,j} * a_{j,i} * S_i(t - \tau_{j,i})
+  &   &  - \sum_{j \in \hat{S}^-_i} d_{j,i} * a_{j,i} * S_i(t - \tau_{j,i})
           * \frac{S_j(t)}{h_j + \sum_{k \in \hat{S}^+_j} a_{j,k} * S_k(t - \tau_{j,k})} \\
   &   &  - m_i * S_i(t)
 \end{align*}
@@ -173,108 +173,4 @@ $$
 \end{align*}
 $$
 
-# Specifying a model in R
-
-```{r echo=FALSE}
-library(ecoNetworksSimulator)
-```
-
-To build a given trophic model we begin by creating an empty trophic model and then adding the different species:
-
-```{r}
-r2c1 <- newTrophicModel()
-r2c1 <- addSpecies(r2c1, 
-  "resource1",
-  growthRate=0.2,
-  carryingCapacity=25,
-  timeLag = 0.0)
-r2c1 <- addSpecies(r2c1, 
-  "resource2",
-  growthRate=0.2,
-  carryingCapacity=25,
-  timeLag = 3.5)
-r2c1 <- addSpecies(r2c1, 
-  "consumer",
-  mortality=0.2,
-  halfSaturation=1)
-r2c1
-```
-
-Next we add some interactions:
-
-```{r}
-r2c1 <- addInteraction(r2c1,
-  predator="consumer",
-  prey="resource1",
-  attackRate=0.1,
-  conversionRate=0.35,
-  deathRate = 1.0,
-  timeLag = 0.0)
-r2c1 <- addInteraction(r2c1,
-  predator="consumer",
-  prey="resource2",
-  attackRate=0.1,
-  conversionRate=0.35,
-  deathRate = 1.0,
-  timeLag = 2.3)
-r2c1
-```
-
-we can then get a LaTeX representation of our model
-
-```{r eval=FALSE}
-getLaTeX(r2c1) # NOT YET IMPLEMENTED
-```
-
-or the species interactions in an interactions *matrix* form
-
-```{r eval=FALSE}
-getInteractionsMatrix(r2c1) # NOT YET IMPLEMENTED
-```
-
-We might want to specify a random collection of models based upon individual species and interaction mean and standard deviations. To do this we can add species standard deviations tables to the model:
-
-```{r}
-r2c1 <- addSpeciesStd(r2c1, 
-  name="resource1",
-  growthRate=0.01,
-  carryingCapacity=5,
-  timeLag = 0.01)
-r2c1 <- addSpecies(r2c1, 
-  name="resource2",
-  growthRate=0.01,
-  carryingCapacity=5,
-  timeLag = 0.1)
-r2c1 <- addSpecies(r2c1, 
-  name="consumer",
-  mortality=0.01,
-  halfSaturation=0.0)
-r2c1
-```
-
-Next we add some interactions standard deviations:
-
-```{r}
-r2c1 <- addInteractionStd(r2c1,
-  predator="consumer",
-  prey="resource1",
-  attackRate=0.01,
-  conversionRate=0.1,
-  deathRate = 0.01,
-  timeLag = 0.01)
-r2c1 <- addInteractionStd(r2c1,
-  predator="consumer",
-  prey="resource2",
-  attackRate=0.01,
-  conversionRate=0.1,
-  deathRate = 0.01,
-  timeLag = 0.1)
-r2c1
-```
-
-To get an individual model:
-
-```{r eval=FALSE}
-# r2c1 <- varyModel(r2c1var) # NOT YET IMPLEMENTED
-```
 

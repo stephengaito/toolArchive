@@ -1,0 +1,114 @@
+---
+title: "Specifying a model in R"
+author: "Stephen Gaito"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Specifying a model in R}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+# Specifying a model in R
+
+```{r echo=FALSE}
+library(ecoNetworksSimulator)
+```
+
+To build a given trophic model we begin by creating an empty trophic model and then adding the different species:
+
+```{r}
+r2c1 <- newTrophicModel()
+r2c1 <- addSpecies(r2c1, 
+  "resource1",
+  growthRate=0.2,
+  carryingCapacity=25,
+  timeLag = 0.0)
+r2c1 <- addSpecies(r2c1, 
+  "resource2",
+  growthRate=0.2,
+  carryingCapacity=25,
+  timeLag = 3.5)
+r2c1 <- addSpecies(r2c1, 
+  "consumer",
+  mortality=0.2,
+  halfSaturation=1)
+r2c1
+```
+
+Next we add some interactions:
+
+```{r}
+r2c1 <- addInteraction(r2c1,
+  predator="consumer",
+  prey="resource1",
+  attackRate=0.1,
+  conversionRate=0.35,
+  deathRate = 1.0,
+  timeLag = 0.0)
+r2c1 <- addInteraction(r2c1,
+  predator="consumer",
+  prey="resource2",
+  attackRate=0.1,
+  conversionRate=0.35,
+  deathRate = 1.0,
+  timeLag = 2.3)
+r2c1
+```
+
+we can then get a LaTeX representation of our model
+
+```{r eval=FALSE}
+getLaTeX(r2c1) # NOT YET IMPLEMENTED
+```
+
+or the species interactions in an interactions *matrix* form
+
+```{r eval=FALSE}
+getInteractionsMatrix(r2c1) # NOT YET IMPLEMENTED
+```
+
+We might want to specify a random collection of models based upon individual species and interaction mean and standard deviations. To do this we can add species standard deviations tables to the model:
+
+```{r}
+r2c1 <- addSpeciesStd(r2c1, 
+  name="resource1",
+  growthRate=0.01,
+  carryingCapacity=5,
+  timeLag = 0.01)
+r2c1 <- addSpecies(r2c1, 
+  name="resource2",
+  growthRate=0.01,
+  carryingCapacity=5,
+  timeLag = 0.1)
+r2c1 <- addSpecies(r2c1, 
+  name="consumer",
+  mortality=0.01,
+  halfSaturation=0.0)
+r2c1
+```
+
+Next we add some interactions standard deviations:
+
+```{r}
+r2c1 <- addInteractionStd(r2c1,
+  predator="consumer",
+  prey="resource1",
+  attackRate=0.01,
+  conversionRate=0.1,
+  deathRate = 0.01,
+  timeLag = 0.01)
+r2c1 <- addInteractionStd(r2c1,
+  predator="consumer",
+  prey="resource2",
+  attackRate=0.01,
+  conversionRate=0.1,
+  deathRate = 0.01,
+  timeLag = 0.1)
+r2c1
+```
+
+To get an individual model:
+
+```{r eval=FALSE}
+# r2c1 <- varyModel(r2c1var) # NOT YET IMPLEMENTED
+```

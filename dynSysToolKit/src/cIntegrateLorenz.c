@@ -1,4 +1,4 @@
-// Integrate the Lorenz equations
+li// Integrate the Lorenz equations
 //
 // see: [Lorenz System](https://en.wikipedia.org/wiki/Lorenz_system)
 //
@@ -39,8 +39,21 @@ void L_lorenzDerivs(double  sigma, double  rho, double beta,
   derivs[2] = ( X(curStep) * Y(curStep) ) - ( beta * Z(curStep) );
 }
 
-void L_lorenzJacob() {
-  
+void L_lorenzJacob(double sigma, double rho, double beta,
+                   double* jacob,
+                   size_t curStep,
+                   double* workingResults,
+                   size_t  workingResultsMask,
+                   size_t  numWorkingResults) {
+  jacob[0] = -sigma;            # dx/dx
+  jacob[1] =  sigma;            # dx/dy
+  jacob[2] =  0.0;              # dx/dz
+  jacob[3] =  rho - Z(curStep); # dy/dx
+  jacob[4] = -1.0;              # dy/dy
+  jacob[5] = -X(curStep);       # dy/dz
+  jacob[6] =  Y(curStep);       # dz/dx
+  jacob[7] =  X(curStep);       # dz/dy
+  jacob[8] = -beta;             # dz/dz
 }
 
 SEXP C_integrateLorenzEuler(SEXP initialValuesSexp,

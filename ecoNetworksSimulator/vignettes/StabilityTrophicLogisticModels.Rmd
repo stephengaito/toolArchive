@@ -1,0 +1,48 @@
+---
+title: "Global stability of Trophic Logistic Models"
+author: "Stephen Gaito"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Global stability of Trophic Logistic Models}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+# Global stability of Trophic Logistic Models
+
+Recall that, for a general species, $S_i$, the [Trophic Logistic Model equations](TrophicLogisticModels.html) are:
+
+$$
+\begin{align*}
+\frac{dS_i}{dt}
+  & = & r_i * S_i(t) * \left( 1 - \frac{S_i(t - \tau_i)}{K_i} \right) \\
+  &   &  + \left( \sum_{j \in \hat{S}^+_i} e_{i,j} * a_{i,j} * S_j(t - \tau_{i,j}) \right)
+          * \frac{S_i(t)}{ h_i + \sum_{j \in \hat{S}^+_i} a_{i,j} * S_j(t - \tau_{i,j}) } \\
+  &   &  - \sum_{j \in \hat{S}^-_i} d_{j,i} * a_{j,i} * S_i(t - \tau_{j,i})
+          * \frac{S_j(t)}{h_j + \sum_{k \in \hat{S}^+_j} a_{j,k} * S_k(t - \tau_{j,k})} \\
+  &   &  - m_i * S_i(t)
+\end{align*}
+$$
+
+## Global stability with no time delay
+
+If all time delays are zero, $\tau_i = 0$ and $\tau_{i,j} = 0$, then $S_i(t)$ is a multiplicand in every term. This means that the axis, $S_i(t) = 0$, is an isocline.
+
+---------
+For both the resource and the consumer, the axes, $x = 0$ and $y = 0$, are isoclines. This means that the ecologicaly relevant first quadrant is globally stable; any ecology with initial conditions in the first quadrant (including the axes) will remain in the first quadrant (including the axes) for all future time.
+
+Since the over all resources of the earth are finite, we know that the biomass of all species in an ecology will never get arbitrarily large. This means that, for any ecologically relevant model, the derivatives of the species biomass, $deltaX$ and $deltaY$, should be negative for very large, positive, values of both $x$ and $y$.
+
+To show that the current r1-c1 model is not ecologically irrelevant, we begin by showing that for large $x$ and $y$ the $deltaX$ is eventually negative. To see this consider the term $-\frac{adxy}{ax + h}$. Since all of the parameters as well as the biomasses are all positive, this term is *always* negative.
+
+Now consider the second term, $rx\left(1 - \frac{x}{k}\right)$ of $deltaX$. With $r$, $k$ and $x$ positive, this term will be negative whenever $k < x$. This means that for all positive values of $a$, $d$, $h$, $k$, and $y$, $deltaX$ will be negative, and hence the resource biomass will be declining, whenever $k < x$.
+
+Now consider, $deltaY$, it will be negative whenever:
+
+$$
+aex<m(ax+h)
+$$
+
+Since $a$, $h$ and $x$ are all positive, we know that $ax < ax+h$. This means that, *no matter how large but finite the resource biomass is*, so long as $e < m$, we know that $deltaY$ will be negative and hence the consumers will gradually decline away to extinction.
+
+Solving $deltaY < 0$ for $x$ we get, $x < \frac{hm}{a(e-m)}$
