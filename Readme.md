@@ -5,9 +5,9 @@ Lake](https://github.com/stevedonovan/Lake) or Ruby's
 [rake](https://github.com/ruby/rake).
 
 Out of the box, lms knows very little, except how to *recursively* walk 
-through a dependency tree looking for out of date artifacts.
+through a dependency tree looking for out of date artefacts.
 
-For each out of date artifact, lms will either execute the contents of a 
+For each out of date artefact, lms will either execute the contents of a 
 string or will run a lua function.
 
 lms does come with an example collection of lua functions to build 

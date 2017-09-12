@@ -1,0 +1,114 @@
+#!/usr/bin/env lua
+
+-- Start with some local convience functions
+
+local tConcat = table.concat
+local tRemove = table.remove
+local getEnv  = os.getenv
+local lfs     = require 'lfs'
+
+-- Now update the require search paths
+
+package.path = tConcat({
+  './?',
+  './luaLibs/?',
+  './luaLibs/?.lua',
+  getEnv('HOME')..'/.lms/?',
+  getEnv('HOME')..'/.lms/?.lua',
+  package.path
+},';')
+
+package.cpath =
+  './luaLibs/?.so;'..os.getenv('HOME')..'/.lms/?.so;'..package.cpath
+
+-- Now create a collection of global functions to act as a DSL 
+
+targets = {}
+
+alreadyRun = {}
+
+verbose = false
+
+function lmsError(aMessage)
+  print('ERROR: '..aMessage)
+  os.exit(-1)
+end
+
+function target(tDef)
+  if 0 < #tDef then tDef.target       = tRemove(tDef, 1) end
+  if 0 < #tDef then tDef.dependencies = tRemove(tDef, 1) end
+  if 0 < #tDef then tDef.command      = tRemove(tDef, 1) end
+  if not tDef.target then lmsError('target method did not supply a target') end
+  targets[tDef.target] = tDef
+end
+
+function needsToBuild(aTargetDef)
+  tTime = lfs.attributes(aTargetDef.target, 'modification')
+  if not tTime then return true end
+  
+  for i, aDependency in ipairs(aTargetDef.dependencies) do
+    dTime = lfs.attributes(aDependency, 'modification')
+    if not dTime then lmsError('missing dependency: ['..aDependency..']') end
+    if dTime < tTime then return true end
+  end
+  return false
+end
+
+function runTarget(targetToRun)
+  if alreadyRun[targetToRun] then return end
+  
+  if verbose then print('checking: '..targetToRun) end
+  
+  local aTarget = targets[targetToRun]
+  if not aTarget then
+    lmsError(' no target found for ['..targetToRun..']')
+  end
+  
+  for i, aDependency in ipairs(aTarget.dependencies) do
+    runTarget(aDependency)
+  end
+
+  if aTarget.command and needsToBuild(aTarget) then
+    if type(aTarget.command) == 'string' then
+      if verbose then 
+        print('building ['..aTarget.target..'] using ['..aTarget.command..']')
+      end
+      if not os.execute(aTarget.command) then
+        lmsError('could not run ['..aTarget.command..']')
+      end
+    elseif type(aTarget.command) == 'function' then
+      if verbose then 
+        print('building ['..aTarget.target..']')
+      end
+      if not aTarget.command(aTarget) then
+        lmsError('could not run command for ['..aTarget.target..']')
+      end
+    else
+      lmsError('the command for target ['..aTarget.target..'] MUSt be either a string or a function.')
+    end
+  end
+  alreadyRun[targetToRun] = true
+end
+
+function parseAndRunArguments()
+  local runDefault = true
+  for i, anArg in ipairs(arg) do
+    if anArg == '-v' then
+      verbose = true
+    else
+      runDefault = false
+      runTarget(anArg)
+    end
+  end
+  if runDefault then
+    runTarget('default')
+  end
+end
+
+-- load the user's LMS file
+
+require 'lmsfile'
+
+-- execute it!
+
+parseAndRunArguments()

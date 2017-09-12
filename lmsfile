@@ -1,0 +1,38 @@
+-- A lua lmsfile
+
+-- An example lmsfile
+
+-- NOTE that we *EXPLICITLY* use tables as (the only) argument to targets. 
+-- This means that you need to use '{' '}' rather than '(' ')' to surround 
+-- your collection of arguments. The first three arguments (if they exist) 
+-- are automatically promoted to the (hash) table entries 'target', 
+-- 'dependencies', and 'command' in that order. 
+
+local function doSomething()
+  print('doing something!')
+  return true
+end
+
+local function doNothing()
+  print('doing nothing!')
+  return true
+end
+
+target{
+  'silly',
+  { 'sillyer', 'silliest' },
+  'echo doing something'
+}
+
+target{
+  'sillyer',
+  { 'silliest' },
+  doNothing
+}
+
+target{
+  'silliest',
+  { },
+  doNothing
+}
+
