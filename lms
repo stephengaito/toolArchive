@@ -1,13 +1,16 @@
 #!/usr/bin/env lua
 
--- Start with some local convience functions
+-- Start with some local convenience functions
 
 local tConcat = table.concat
+local tInsert = table.insert
 local tRemove = table.remove
+local tSort   = table.sort
 local getEnv  = os.getenv
 local lfs     = require 'lfs'
 
--- Now update the require search paths
+-- Now update the require search paths to ensure lms standard paths will 
+-- be searched 
 
 package.path = tConcat({
   './?',
@@ -54,15 +57,20 @@ function needsToBuild(aTargetDef)
   return false
 end
 
+function mustHaveTarget(targetToRun)
+  local aTarget = targets[targetToRun]
+  if not aTarget then
+    lmsError(' no target found for ['..targetToRun..']')
+  end
+end
+
 function runTarget(targetToRun)
   if alreadyRun[targetToRun] then return end
   
   if verbose then print('checking: '..targetToRun) end
   
   local aTarget = targets[targetToRun]
-  if not aTarget then
-    lmsError(' no target found for ['..targetToRun..']')
-  end
+  if not aTarget then return end  
   
   for i, aDependency in ipairs(aTarget.dependencies) do
     runTarget(aDependency)
@@ -90,17 +98,63 @@ function runTarget(targetToRun)
   alreadyRun[targetToRun] = true
 end
 
-function parseAndRunArguments()
-  local runDefault = true
+-- Now we create a helper tools to be able to deal with options 
+
+lmsOptionHelp   = { }
+lmsLongSwitches = { }
+lmsOption       = { }
+runDefault      = true
+
+function addOption( shortSwitch, longSwitch, description, action)
+  lmsOptionHelp[longSwitch] = { shortSwitch, longSwitch, description, action }
+  tInsert(lmsLongSwitches, longSwitch)
+  lmsOption[shortSwitch] = action
+  lmsOption[longSwitch]  = action
+end
+
+addOption('-h', '--help', 'Provide this list of options', function()
+  runDefault = false
+  print('lms -- Lua Make System\n')
+  print('usage: lms [options] [targets]\n')
+  print('where: targets is a space delimited list of lms targets to be run,')
+  print('and options is one of the following:\n')
+  tSort(lmsLongSwitches)
+  local longestSwitch = 0
+  for i, aSwitch in ipairs(lmsLongSwitches) do
+    if longestSwitch < #aSwitch then longestSwitch = #aSwitch end
+  end
+  longestSwitch = longestSwitch + 1
+  local spaces = '                                                       '
+  for i, aSwitch in ipairs(lmsLongSwitches) do
+    local anOption = lmsOptionHelp[aSwitch]
+    local pad      = spaces:sub(1, (longestSwitch - #anOption[2]))
+    print(anOption[1]..'  '..anOption[2]..pad..anOption[3])
+  end
+  print("\nif no target is specified then the 'default' target will be run")
+  os.exit(0)
+end)
+
+addOption('-v', '--verbose', 'Provide extra output', function()
+  verbose = true
+end)
+
+local function parseAndRunArguments()
+  runDefault = true
   for i, anArg in ipairs(arg) do
-    if anArg == '-v' then
-      verbose = true
+    local key    = anArg:gsub('=.*$', '')
+    local value  = anArg:gsub('^[^=]*=', '')
+    if key == value then value = nil end
+    optionAction = lmsOption[key]
+    if optionAction and type(optionAction) == 'function' then
+      optionAction(key, value)
     else
       runDefault = false
+      mustHaveTarget(anArg)
       runTarget(anArg)
     end
   end
   if runDefault then
+    mustHaveTarget('default')
     runTarget('default')
   end
 end
