@@ -45,7 +45,7 @@ function litProgs.targets(lpDef)
     tInsert(lpDef.dependencies, lpDef.docDir..'/'..aDocFile)
   end
   
-  for j, aSrcFile in ipairs(lpDef.srcFiles) do
+  for i, aSrcFile in ipairs(lpDef.srcFiles) do
     
     local srcTarget = lpDef.buildDir..'/'..aSrcFile
     tInsert(buildTargets, srcTarget)

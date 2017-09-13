@@ -16,8 +16,8 @@ package.path = tConcat({
   './?',
   './luaLibs/?',
   './luaLibs/?.lua',
-  getEnv('HOME')..'/.lms/?',
-  getEnv('HOME')..'/.lms/?.lua',
+  getEnv('HOME')..'/.luaMakeSystem/?',
+  getEnv('HOME')..'/.luaMakeSystem/?.lua',
   package.path
 },';')
 
