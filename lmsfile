@@ -8,7 +8,7 @@
 -- are automatically promoted to the (hash) table entries 'target', 
 -- 'dependencies', and 'command' in that order. 
 
-require 'lms.ansi-c'
+require 'lms.c'
 
 local function doSomething()
   print('doing something!')

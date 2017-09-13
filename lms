@@ -2,12 +2,12 @@
 
 -- Start with some local convenience functions
 
-local tConcat = table.concat
-local tInsert = table.insert
-local tRemove = table.remove
-local tSort   = table.sort
-local getEnv  = os.getenv
-local lfs     = require 'lfs'
+tConcat = table.concat
+tInsert = table.insert
+tRemove = table.remove
+tSort   = table.sort
+getEnv  = os.getenv
+lfs     = require 'lfs'
 
 -- Now update the require search paths to ensure lms standard paths will 
 -- be searched 
@@ -26,15 +26,52 @@ package.cpath =
 
 -- Now create a collection of global functions to act as a DSL 
 
-targets = {}
-
+targets    = {}
+targetList = {}
 alreadyRun = {}
 
-verbose = false
+verbose     = false
+veryVerbose = false
 
 function lmsError(aMessage)
   print('ERROR: '..aMessage)
   os.exit(-1)
+end
+
+function lmsMessage(...)
+  if verbose then
+    print('---------------------------------------')
+    for i, aMessage in ipairs({...}) do
+      print(aMessage)
+    end
+  end
+end
+
+function lmsMessageCont(...)
+  if verbose then
+    for i, aMessage in ipairs({...}) do
+      print(aMessage)
+    end
+  end
+end
+
+function lmsMessageVery(...)
+  if veryVerbose then
+    for i, aMessage in ipairs({...}) do
+      print(aMessage)
+    end
+  end
+end
+
+function executeCmd(aCmd)
+  lmsMessage('running: ['..aCmd..']')
+  return os.execute(aCmd)
+end
+
+function chDir(aNewDir)
+  if not lfs.chdir(aNewDir) then 
+    lmsError('could not change directory to: ['..aNewDir..']')
+  end
 end
 
 function target(tDef)
@@ -43,17 +80,31 @@ function target(tDef)
   if 0 < #tDef then tDef.command      = tRemove(tDef, 1) end
   if not tDef.target then lmsError('target method did not supply a target') end
   targets[tDef.target] = tDef
+  tInsert(targetList, tDef.target)
+  return tDef.target
 end
 
 function needsToBuild(aTargetDef)
   tTime = lfs.attributes(aTargetDef.target, 'modification')
-  if not tTime then return true end
+  if not tTime then 
+    lmsMessage('need to build ['..aTargetDef.target..'] since target does not exist')
+    return true
+  end
   
   for i, aDependency in ipairs(aTargetDef.dependencies) do
     dTime = lfs.attributes(aDependency, 'modification')
     if not dTime then lmsError('missing dependency: ['..aDependency..']') end
-    if dTime < tTime then return true end
+    if dTime > tTime then
+      lmsMessage(
+        'need to build ['..aTargetDef.target..']',
+        'since ['..aDependency..']',
+        'is newer ('..os.date('%Y/%m/%d %H:%M:%S', dTime)..')['..dTime..']',
+        'than the target ('..os.date('%Y/%m/%d %H:%M:%S', tTime)..')['..tTime..']'
+        )
+      return true
+    end
   end
+  lmsMessageVery('all dependencies older than target')
   return false
 end
 
@@ -65,29 +116,35 @@ function mustHaveTarget(targetToRun)
 end
 
 function runTarget(targetToRun)
-  if alreadyRun[targetToRun] then return end
+  if alreadyRun[targetToRun] then
+    lmsMessageVery('already run '..targetToRun)
+    return
+  end
   
-  if verbose then print('checking: '..targetToRun) end
+  lmsMessage('checking: '..targetToRun)
   
   local aTarget = targets[targetToRun]
-  if not aTarget then return end  
+  if not aTarget then
+    lmsMessageVery('nothing to do')
+    return
+  end  
   
   for i, aDependency in ipairs(aTarget.dependencies) do
     runTarget(aDependency)
   end
 
+  lmsMessage('(re)checking: '..targetToRun)
+  
   if aTarget.command and needsToBuild(aTarget) then
     if type(aTarget.command) == 'string' then
-      if verbose then 
-        print('building ['..aTarget.target..'] using ['..aTarget.command..']')
-      end
+      lmsMessageCont(
+       'building ['..aTarget.target..'] using ['..aTarget.command..']'
+      )
       if not os.execute(aTarget.command) then
         lmsError('could not run ['..aTarget.command..']')
       end
     elseif type(aTarget.command) == 'function' then
-      if verbose then 
-        print('building ['..aTarget.target..']')
-      end
+      lmsMessageCont('building ['..aTarget.target..']')
       if not aTarget.command(aTarget) then
         lmsError('could not run command for ['..aTarget.target..']')
       end
@@ -138,6 +195,30 @@ addOption('-v', '--verbose', 'Provide extra output', function()
   verbose = true
 end)
 
+addOption('-vv', '--veryVerbose', 'Provide even more output', function()
+  verbose = true
+  veryVerbose = true
+end)
+
+addOption('-T', '--targets', 'List all known targets', function()
+  tSort(targetList)
+  for i, aTarget in ipairs(targetList) do
+    aTDef = targets[aTarget]
+    if aTDef then
+      print(aTDef.target..':')
+      if aTDef.dependencies then
+        tSort(aTDef.dependencies)
+        for i, aDependency in ipairs(aTDef.dependencies) do
+          print('  '..aDependency)
+        end
+      else
+        print('  no dependencies')
+      end
+    end
+  end
+  os.exit(0)
+end)
+
 local function parseAndRunArguments()
   runDefault = true
   for i, anArg in ipairs(arg) do
@@ -157,6 +238,25 @@ local function parseAndRunArguments()
     mustHaveTarget('default')
     runTarget('default')
   end
+end
+
+function tCopy(origTable)
+  local newTable = table.unpack(origTable)
+  for aKey, aValue in pairs(origTable) do
+    newTable[aKey] = aValue
+  end
+  return newTable
+end
+
+function hMerge(hashA, hashB)
+  local newHash = { }
+  for aKey, aValue in pairs(hashA) do
+    newHash[aKey] = aValue
+  end
+  for aKey, aValue in pairs(hashB) do
+    newHash[aKey] = aValue
+  end
+  return newHash
 end
 
 -- load the user's LMS file
