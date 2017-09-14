@@ -12,9 +12,9 @@ installTargets = installTargets or { }
 diffTargets    = diffTargets    or { }
 testTargets    = testTargets    or { }
 
-contests.targets(cDef)
+function contests.targets(cDef)
 
-  cDef/dependencies = { }
+  cDef.dependencies = { }
   tInsert(cDef.docFiles, 1, cDef.mainDoc)
   for i, aDocFile in ipairs(cDef.docFiles) do
     tInsert(cDef.dependencies, cDef.docDir..'/'..aDocFile)
@@ -30,8 +30,19 @@ contests.targets(cDef)
     }))
     
     local testExecTarget = cDef.buildDir..'/'..aTestExec
+    local cDependencies = { }
+    tInsert(cDependencies, srcTarget)
+    for j, aSrcFile in ipairs(cDef.srcFiles) do
+      for k, aCExt in ipairs(c.cExt) do
+        if aSrcFile:match('%'..aCExt..'$') then
+          tInsert(cDependencies, cDef.buildDir..'/'..aSrcFile)
+        end
+      end
+    end
     c.program(hMerge(cDef, {
-      target = testExecTarget,
+      target       = testExecTarget,
+      dependencies = cDependencies,
+      needs        = { 'lua5.2' }
     }))
     
     local testTarget = cDef.buildDir..'/'..aTestExec..'-results.lua'

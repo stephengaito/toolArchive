@@ -68,6 +68,16 @@ function executeCmd(aCmd)
   return os.execute(aCmd)
 end
 
+function getOutputFromCmd(aCmd)
+  lmsMessageVery('getting output from: ['..aCmd..']')
+  local proc = io.popen(aCmd..' 2>&1', 'r')
+  if not proc then return '' end
+  local result = proc:read('*a')
+  proc:close()
+  local result = result:gsub('\n$','')
+  return result
+end
+
 function chDir(aNewDir)
   if not lfs.chdir(aNewDir) then 
     lmsError('could not change directory to: ['..aNewDir..']')
