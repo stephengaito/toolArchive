@@ -33,15 +33,11 @@ function contests.targets(cDef)
     local cDependencies = { }
     tInsert(cDependencies, srcTarget)
     for j, aSrcFile in ipairs(cDef.srcFiles) do
-      for k, aCExt in ipairs(c.cExt) do
-        if aSrcFile:match('%'..aCExt..'$') then
-          tInsert(cDependencies, cDef.buildDir..'/'..aSrcFile)
-        end
-      end
+      tInsert(cDependencies, cDef.buildDir..'/'..aSrcFile)
     end
     c.program(hMerge(cDef, {
       target       = testExecTarget,
-      dependencies = cDependencies,
+      dependencies = c.collectCDependencies(cDependencies),
       needs        = { 'lua5.2' }
     }))
     

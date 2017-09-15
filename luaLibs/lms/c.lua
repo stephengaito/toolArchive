@@ -7,16 +7,28 @@
 c = c or { }
 
 local cDefaults = {
-  cc     = 'gcc',
-  cOpts  = '-c -O2 -Wall',
-  cIncs  = { '-I.' },
-  cExt   = { '.h', '.c'},
-  needs  = { },
-  libs   = { },
-  ldOpts = { }
+  cc       = 'gcc',
+  cOpts    = { '-c -O2 -Wall' },
+  cIncs    = { '-I.' },
+  cExts    = { '.h', '.c'},
+  needs    = { },
+  libs     = { },
+  linkOpts = { }
 }
 
 c = hMerge(cDefaults, c)
+
+function c.collectCDependencies(someDependencies)
+  local cDependencies = { }
+  for i, aDependency in ipairs(someDependencies) do 
+    for j, aCExt in ipairs(c.cExts) do
+      if aDependency:match('%'..aCExt..'$') then
+        tInsert(cDependencies, aDependency)
+      end
+    end
+  end
+  return cDependencies
+end
 
 local function collectCSrc(cDef)
   cDef.cSrc   = { }
@@ -31,12 +43,12 @@ local function collectCSrc(cDef)
 end
 
 local function cCompile(cDef)
-  local oFile = cDef.target:gsub('%.o$', '.c')
+  local cFile = cDef.target:gsub('%.o$', '.c')
   local cmd = {
     cDef.cc,
-    cDef.cOpts,
+    tConcat(cDef.cOpts, ' '),
     tConcat(cDef.cIncs, ' '),
-    oFile,
+    cFile,
     '-o',
     cDef.target
   }
@@ -46,9 +58,9 @@ end
 local function cLink(cDef)
   local cmd = {
     cDef.cc,
-    tConcat(cDef.oFiles, ' '),
-    tConcat(cDef.libs, ' '),
-    tConcat(cDef.ldOpts, ' '),
+    tConcat(cDef.oFiles,   ' '),
+    tConcat(cDef.libs,     ' '),
+    tConcat(cDef.linkOpts, ' '),
     '-o',
     cDef.target
   }
@@ -86,3 +98,11 @@ function c.program(cDef)
     command = cLink    
   }))
 end
+
+function c.shared(cDef)
+  cDef = hMerge(c, cDef)
+  tInsert(cDef.cOpts,       '-fpic')
+  tInsert(cDef.linkOpts, 1, '-shared')
+  c.program(cDef)
+end
+
