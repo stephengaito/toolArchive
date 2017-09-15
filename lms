@@ -251,7 +251,12 @@ local function parseAndRunArguments()
 end
 
 function tCopy(origTable)
-  local newTable = table.unpack(origTable)
+  if type(origTable) ~= 'table' then return origTable end
+  
+  local newTable = {}
+  for i, aValue in ipairs(origTable) do
+    tInsert(newTable, aValue)
+  end
   for aKey, aValue in pairs(origTable) do
     newTable[aKey] = aValue
   end
@@ -261,10 +266,18 @@ end
 function hMerge(hashA, hashB)
   local newHash = { }
   for aKey, aValue in pairs(hashA) do
-    newHash[aKey] = aValue
+    if type(aValue) == 'table' then
+      newHash[aKey] = tCopy(aValue)
+    else
+      newHash[aKey] = aValue
+    end
   end
   for aKey, aValue in pairs(hashB) do
-    newHash[aKey] = aValue
+    if type(aValue) == 'table' then
+      newHash[aKey] = tCopy(aValue)
+    else
+      newHash[aKey] = aValue
+    end
   end
   return newHash
 end

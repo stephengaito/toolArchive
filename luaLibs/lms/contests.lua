@@ -5,7 +5,15 @@
 
 require 'lms.c'
 
-contests = { }
+contests = contests or { }
+
+local contestsDefaults = {
+  contestsIncDir =
+    getEnv('HOME')..'/texmf/t-contests/tex/context/third/contests',
+}
+
+contests = hMerge(contestsDefaults, contests)
+
 docTargets     = docTargets     or { }
 buildTargets   = buildTargets   or { }
 installTargets = installTargets or { }
@@ -35,7 +43,9 @@ function contests.targets(cDef)
     for j, aSrcFile in ipairs(cDef.srcFiles) do
       tInsert(cDependencies, cDef.buildDir..'/'..aSrcFile)
     end
-    c.program(hMerge(cDef, {
+    local pDef = hMerge(c, cDef)
+    tInsert(pDef.cIncs, '-I'..contests.contestsIncDir)
+    c.program(hMerge(pDef, {
       target       = testExecTarget,
       dependencies = c.collectCDependencies(cDependencies),
       needs        = { 'lua5.2' }
