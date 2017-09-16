@@ -12,26 +12,39 @@ lfs     = require 'lfs'
 -- Now update the require search paths to ensure lms standard paths will 
 -- be searched 
 
+function makePath(pathTable)
+  return tConcat(pathTable, package.config:sub(1,1))
+end
+
 package.path = tConcat({
-  './?',
-  './luaLibs/?',
-  './luaLibs/?.lua',
-  getEnv('HOME')..'/.luaMakeSystem/?',
-  getEnv('HOME')..'/.luaMakeSystem/?.lua',
+  makePath{'.', '?'},
+  makePath{'.', 'lib', '?'},
+  makePath{'.', 'lib', '?.lua'},
+  makePath{getEnv('HOME'), '.luaMakeSystem', '?'},
+  makePath{getEnv('HOME'), '.luaMakeSystem','?.lua'},
   package.path
 },';')
 
-package.cpath =
-  './luaLibs/?.so;'..os.getenv('HOME')..'/.lms/?.so;'..package.cpath
+package.cpath = tConcat({
+  makePath{'.', 'luaLibs', '?.so'},
+  makePath{getEnv('HOME'), '.luaMakeSystem', '?.so'},
+  package.cpath
+}, ';')
 
--- Now create a collection of global functions to act as a DSL 
+-- Now load any user's local lms configuration
 
-targets    = {}
-targetList = {}
-alreadyRun = {}
+-- The following conditional require is adapted from: shuva's answer to 
+--  "How to check if a module exists in Lua?"
+-- see: http://stackoverflow.com/a/22686090
 
-verbose     = false
-veryVerbose = false
+local hasLmsConfig, lmsConfig = pcall(require, "lmsConfig")
+if not hasLmsConfig then lmsConfig = { } end
+lms = lmsConfig
+
+-- Now define some functions to help communicate with the user 
+
+verbose     = lms.verbose     or false
+veryVerbose = lms.veryVerbose or false
 
 function lmsError(aMessage)
   print('ERROR: '..aMessage)
@@ -63,10 +76,8 @@ function lmsMessageVery(...)
   end
 end
 
-function executeCmd(aCmd)
-  lmsMessage('running: ['..aCmd..']')
-  return os.execute(aCmd)
-end
+-- Now compute the OS (which can be used to require different versions of 
+-- the lms modules) 
 
 function getOutputFromCmd(aCmd)
   lmsMessageVery('getting output from: ['..aCmd..']')
@@ -76,6 +87,23 @@ function getOutputFromCmd(aCmd)
   proc:close()
   local result = result:gsub('\n$','')
   return result
+end
+
+if package.config:sub(1,1) == '\\' then
+  lms.os = 'Windows'
+else
+  lms.os = getOutputFromCmd('uname -s')
+end
+
+-- Now create a collection of global functions to act as a DSL 
+
+targets    = {}
+targetList = {}
+alreadyRun = {}
+
+function executeCmd(aCmd)
+  lmsMessage('running: ['..aCmd..']')
+  return os.execute(aCmd)
 end
 
 function chDir(aNewDir)
@@ -197,7 +225,8 @@ addOption('-h', '--help', 'Provide this list of options', function()
     local pad      = spaces:sub(1, (longestSwitch - #anOption[2]))
     print(anOption[1]..'  '..anOption[2]..pad..anOption[3])
   end
-  print("\nif no target is specified then the 'default' target will be run")
+  print("\nif no target is specified then the 'default' target will be run\n")
+  print("lms.os = "..lms.os)
   os.exit(0)
 end)
 
@@ -263,20 +292,18 @@ function tCopy(origTable)
   return newTable
 end
 
-function hMerge(hashA, hashB)
+-- merge a sequence of hash tables in order...
+function hMerge(...)
   local newHash = { }
-  for aKey, aValue in pairs(hashA) do
-    if type(aValue) == 'table' then
-      newHash[aKey] = tCopy(aValue)
-    else
-      newHash[aKey] = aValue
-    end
-  end
-  for aKey, aValue in pairs(hashB) do
-    if type(aValue) == 'table' then
-      newHash[aKey] = tCopy(aValue)
-    else
-      newHash[aKey] = aValue
+  for i, aHash in ipairs{...} do
+    if type(aHash) == 'table' then
+      for aKey, aValue in pairs(aHash) do
+        if type(aValue) == 'table' then
+          newHash[aKey] = tCopy(aValue)
+        else
+          newHash[aKey] = aValue
+        end
+      end
     end
   end
   return newHash

@@ -3,7 +3,13 @@
 -- This lms Lua script creates the targets required to build, diff or 
 -- install a literate programming project. 
 
-litProgs = { }
+litProgs     = litProgs     or { }
+lms.litProgs = lms.litProgs or { }
+
+-- no module defaults
+
+litProgs = hMerge(lms.litProgs, litProgs)
+
 docTargets     = docTargets     or { }
 buildTargets   = buildTargets   or { }
 installTargets = installTargets or { }
@@ -42,12 +48,12 @@ function litProgs.targets(lpDef)
   lpDef.dependencies = { }
   tInsert(lpDef.docFiles, 1, lpDef.mainDoc)
   for i, aDocFile in ipairs(lpDef.docFiles) do
-    tInsert(lpDef.dependencies, lpDef.docDir..'/'..aDocFile)
+    tInsert(lpDef.dependencies, makePath{ lpDef.docDir, aDocFile })
   end
   
   for i, aSrcFile in ipairs(lpDef.srcFiles) do
     
-    local srcTarget = lpDef.buildDir..'/'..aSrcFile
+    local srcTarget = makePath{ lpDef.buildDir, aSrcFile }
     tInsert(buildTargets, srcTarget)
     target(hMerge(lpDef, {
       target  = srcTarget,
@@ -55,7 +61,7 @@ function litProgs.targets(lpDef)
     }))
 
     local diffTarget   = 'diff-'..aSrcFile
-    local moduleTarget = lpDef.moduleDir..'/'..aSrcFile
+    local moduleTarget = makePath{ lpDef.moduleDir, aSrcFile }
     tInsert(diffTargets, diffTarget)
     target(hMerge(lpDef, {
       target       = diffTarget,
@@ -72,7 +78,7 @@ function litProgs.targets(lpDef)
     }))
   end
   
-  local srcTarget = lpDef.buildDir..'/lmsfile'
+  local srcTarget = makePath{ lpDef.buildDir, 'lmsfile' }
   tInsert(buildTargets, srcTarget)
   target(hMerge(lpDef, {
     target  = srcTarget,
@@ -96,7 +102,8 @@ function litProgs.targets(lpDef)
     command      = 'cp '..srcTarget..' '..moduleTarget
   }))
 
-  local docTarget = lpDef.docDir..'/'..lpDef.mainDoc:gsub('%.tex$', '.pdf')
+  local pdfMainDoc = lpDef.mainDoc:gsub('%.tex$', '.pdf')
+  local docTarget = makePath{ lpDef.docDir, pdfMainDoc }
   tInsert(docTargets, docTarget)
   target(hMerge(lpDef, {
     target  = docTarget,

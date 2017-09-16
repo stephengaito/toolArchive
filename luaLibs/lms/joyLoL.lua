@@ -5,7 +5,12 @@
 
 require 'lms.c'
 
-joylol = { }
+joylol     = joylol     or { }
+lms.joylol = lms.joylol or { }
+
+-- no module defaults
+
+joylol = hMerge(lms.joylol, joylol)
 
 docTargets     = docTargets     or { }
 buildTargets   = buildTargets   or { }
@@ -21,10 +26,10 @@ function joylol.targets(jDef)
 
   for i, aCoAlg in ipairs(jDef.coAlgs) do
 
-    local coAlgTarget = jDef.buildDir..'/'..aCoAlg..'.so'
+    local coAlgTarget = makePath{ jDef.buildDir, aCoAlg..'.so' }
     local cDependencies = { }
     for j, aSrcFile in ipairs(jDef.srcFiles) do
-      tInsert(cDependencies, jDef.buildDir..'/'..aSrcFile)
+      tInsert(cDependencies, makePath{ jDef.buildDir, aSrcFile })
     end
     c.shared(hMerge(jDef, {
       target = coAlgTarget,

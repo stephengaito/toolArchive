@@ -4,7 +4,8 @@
 -- expressed dependencies... we *could* instead use gcc/clang -MD/-MF or 
 -- -MMD to compute the exact dependencies. 
 
-c = c or { }
+c     = c     or { }
+lms.c = lms.c or { }
 
 local cDefaults = {
   cc       = 'gcc',
@@ -16,7 +17,7 @@ local cDefaults = {
   linkOpts = { }
 }
 
-c = hMerge(cDefaults, c)
+c = hMerge(cDefaults, lms.c, c)
 
 function c.collectCDependencies(someDependencies)
   local cDependencies = { }

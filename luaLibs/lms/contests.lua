@@ -5,14 +5,18 @@
 
 require 'lms.c'
 
-contests = contests or { }
+contests     = contests     or { }
+lms.contests = lms.contests or { }
 
 local contestsDefaults = {
   contestsIncDir =
-    getEnv('HOME')..'/texmf/t-contests/tex/context/third/contests',
+    makePath{
+      getEnv('HOME'), 'texmf', 't-contests', 'tex',
+      'context', 'third', 'contests'
+    },
 }
 
-contests = hMerge(contestsDefaults, contests)
+contests = hMerge(contestsDefaults, lms.contests, contests)
 
 docTargets     = docTargets     or { }
 buildTargets   = buildTargets   or { }
@@ -25,23 +29,23 @@ function contests.targets(cDef)
   cDef.dependencies = { }
   tInsert(cDef.docFiles, 1, cDef.mainDoc)
   for i, aDocFile in ipairs(cDef.docFiles) do
-    tInsert(cDef.dependencies, cDef.docDir..'/'..aDocFile)
+    tInsert(cDef.dependencies, makePath{ cDef.docDir, aDocFile })
   end
 
   for i, aTestExec in ipairs(cDef.testExecs) do
   
-    local srcTarget = cDef.buildDir..'/'..aTestExec..'.c'
+    local srcTarget = makePath{ cDef.buildDir, aTestExec..'.c' }
     tInsert(buildTargets, srcTarget)
     target(hMerge(cDef, {
       target  = srcTarget,
       command = litProgs.compileLitProg
     }))
     
-    local testExecTarget = cDef.buildDir..'/'..aTestExec
+    local testExecTarget = makePath{ cDef.buildDir, aTestExec }
     local cDependencies = { }
     tInsert(cDependencies, srcTarget)
     for j, aSrcFile in ipairs(cDef.srcFiles) do
-      tInsert(cDependencies, cDef.buildDir..'/'..aSrcFile)
+      tInsert(cDependencies, makePath{ cDef.buildDir, aSrcFile })
     end
     local pDef = hMerge(c, cDef)
     tInsert(pDef.cIncs, '-I'..contests.contestsIncDir)
@@ -51,7 +55,7 @@ function contests.targets(cDef)
       needs        = { 'lua5.2' }
     }))
     
-    local testTarget = cDef.buildDir..'/'..aTestExec..'-results.lua'
+    local testTarget = makePath{ cDef.buildDir, aTestExec..'-results.lua' }
     tInsert(testTargets, testTarget)
     target(hMerge(cDef, {
       target       = testTarget,
