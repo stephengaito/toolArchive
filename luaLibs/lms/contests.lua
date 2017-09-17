@@ -14,6 +14,7 @@ local contestsDefaults = {
       getEnv('HOME'), 'texmf', 't-contests', 'tex',
       'context', 'third', 'contests'
     },
+  contestsStartup = 't-contests-cTests.lua'
 }
 
 contests = hMerge(contestsDefaults, lms.contests, contests)
@@ -48,6 +49,14 @@ function contests.targets(cDef)
       tInsert(cDependencies, makePath{ cDef.buildDir, aSrcFile })
     end
     local pDef = hMerge(c, cDef)
+    tInsert(pDef.cOpts, tConcat({
+      '-DCONTESTS_STARTUP=\\"',
+      makePath{
+        contests.contestsIncDir,
+        contests.contestsStartup
+      },
+      '\\"'
+    }, ''))
     tInsert(pDef.cIncs, '-I'..contests.contestsIncDir)
     c.program(hMerge(pDef, {
       target       = testExecTarget,
