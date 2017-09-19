@@ -18,10 +18,6 @@ installTargets = installTargets or { }
 diffTargets    = diffTargets    or { }
 testTargets    = testTargets    or { }
 
-local function installCoAlg(jDef)
-  print('need to install'..jDef.target)
-end
-
 function joylol.targets(jDef)
 
   for i, aCoAlg in ipairs(jDef.coAlgs) do
@@ -37,12 +33,56 @@ function joylol.targets(jDef)
       needs = { 'lua5.2' },
     }))
 
-    local installTarget = 'install-'..aCoAlg
+    local installPath   = makePath{
+      getEnv('HOME'),
+      '.joylol',
+      'joylol'
+    }
+    local installTarget = makePath{
+      installPath,
+      aCoAlg..'.so'
+    }
+    lfs.mkdir(installPath)
     tInsert(installTargets, installTarget)
     target(hMerge(jDef, {
       target = installTarget,
       dependencies = { coAlgTarget },
-      command = installCoAlg
+      command = tConcat({
+        'install -T',
+        coAlgTarget,
+        installTarget
+      }, ' ')
     }))
+  end
+  
+  for i, anInclude in ipairs(jDef.srcFiles) do
+    if anInclude:match('%.h$') and
+      not anInclude:match('-private%.') then
+      local anIncludeDep = makePath {
+        jDef.buildDir,
+        anInclude
+      }
+      local installPath = makePath{
+        getEnv('HOME'),
+        '.joylol',
+        'include',
+        'joylol'
+      }
+      local installTarget = makePath{
+        installPath,
+        anInclude
+      }
+      lfs.mkdir(installPath)
+      tInsert(installTargets, installTarget)
+      target(hMerge(jDef, {
+        target = installTarget,
+        dependencies = { anIncludeDep },
+        command = tConcat({
+          'install -T',
+          anIncludeDep,
+          installTarget
+        }, ' ')
+      }))
+    end
   end
 end

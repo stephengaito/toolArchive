@@ -166,9 +166,13 @@ function runTarget(targetToRun)
     lmsMessageVery('nothing to do')
     return
   end  
-  
-  for i, aDependency in ipairs(aTarget.dependencies) do
-    runTarget(aDependency)
+
+  if aTarget.dependencies then
+    for i, aDependency in ipairs(aTarget.dependencies) do
+      runTarget(aDependency)
+    end
+  else
+    lmsMessageCont('no dependencies key found')
   end
 
   lmsMessage('(re)checking: '..targetToRun)
