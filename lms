@@ -125,7 +125,7 @@ end
 function needsToBuild(aTargetDef)
   tTime = lfs.attributes(aTargetDef.target, 'modification')
   if not tTime then 
-    lmsMessage('need to build ['..aTargetDef.target..'] since target does not exist')
+    lmsMessage('need to build ['..aTargetDef.target..']\nsince target does not exist')
     return true
   end
   
@@ -180,7 +180,7 @@ function runTarget(targetToRun)
   if aTarget.command and needsToBuild(aTarget) then
     if type(aTarget.command) == 'string' then
       lmsMessageCont(
-       'building ['..aTarget.target..'] using ['..aTarget.command..']'
+       'building ['..aTarget.target..']\nusing ['..aTarget.command..']'
       )
       if not os.execute(aTarget.command) then
         lmsError('could not run ['..aTarget.command..']')
