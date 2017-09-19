@@ -87,7 +87,7 @@ function c.program(cDef)
   cDef = hMerge(c, cDef)
   computeNeeds(cDef)
   collectCSrc(cDef)
-  tInsert(cDef.cIncs, '-I'..cDef.buildDir)
+  tInsert(cDef.cIncs, 1, '-I'..cDef.buildDir)
   for i, anOFile in ipairs(cDef.oFiles) do
     target(hMerge(cDef, {
       target = anOFile,

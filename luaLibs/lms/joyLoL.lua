@@ -35,11 +35,11 @@ function joylol.targets(jDef)
 
     local installPath   = makePath{
       getEnv('HOME'),
-      '.joylol',
-      'joylol'
+      '.joylol'
     }
     local installTarget = makePath{
       installPath,
+      'joylol',
       aCoAlg..'.so'
     }
     lfs.mkdir(installPath)
@@ -65,8 +65,7 @@ function joylol.targets(jDef)
       local installPath = makePath{
         getEnv('HOME'),
         '.joylol',
-        'include',
-        'joylol'
+        'include'
       }
       local installTarget = makePath{
         installPath,
