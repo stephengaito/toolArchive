@@ -14,6 +14,17 @@ joylol = hMerge(lms.joylol, joylol)
 
 function joylol.targets(jDef)
 
+  -- update the required libraries for ALL C compilations
+  for j, aCoAlgLib in ipairs(jDef.coAlgLibs) do
+    tInsert(c.libs, makePath{
+      getEnv('HOME'),
+      '.joylol',
+      'joylol',
+      aCoAlgLib..'.so'
+    })
+  end
+  tInsert(c.cOpts, '-fPIC')
+
   for i, aCoAlg in ipairs(jDef.coAlgs) do
 
     local coAlgTarget = makePath{ jDef.buildDir, aCoAlg..'.so' }
@@ -21,7 +32,16 @@ function joylol.targets(jDef)
     for j, aSrcFile in ipairs(jDef.srcFiles) do
       tInsert(cDependencies, makePath{ jDef.buildDir, aSrcFile })
     end
-    c.shared(hMerge(jDef, {
+    local pDef = hMerge(c, jDef)
+    tInsert(pDef.cIncs, 1, tConcat{
+      '-I',
+      makePath{
+        getEnv('HOME'),
+        '.joylol',
+        'include'
+      }
+    })
+    c.shared(hMerge(pDef, {
       target = coAlgTarget,
       dependencies = c.collectCDependencies(cDependencies),
       needs = { 'lua5.2' },

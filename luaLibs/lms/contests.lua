@@ -51,11 +51,19 @@ function contests.targets(cDef)
       },
       '\\"'
     }, ''))
-    tInsert(pDef.cIncs, '-I'..contests.contestsIncDir)
+    tInsert(pDef.cIncs, 1, '-I'..contests.contestsIncDir)
+    tInsert(pDef.cIncs, 1, tConcat{
+      '-I',
+      makePath{
+        getEnv('HOME'),
+        '.joylol',
+        'include'
+      }
+    })
     c.program(hMerge(pDef, {
       target       = testExecTarget,
       dependencies = c.collectCDependencies(cDependencies),
-      needs        = { 'lua5.2' }
+      needs        = { 'lua5.2' },
     }))
     
     local testTarget = makePath{ cDef.buildDir, aTestExec..'-results.lua' }
