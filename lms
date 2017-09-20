@@ -377,7 +377,7 @@ target{'build',   buildTargets}
 target{'install', installTargets}
 target{'diff',    diffTargets}
 target{'tests',   testTargets}
-
+target{'default', buildTargets}
 
 -- load the user's LMS file
 
