@@ -19,12 +19,6 @@ local contestsDefaults = {
 
 contests = hMerge(contestsDefaults, lms.contests, contests)
 
-docTargets     = docTargets     or { }
-buildTargets   = buildTargets   or { }
-installTargets = installTargets or { }
-diffTargets    = diffTargets    or { }
-testTargets    = testTargets    or { }
-
 function contests.targets(cDef)
 
   cDef.dependencies = { }
@@ -71,6 +65,7 @@ function contests.targets(cDef)
       dependencies = { testExecTarget },
       command      = testExecTarget
     }))
+    tInsert(cleanTargets, nameCleanTarget(srcTarget))
   end
   
 end

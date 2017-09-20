@@ -93,11 +93,13 @@ function c.program(cDef)
       target = anOFile,
       command = cCompile
     }))
+    tInsert(cleanTargets, nameCleanTarget(anOFile))
   end
   target(hMerge(cDef, { 
     dependencies = cDef.oFiles,
     command = cLink    
   }))
+  tInsert(clobberTargets, nameClobberTarget(cDef.target))
 end
 
 function c.shared(cDef)

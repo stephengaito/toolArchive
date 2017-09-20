@@ -12,12 +12,6 @@ lms.joylol = lms.joylol or { }
 
 joylol = hMerge(lms.joylol, joylol)
 
-docTargets     = docTargets     or { }
-buildTargets   = buildTargets   or { }
-installTargets = installTargets or { }
-diffTargets    = diffTargets    or { }
-testTargets    = testTargets    or { }
-
 function joylol.targets(jDef)
 
   for i, aCoAlg in ipairs(jDef.coAlgs) do

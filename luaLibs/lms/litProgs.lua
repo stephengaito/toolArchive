@@ -10,11 +10,6 @@ lms.litProgs = lms.litProgs or { }
 
 litProgs = hMerge(lms.litProgs, litProgs)
 
-docTargets     = docTargets     or { }
-buildTargets   = buildTargets   or { }
-installTargets = installTargets or { }
-diffTargets    = diffTargets    or { }
-
 local function compileDocument(lpDef)
   local curDir = lfs.currentdir()
   chDir(lpDef.docDir)
@@ -76,6 +71,8 @@ function litProgs.targets(lpDef)
       dependencies = { srcTarget },
       command      = 'cp '..srcTarget..' '..moduleTarget
     }))
+    
+    tInsert(cleanTargets, nameCleanTarget(srcTarget))
   end
   
   local srcTarget = makePath{ lpDef.buildDir, 'lmsfile' }
@@ -101,6 +98,8 @@ function litProgs.targets(lpDef)
     dependencies = { srcTarget },
     command      = 'cp '..srcTarget..' '..moduleTarget
   }))
+  
+  tInsert(cleanTargets, nameCleanTarget(srcTarget))
 
   local pdfMainDoc = lpDef.mainDoc:gsub('%.tex$', '.pdf')
   local docTarget = makePath{ lpDef.docDir, pdfMainDoc }
@@ -109,4 +108,11 @@ function litProgs.targets(lpDef)
     target  = docTarget,
     command = compileDocument
   }))
+  
+  tInsert(clobberTargets, nameClobberTarget(docTarget))
+  
+  tInsert(cleanTargets, 
+    nameCleanTarget(docTarget:gsub('%.pdf', '.log')))
+  tInsert(cleanTargets, 
+    nameCleanTarget(docTarget:gsub('%.pdf$', '.tuc')))
 end

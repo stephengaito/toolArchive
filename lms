@@ -116,7 +116,9 @@ function target(tDef)
   if 0 < #tDef then tDef.target       = tRemove(tDef, 1) end
   if 0 < #tDef then tDef.dependencies = tRemove(tDef, 1) end
   if 0 < #tDef then tDef.command      = tRemove(tDef, 1) end
-  if not tDef.target then lmsError('target method did not supply a target') end
+  if not tDef.target then 
+    lmsError(debug.traceback('target method did not supply a target')) 
+  end
   targets[tDef.target] = tDef
   tInsert(targetList, tDef.target)
   return tDef.target
@@ -312,6 +314,70 @@ function hMerge(...)
   end
   return newHash
 end
+
+-- Create the standard targets
+
+cleanTargets   = cleanTargets   or { }
+clobberTargets = clobberTargets or { }
+docTargets     = docTargets     or { }
+buildTargets   = buildTargets   or { }
+installTargets = installTargets or { }
+diffTargets    = diffTargets    or { }
+testTargets    = testTargets    or { }
+
+function nameCleanTarget(theTarget)
+  return 'clean-'..theTarget
+end
+
+function cleanAllTargets(cDef)
+  if cDef.dependencies then
+    for i, aDep in ipairs(cDef.dependencies) do
+        local aCmd = 'rm -rf '..aDep:gsub('^clean%-', '')
+      lmsMessageCont(aCmd)
+      os.execute(aCmd)
+    end
+  end
+  return true
+end
+
+target{
+  target       = 'clean',
+  dependencies = cleanTargets,
+  command      = cleanAllTargets
+}
+
+function nameClobberTarget(theTarget)
+  return 'clobber-'..theTarget
+end
+
+tInsert(clobberTargets, nameClobberTarget('build'))
+tInsert(clobberTargets, nameClobberTarget('install'))
+
+function clobberAllTargets(cDef)
+  runTarget('clean')
+  lmsMessage('clobbering...')
+  if cDef.dependencies then
+    for i, aDep in ipairs(cDef.dependencies) do
+        local aCmd = 'rm -rf '..aDep:gsub('^clobber%-', '')
+      lmsMessageCont(aCmd)
+      os.execute(aCmd)
+    end
+  end
+  return true
+end
+
+target{
+  target       = 'clobber',
+  dependencies = clobberTargets,
+  command      = clobberAllTargets
+}
+
+target{'doc',     docTargets}
+target{'build',   buildTargets}
+target{'install', installTargets}
+target{'diff',    diffTargets}
+target{'tests',   testTargets}
+
 
 -- load the user's LMS file
 
