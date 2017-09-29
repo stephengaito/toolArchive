@@ -60,6 +60,21 @@ function contests.targets(cDef)
         'include'
       }
     })
+    if cDef.testLibDirs then
+      for j, aLibDir in ipairs(cDef.testLibDirs) do
+        aLibDir = aLibDir:gsub('<HOME>', getEnv('HOME'))
+        tInsert(pDef.libs, tConcat({
+          '-L',
+          aLibDir
+        }, ''))
+      end
+    end
+    if cDef.testLibs then
+      for j, aLib in ipairs(cDef.testLibs) do
+        aLib = aLib:gsub('<HOME>', getEnv('HOME'))
+        tInsert(pDef.libs, aLib..'.so')
+      end
+    end
     c.program(hMerge(pDef, {
       target       = testExecTarget,
       dependencies = c.collectCDependencies(cDependencies),
