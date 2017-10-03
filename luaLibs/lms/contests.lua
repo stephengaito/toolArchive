@@ -72,7 +72,11 @@ function contests.targets(cDef)
     if cDef.testLibs then
       for j, aLib in ipairs(cDef.testLibs) do
         aLib = aLib:gsub('<HOME>', getEnv('HOME'))
-        tInsert(pDef.libs, aLib..'.so')
+        if aLib:match('^-l') then
+          tInsert(pDef.libs, aLib)
+        else
+          tInsert(pDef.libs, aLib..'.so')
+        end
       end
     end
     c.program(hMerge(pDef, {

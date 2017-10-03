@@ -236,8 +236,14 @@ addOption('-h', '--help', 'Provide this list of options', function()
   os.exit(0)
 end)
 
+
 addOption('-v', '--verbose', 'Provide extra output', function()
   verbose = true
+end)
+
+addOption('-V', '--Verbose', 'Provide extra output and clear screen', function()
+  verbose = true
+  os.execute('reset')
 end)
 
 addOption('-vv', '--veryVerbose', 'Provide even more output', function()
