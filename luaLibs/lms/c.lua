@@ -9,7 +9,7 @@ lms.c = lms.c or { }
 
 local cDefaults = {
   cc       = 'gcc',
-  cOpts    = { '-c -O2 -Wall' },
+  cOpts    = { '-c -O2 -Wall -Werror' },
   cIncs    = { '-I.' },
   cExts    = { '.h', '.c'},
   needs    = { },
