@@ -14,15 +14,15 @@ joylol = hMerge(lms.joylol, joylol)
 
 function joylol.targets(jDef)
 
-  -- update the required libraries for ALL C compilations
-  for j, aCoAlgLib in ipairs(jDef.coAlgLibs) do
-    tInsert(c.libs, makePath{
-      getEnv('HOME'),
-      '.joylol',
-      'joylol',
-      aCoAlgLib..'.so'
-    })
-  end
+--  -- update the required libraries for ALL C compilations
+--  for j, aCoAlgLib in ipairs(jDef.coAlgLibs) do
+--    tInsert(c.libs, makePath{
+--      getEnv('HOME'),
+--      '.joylol',
+--      'joylol',
+--      aCoAlgLib..'.so'
+--    })
+--  end
   tInsert(c.cOpts, '-fPIC')
 
   for i, aCoAlg in ipairs(jDef.coAlgs) do
