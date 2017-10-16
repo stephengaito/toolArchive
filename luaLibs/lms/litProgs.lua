@@ -109,6 +109,16 @@ function litProgs.targets(lpDef)
     command = compileDocument
   }))
   
+  if lpDef.cCodeLibDirs then
+    lms.c          = lms.c or { }
+    lms.c.linkOpts = lpDef.cCodeLibDirs
+  end
+  
+  if lpDef.cCodeLibs then
+    lms.c      = lms.c or { }
+    lms.c.libs = lpDef.cCodeLibs
+  end
+  
   tInsert(clobberTargets, nameClobberTarget(docTarget))
   
   tInsert(cleanTargets, 
