@@ -43,6 +43,7 @@ lms = lmsConfig
 
 -- Now define some functions to help communicate with the user 
 
+clearScreen = lms.clearScreen or true
 verbose     = lms.verbose     or false
 veryVerbose = lms.veryVerbose or false
 
@@ -236,6 +237,14 @@ addOption('-h', '--help', 'Provide this list of options', function()
   os.exit(0)
 end)
 
+addOption('-c', '--no-clear-screen', 'Do not clear screen', function()
+  clearScreen = false
+end)
+
+addOption('-C', '--clear-screen', 'Clear screen', function()
+  clearScreen = true
+  os.execute('reset')
+end)
 
 addOption('-v', '--verbose', 'Provide extra output', function()
   verbose = true
@@ -270,8 +279,9 @@ addOption('-T', '--targets', 'List all known targets', function()
   os.exit(0)
 end)
 
-local function parseAndRunArguments()
-  runDefault = true
+targetsToRun = { }
+
+local function parseArguments()
   for i, anArg in ipairs(arg) do
     local key    = anArg:gsub('=.*$', '')
     local value  = anArg:gsub('^[^=]*=', '')
@@ -280,14 +290,18 @@ local function parseAndRunArguments()
     if optionAction and type(optionAction) == 'function' then
       optionAction(key, value)
     else
-      runDefault = false
-      mustHaveTarget(anArg)
-      runTarget(anArg)
+      tInsert(targetsToRun, anArg)
     end
   end
-  if runDefault then
-    mustHaveTarget('default')
-    runTarget('default')
+  if #targetsToRun < 1 then
+    tInsert(targetsToRun, 'default')
+  end
+end
+
+local function runTargets()
+  for i, aTarget in ipairs(targetsToRun) do
+    mustHaveTarget(aTarget)
+    runTarget(aTarget)
   end
 end
 
@@ -385,10 +399,13 @@ target{'diff',    diffTargets}
 target{'tests',   testTargets}
 target{'default', buildTargets}
 
+parseArguments()
+
 -- load the user's LMS file
 
 require 'lmsfile'
 
 -- execute it!
 
-parseAndRunArguments()
+if clearScreen then os.execute('reset') end
+runTargets()
