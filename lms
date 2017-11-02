@@ -341,6 +341,7 @@ cleanTargets   = cleanTargets   or { }
 clobberTargets = clobberTargets or { }
 docTargets     = docTargets     or { }
 buildTargets   = buildTargets   or { }
+headerTargets  = headerTargets  or { }
 installTargets = installTargets or { }
 diffTargets    = diffTargets    or { }
 testTargets    = testTargets    or { }
@@ -394,6 +395,7 @@ target{
 
 target{'doc',     docTargets}
 target{'build',   buildTargets}
+target{'headers', headerTargets}
 target{'install', installTargets}
 target{'diff',    diffTargets}
 target{'tests',   testTargets}

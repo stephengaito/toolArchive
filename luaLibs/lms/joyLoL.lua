@@ -86,6 +86,7 @@ function joylol.targets(jDef)
         anInclude
       }
       lfs.mkdir(installPath)
+      tInsert(headerTargets, installTarget)
       tInsert(installTargets, installTarget)
       target(hMerge(jDef, {
         target = installTarget,
