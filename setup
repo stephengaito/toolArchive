@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# This bash script automates the installation of the Lua Make System on 
+# any Unix-like system. 
+
+cp    lms       $HOME/bin
+
+mkdir -p        $HOME/.luaMakeSystem
+cp -R luaLibs/* $HOME/.luaMakeSystem

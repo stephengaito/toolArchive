@@ -19,3 +19,24 @@ and compilers functions.
 lms uses a simple build 
 [DSL](https://martinfowler.com/bliki/DomainSpecificLanguage.html) based 
 loosely upon that used by [Lake](https://github.com/stevedonovan/Lake).
+
+# Installation
+
+This Lua Make System expects a POSIX-like environment: it currently looks 
+for its lua extension modules in the ".luaMakeSystem" directory of 
+the user's "HOME" directory as specified by the environment variable 
+"HOME". 
+
+To install the system on your computer, copy the file "lms" into a 
+directory on your executable "path" (such as $HOME/bin) and copy the 
+contents of the "lmsLibs" directory to the directory ".luaMakeSystem" 
+directory in your "HOME" directory (for example: 
+$HOME/.luaMakeSystem).
+
+You then be able to run the "lms" command in any directory which contains 
+a "lmsfile" containing Lua Make System instructions on how to build 
+the document or code. 
+
+Alternatively, you can use the "setup" BASH script to automate the 
+installation of the Lua Make System. 
+
