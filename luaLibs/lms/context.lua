@@ -25,6 +25,12 @@ end
 
 function context.targets(ctxDef)
 
+  ctxDef.dependencies = { }
+  tInsert(ctxDef.docFiles, 1, ctxDef.mainDoc)
+  for i, aDocFile in ipairs(ctxDef.docFiles) do
+    tInsert(ctxDef.dependencies, makePath{ ctxDef.docDir, aDocFile })
+  end
+
   local pdfMainDoc = ctxDef.mainDoc:gsub('%.tex$', '.pdf')
   local docTarget = makePath{ ctxDef.docDir, pdfMainDoc }
   tInsert(docTargets, docTarget)
