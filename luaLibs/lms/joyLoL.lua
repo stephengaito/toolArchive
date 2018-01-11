@@ -12,26 +12,26 @@ lms.joylol = lms.joylol or { }
 
 joylol = hMerge(lms.joylol, joylol)
 
-function joylol.targets(jDef)
+function joylol.targets(defaultDef, jDef)
 
---  -- update the required libraries for ALL C compilations
---  for j, aCoAlgLib in ipairs(jDef.coAlgLibs) do
---    tInsert(c.libs, makePath{
---      getEnv('HOME'),
---      '.joylol',
---      'joylol',
---      aCoAlgLib..'.so'
---    })
---  end
+  jDef = hMerge(defaultDef, jDef or { })
+
   tInsert(c.cOpts, '-fPIC')
 
   for i, aCoAlg in ipairs(jDef.coAlgs) do
 
     local coAlgTarget = makePath{ jDef.buildDir, aCoAlg..'.so' }
     local cDependencies = { }
+    jDef.srcFiles = aAppend(jDef.cHeaderFiles, jDef.cCodeFiles)
     for j, aSrcFile in ipairs(jDef.srcFiles) do
-      tInsert(cDependencies, makePath{ jDef.buildDir, aSrcFile })
+      srcTarget = makePath{ jDef.buildDir, aSrcFile }
+      tInsert(cDependencies, srcTarget)
+      target(hMerge(jDef, {
+        target  = srcTarget,
+        command = jDef.compileLitProg
+      }))
     end
+
     local pDef = hMerge(c, jDef)
     tInsert(pDef.cIncs, 1, tConcat{
       '-I',
@@ -99,4 +99,6 @@ function joylol.targets(jDef)
       }))
     end
   end
+  
+  return jDef
 end

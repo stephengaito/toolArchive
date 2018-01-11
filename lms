@@ -335,6 +335,23 @@ function hMerge(...)
   return newHash
 end
 
+-- merge a sequence of arrays in order...
+function aAppend(...)
+  local newArray = { }
+  for i, anArray in ipairs{...} do
+    if type(anArray) == 'table' then
+      for j, aValue in ipairs(anArray) do
+        if type(aValue) == 'table' then
+          tInsert(newArray, tCopy(aValue))
+        else
+          tInsert(newArray, aValue)
+        end
+      end
+    end
+  end
+  return newArray
+end
+
 -- Create the standard targets
 
 cleanTargets   = cleanTargets   or { }

@@ -38,7 +38,12 @@ local function compileLitProg(lpDef)
   return result
 end
 
-function litProgs.targets(lpDef)
+function litProgs.targets(defaultDef, lpDef)
+
+  lpDef = hMerge(defaultDef, lpDef or { })
+
+  lpDef.compileDocument = compileDocument
+  lpDef.compileLitProg  = compileLitProg
   
   lpDef.dependencies = { }
   tInsert(lpDef.docFiles, 1, lpDef.mainDoc)
@@ -46,34 +51,7 @@ function litProgs.targets(lpDef)
     tInsert(lpDef.dependencies, makePath{ lpDef.docDir, aDocFile })
   end
   
-  for i, aSrcFile in ipairs(lpDef.srcFiles) do
-    
-    local srcTarget = makePath{ lpDef.buildDir, aSrcFile }
-    tInsert(buildTargets, srcTarget)
-    target(hMerge(lpDef, {
-      target  = srcTarget,
-      command = compileLitProg
-    }))
-
-    local diffTarget   = 'diff-'..aSrcFile
-    local moduleTarget = makePath{ lpDef.moduleDir, aSrcFile }
-    tInsert(diffTargets, diffTarget)
-    target(hMerge(lpDef, {
-      target       = diffTarget,
-      dependencies = { srcTarget, moduleTarget },
-      command      = 'diff '..srcTarget..' '..moduleTarget
-    }))
-
-    local installTarget = 'install-'..aSrcFile
-    tInsert(installTargets, installTarget)
-    target(hMerge(lpDef, {
-      target       = installTarget,
-      dependencies = { srcTarget },
-      command      = 'cp '..srcTarget..' '..moduleTarget
-    }))
-    
-    tInsert(cleanTargets, nameCleanTarget(srcTarget))
-  end
+  lpDef.buildDir = 'build' or lpDef.buildDir
   
   local srcTarget = makePath{ lpDef.buildDir, 'lmsfile' }
   tInsert(buildTargets, srcTarget)
@@ -125,4 +103,6 @@ function litProgs.targets(lpDef)
     nameCleanTarget(docTarget:gsub('%.pdf', '.log')))
   tInsert(cleanTargets, 
     nameCleanTarget(docTarget:gsub('%.pdf$', '.tuc')))
+    
+  return lpDef
 end

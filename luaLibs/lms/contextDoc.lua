@@ -3,12 +3,12 @@
 -- This lms Lua script creates the targets required to build, diff or 
 -- install a ConTeXt document. 
 
-context     = context     or { }
-lms.context = lms.context or { }
+contextDoc     = contextDoc     or { }
+lms.contextDoc = lms.contextDoc or { }
 
 -- no module defaults
 
-context = hMerge(lms.context, context)
+contextDoc = hMerge(lms.contextDoc, contextDoc)
 
 local function compileDocument(ctxDef)
   local curDir = lfs.currentdir()

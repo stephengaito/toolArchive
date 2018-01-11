@@ -19,7 +19,9 @@ local contestsDefaults = {
 
 contests = hMerge(contestsDefaults, lms.contests, contests)
 
-function contests.targets(cDef)
+function contests.targets(defaultDef, cDef)
+
+  cDef = hMerge(defaultDef, cDef or { })
 
   cDef.dependencies = { }
   tInsert(cDef.docFiles, 1, cDef.mainDoc)
@@ -38,6 +40,7 @@ function contests.targets(cDef)
     
     local testExecTarget = makePath{ cDef.buildDir, aTestExec }
     local cDependencies = { }
+    cDef.srcFiles = aAppend(cDef.cHeaderFiles, cDef.cCodeFiles)
     tInsert(cDependencies, srcTarget)
     for j, aSrcFile in ipairs(cDef.srcFiles) do
       tInsert(cDependencies, makePath{ cDef.buildDir, aSrcFile })
