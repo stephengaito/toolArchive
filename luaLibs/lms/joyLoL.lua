@@ -41,6 +41,12 @@ function joylol.targets(defaultDef, jDef)
         'include'
       }
     })
+    if jDef.cCodeLibDirs then
+      pDef.linkOpts = aAppend(pDef.linkOpts, jDef.cCodeLibDirs)
+    end
+    if jDef.cCodeLibs then
+      pDef.libs = aAppend(pDef.libs, jDef.cCodeLibs)
+    end
     c.shared(hMerge(pDef, {
       target = coAlgTarget,
       dependencies = c.collectCDependencies(cDependencies),
