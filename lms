@@ -12,8 +12,10 @@ lfs     = require 'lfs'
 -- Now update the require search paths to ensure lms standard paths will 
 -- be searched 
 
+directorySeparator = package.config:sub(1,1)
+
 function makePath(pathTable)
-  return tConcat(pathTable, package.config:sub(1,1))
+  return tConcat(pathTable, directorySeparator)
 end
 
 package.path = tConcat({
@@ -133,16 +135,18 @@ function needsToBuild(aTargetDef)
   end
   
   for i, aDependency in ipairs(aTargetDef.dependencies) do
-    dTime = lfs.attributes(aDependency, 'modification')
-    if not dTime then lmsError('missing dependency: ['..aDependency..']') end
-    if dTime > tTime then
-      lmsMessage(
-        'need to build ['..aTargetDef.target..']',
-        'since ['..aDependency..']',
-        'is newer ('..os.date('%Y/%m/%d %H:%M:%S', dTime)..')['..dTime..']',
-        'than the target ('..os.date('%Y/%m/%d %H:%M:%S', tTime)..')['..tTime..']'
-        )
-      return true
+    if lfs.attributes(aDependency, 'mode') ~= 'directory' then
+      dTime = lfs.attributes(aDependency, 'modification')
+      if not dTime then lmsError('missing dependency: ['..aDependency..']') end
+      if dTime > tTime then
+        lmsMessage(
+          'need to build ['..aTargetDef.target..']',
+          'since ['..aDependency..']',
+          'is newer ('..os.date('%Y/%m/%d %H:%M:%S', dTime)..')['..dTime..']',
+          'than the target ('..os.date('%Y/%m/%d %H:%M:%S', tTime)..')['..tTime..']'
+          )
+        return true
+      end
     end
   end
   lmsMessageVery('all dependencies older than target')

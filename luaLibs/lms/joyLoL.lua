@@ -16,6 +16,14 @@ function joylol.targets(defaultDef, jDef)
 
   jDef = hMerge(defaultDef, jDef or { })
 
+  local buildJoylol = makePath{jDef.buildDir, 'joylol'}
+  tInsert(jDef.dependencies, buildJoylol)
+  target(hMerge(jDef, {
+    dependencies = { },
+    target       = buildJoylol,
+    command      = 'mkdir -p '..buildJoylol
+  }))
+  
   tInsert(c.cOpts, '-fPIC')
 
   for i, aCoAlg in ipairs(jDef.coAlgs) do

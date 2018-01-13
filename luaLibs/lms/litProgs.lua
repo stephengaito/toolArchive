@@ -51,7 +51,13 @@ function litProgs.targets(defaultDef, lpDef)
     tInsert(lpDef.dependencies, makePath{ lpDef.docDir, aDocFile })
   end
   
-  lpDef.buildDir = 'build' or lpDef.buildDir
+  lpDef.buildDir = lpDef.buildDir or 'build'
+  tInsert(lpDef.dependencies, lpDef.buildDir)
+  target(hMerge(lpDef, {
+    dependencies = { },
+    target       = lpDef.buildDir,
+    command      = 'mkdir -p '..lpDef.buildDir
+  }))
   
   local srcTarget = makePath{ lpDef.buildDir, 'lmsfile' }
   tInsert(buildTargets, srcTarget)

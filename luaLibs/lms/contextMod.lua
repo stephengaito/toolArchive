@@ -12,6 +12,16 @@ function contextMod.targets(defaultDef, ctxModDef)
 
   ctxModDef = hMerge(defaultDef, ctxModDef or { })
 
+  ctxModDef.moduleDir = ctxModDef.moduleDir or 'install'
+  ctxModDef.moduleDir =
+    ctxModDef.moduleDir:gsub('<HOME>', os.getenv('HOME'))
+  tInsert(ctxModDef.dependencies, ctxModDef.moduleDir)
+  target(hMerge(ctxModDef, {
+    dependencies = { },
+    target       = ctxModDef.moduleDir,
+    command      = 'mkdir -p '..ctxModDef.moduleDir
+  }))
+  
   for i, aSrcFile in ipairs(ctxModDef.moduleFiles) do
     
     local srcTarget = makePath{ ctxModDef.buildDir, aSrcFile }
