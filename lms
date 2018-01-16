@@ -122,8 +122,10 @@ function target(tDef)
   if not tDef.target then 
     lmsError(debug.traceback('target method did not supply a target')) 
   end
-  targets[tDef.target] = tDef
-  tInsert(targetList, tDef.target)
+  if not targets[tDef.target] then -- first definition wins!
+    targets[tDef.target] = tDef
+    tInsert(targetList, tDef.target)
+  end
   return tDef.target
 end
 
@@ -204,12 +206,42 @@ function runTarget(targetToRun)
   alreadyRun[targetToRun] = true
 end
 
+-- Now we create some general helper tools
+
+function getParentPath(aPath)
+  local parentPath =
+    aPath:gsub(directorySeparator..'?[^'..directorySeparator..']*$', '')
+--  print('getParentPath: ['..aPath..']->['..parentPath..']')
+  if #parentPath < 1 then parentPath = nil end
+  return parentPath
+end
+
+local function createPath(aTarget)
+  return lfs.mkdir(aTarget.target)
+end
+
+function ensurePathExists(aPath)
+  if not aPath then return '' end
+  local paths = { }
+  local parentPath = getParentPath(aPath)
+  if parentPath then
+    ensurePathExists(parentPath)
+    paths = { parentPath }
+  end
+  return target({
+    dependencies = paths,
+    target       = aPath,
+    command      = createPath
+  })
+end
+
 -- Now we create a helper tools to be able to deal with options 
 
-lmsOptionHelp   = { }
-lmsLongSwitches = { }
-lmsOption       = { }
-runDefault      = true
+lmsOptionHelp     = { }
+lmsLongSwitches   = { }
+lmsOption         = { }
+runDefault        = true
+shouldListTargets = false
 
 function addOption( shortSwitch, longSwitch, description, action)
   lmsOptionHelp[longSwitch] = { shortSwitch, longSwitch, description, action }
@@ -265,6 +297,10 @@ addOption('-vv', '--veryVerbose', 'Provide even more output', function()
 end)
 
 addOption('-T', '--targets', 'List all known targets', function()
+  shouldListTargets = true
+end)
+
+function listTargets()
   tSort(targetList)
   for i, aTarget in ipairs(targetList) do
     aTDef = targets[aTarget]
@@ -281,7 +317,7 @@ addOption('-T', '--targets', 'List all known targets', function()
     end
   end
   os.exit(0)
-end)
+end
 
 targetsToRun = { }
 
@@ -392,8 +428,8 @@ function nameClobberTarget(theTarget)
   return 'clobber-'..theTarget
 end
 
-tInsert(clobberTargets, nameClobberTarget('build'))
-tInsert(clobberTargets, nameClobberTarget('install'))
+tInsert(clobberTargets, nameClobberTarget('buildDir'))
+tInsert(clobberTargets, nameClobberTarget('installDir'))
 
 function clobberAllTargets(cDef)
   runTarget('clean')
@@ -427,6 +463,8 @@ parseArguments()
 -- load the user's LMS file
 
 require 'lmsfile'
+
+if shouldListTargets then listTargets() end
 
 -- execute it!
 

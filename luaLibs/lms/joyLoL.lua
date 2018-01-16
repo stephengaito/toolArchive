@@ -16,13 +16,14 @@ function joylol.targets(defaultDef, jDef)
 
   jDef = hMerge(defaultDef, jDef or { })
 
-  local buildJoylol = makePath{jDef.buildDir, 'joylol'}
-  tInsert(jDef.dependencies, buildJoylol)
-  target(hMerge(jDef, {
-    dependencies = { },
-    target       = buildJoylol,
-    command      = 'mkdir -p '..buildJoylol
-  }))
+--  local buildJoylol = makePath{jDef.buildDir, 'joylol'}
+--  ensurePathExists(buidlJoylol)
+--  tInsert(jDef.dependencies, buildJoylol)
+--  target(hMerge(jDef, {
+--    dependencies = { },
+--    target       = buildJoylol,
+--    command      = 'mkdir -p '..buildJoylol
+--  }))
   
   tInsert(c.cOpts, '-fPIC')
 
@@ -33,6 +34,11 @@ function joylol.targets(defaultDef, jDef)
     jDef.srcFiles = aAppend(jDef.cHeaderFiles, jDef.cCodeFiles)
     for j, aSrcFile in ipairs(jDef.srcFiles) do
       srcTarget = makePath{ jDef.buildDir, aSrcFile }
+      local parentPath = getParentPath(srcTarget)
+      if parentPath then
+        ensurePathExists(parentPath)
+        tInsert(jDef.dependencies, parentPath)
+      end
       tInsert(cDependencies, srcTarget)
       target(hMerge(jDef, {
         target  = srcTarget,
@@ -55,9 +61,16 @@ function joylol.targets(defaultDef, jDef)
     if jDef.cCodeLibs then
       pDef.libs = aAppend(pDef.libs, jDef.cCodeLibs)
     end
+
+    local coAlgDeps = c.collectCDependencies(cDependencies)
+    local parentPath = getParentPath(coAlgTarget)
+    if parentPath then
+      ensurePathExists(parentPath)
+      tInsert(coAlgDeps, parentPath)
+    end
     c.shared(hMerge(pDef, {
       target = coAlgTarget,
-      dependencies = c.collectCDependencies(cDependencies),
+      dependencies = coAlgDeps,
       needs = { 'lua5.2' },
     }))
 
@@ -70,11 +83,16 @@ function joylol.targets(defaultDef, jDef)
       'joylol',
       aCoAlg..'.so'
     }
-    lfs.mkdir(installPath)
+    local parentPath = getParentPath(installTarget)
+    local installDeps = { coAlgTarget }
+    if parentPath then
+      ensurePathExists(parentPath)
+      tInsert(installDeps, parentPath) 
+    end
     tInsert(installTargets, installTarget)
     target(hMerge(jDef, {
       target = installTarget,
-      dependencies = { coAlgTarget },
+      dependencies = installDeps,
       command = tConcat({
         'install -T',
         coAlgTarget,
@@ -99,12 +117,17 @@ function joylol.targets(defaultDef, jDef)
         installPath,
         anInclude
       }
-      lfs.mkdir(installPath)
+      local includeDeps = { anIncludeDep }
+      local parentPath = getParentPath(installTarget)
+      if parentPath then 
+        ensurePathExists(parentPath)
+        tInsert(includeDeps, parentPath)
+      end
       tInsert(headerTargets, installTarget)
       tInsert(installTargets, installTarget)
       target(hMerge(jDef, {
         target = installTarget,
-        dependencies = { anIncludeDep },
+        dependencies = includeDeps,
         command = tConcat({
           'install -T',
           anIncludeDep,

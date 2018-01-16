@@ -12,9 +12,10 @@ function contextMod.targets(defaultDef, ctxModDef)
 
   ctxModDef = hMerge(defaultDef, ctxModDef or { })
 
-  ctxModDef.moduleDir = ctxModDef.moduleDir or 'install'
+  ctxModDef.moduleDir = ctxModDef.moduleDir or 'installDir'
   ctxModDef.moduleDir =
     ctxModDef.moduleDir:gsub('<HOME>', os.getenv('HOME'))
+  ensurePathExists(ctxModDef.moduleDir)
   tInsert(ctxModDef.dependencies, ctxModDef.moduleDir)
   target(hMerge(ctxModDef, {
     dependencies = { },
@@ -25,6 +26,11 @@ function contextMod.targets(defaultDef, ctxModDef)
   for i, aSrcFile in ipairs(ctxModDef.moduleFiles) do
     
     local srcTarget = makePath{ ctxModDef.buildDir, aSrcFile }
+    local parentPath = getParentPath(srcTarget)
+    if parentPath then
+      ensurePathExists(parentPath)
+      tInsert(ctxModDef.dependencies, parentPath)
+    end
     tInsert(buildTargets, srcTarget)
     target(hMerge(ctxModDef, {
       target  = srcTarget,
@@ -40,11 +46,16 @@ function contextMod.targets(defaultDef, ctxModDef)
       command      = 'diff '..srcTarget..' '..moduleTarget
     }))
 
-    local installTarget = 'install-'..aSrcFile
-    tInsert(installTargets, installTarget)
+    tInsert(installTargets, moduleTarget)
+    local installDep = { srcTarget }
+    local parentPath = getParentPath(moduleTarget)
+    if parentPath then
+      ensurePathExists(parentPath)
+      tInsert(installDep, parentPath)
+    end
     target(hMerge(ctxModDef, {
-      target       = installTarget,
-      dependencies = { srcTarget },
+      target       = moduleTarget,
+      dependencies = installDep,
       command      = 'cp '..srcTarget..' '..moduleTarget
     }))
     
