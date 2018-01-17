@@ -72,7 +72,7 @@ function litProgs.targets(defaultDef, lpDef)
   tInsert(diffTargets, diffTarget)
   target(hMerge(lpDef, {
     target       = diffTarget,
-    dependencies = { srcTarget, moduleTarget },
+    dependencies = { srcTarget },
     command      = 'diff '..srcTarget..' '..moduleTarget
   }))
 

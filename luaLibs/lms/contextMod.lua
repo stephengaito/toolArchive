@@ -42,7 +42,7 @@ function contextMod.targets(defaultDef, ctxModDef)
     tInsert(diffTargets, diffTarget)
     target(hMerge(ctxModDef, {
       target       = diffTarget,
-      dependencies = { srcTarget, moduleTarget },
+      dependencies = { srcTarget },
       command      = 'diff '..srcTarget..' '..moduleTarget
     }))
 
