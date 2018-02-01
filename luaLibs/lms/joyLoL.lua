@@ -30,6 +30,7 @@ function joylol.targets(defaultDef, jDef)
   for i, aCoAlg in ipairs(jDef.coAlgs) do
 
     local coAlgTarget = makePath{ jDef.buildDir, aCoAlg..'.so' }
+    tInsert(buildTargets, coAlgTarget)
     local cDependencies = { }
     jDef.srcFiles = aAppend(jDef.cHeaderFiles, jDef.cCodeFiles)
     for j, aSrcFile in ipairs(jDef.srcFiles) do
