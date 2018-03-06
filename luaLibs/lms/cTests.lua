@@ -1,25 +1,25 @@
 -- A Lua script
 
 -- This lms Lua script creates the targets required to build, diff or 
--- install a suite of Contests based unit tests. 
+-- install a suite of Contest cTest based unit tests. 
 
 require 'lms.c'
 
-contests     = contests     or { }
-lms.contests = lms.contests or { }
+cTests     = cTests     or { }
+lms.cTests = lms.cTests or { }
 
-local contestsDefaults = {
-  contestsIncDir =
+local cTestsDefaults = {
+  cTestsIncDir =
     makePath{
       getEnv('HOME'), 'texmf', 't-contests', 'tex',
       'context', 'third', 'contests'
     },
-  contestsStartup = 't-contests-cTests.lua'
+  cTestsStartup = 't-contests-cTests.lua'
 }
 
-contests = hMerge(contestsDefaults, lms.contests, contests)
+cTests = hMerge(cTestsDefaults, lms.cTests, cTests)
 
-function contests.targets(defaultDef, cDef)
+function cTests.targets(defaultDef, cDef)
 
   cDef = hMerge(defaultDef, cDef or { })
 
@@ -47,14 +47,14 @@ function contests.targets(defaultDef, cDef)
     end
     local pDef = hMerge(c, cDef)
     tInsert(pDef.cOpts, tConcat({
-      '-DCONTESTS_STARTUP=\\"',
+      '-DCTESTS_STARTUP=\\"',
       makePath{
-        contests.contestsIncDir,
-        contests.contestsStartup
+        cTests.cTestsIncDir,
+        cTests.cTestsStartup
       },
       '\\"'
     }, ''))
-    tInsert(pDef.cIncs, 1, '-I'..contests.contestsIncDir)
+    tInsert(pDef.cIncs, 1, '-I'..cTests.cTestsIncDir)
     tInsert(pDef.cIncs, 1, tConcat{
       '-I',
       makePath{
