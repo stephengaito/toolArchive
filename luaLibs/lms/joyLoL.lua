@@ -102,7 +102,7 @@ function joylol.targets(defaultDef, jDef)
     }))
   end
   
-  for i, anInclude in ipairs(jDef.srcFiles) do
+  for i, anInclude in ipairs(jDef.cHeaderFiles) do
     if anInclude:match('%.h$') and
       not anInclude:match('-private%.') then
       local anIncludeDep = makePath {
@@ -137,6 +137,38 @@ function joylol.targets(defaultDef, jDef)
       }))
     end
   end
-  
+
+  for i, aJoylolFile in ipairs(jDef.joylolCodeFiles) do
+    local aJoylolDep = makePath {
+      jDef.buildDir,
+      aJoylolFile
+    }
+    local installPath = makePath{
+      getEnv('HOME'),
+      '.joylol',
+      'joylol'
+    }
+    local installTarget = makePath{
+      installPath,
+      aJoylolFile
+    }
+    local joylolDeps = { aJoylolDep }
+    local parentPath = getParentPath(installTarget)
+    if parentPath then 
+      ensurePathExists(parentPath)
+      tInsert(joylolDeps, parentPath)
+    end
+    tInsert(installTargets, installTarget)
+    target(hMerge(jDef, {
+      target = installTarget,
+      dependencies = joylolDeps,
+      command = tConcat({
+        'install -T',
+        aJoylolDep,
+        installTarget
+      }, ' ')
+    }))
+  end
+
   return jDef
 end
