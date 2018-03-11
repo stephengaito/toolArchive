@@ -3,8 +3,6 @@
 -- This lms Lua script creates the targets required to build, diff or 
 -- install a suite of Contest joylolTest based unit tests. 
 
-require 'lms.c'
-
 joylolTests     = joylolTests     or { }
 lms.joylolTests = lms.joylolTests or { }
 
@@ -36,7 +34,7 @@ function joylolTests.targets(defaultDef, jtDef)
     
     target(hMerge(jtDef, {
       target  = testExecSrc,
-      command = litProgs.compileLitProg
+      command = jtDef.compileLitProg
     }))
     
     local testTarget = makePath{ jtDef.buildDir, aTestExec..'-results.lua' }
