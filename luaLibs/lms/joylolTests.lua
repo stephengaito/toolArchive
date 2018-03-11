@@ -42,7 +42,7 @@ function joylolTests.targets(defaultDef, jtDef)
     target(hMerge(jtDef, {
       target       = testTarget,
       dependencies = { testExecSrc },
-      command      = "joylol "..testExecTarget
+      command      = "joylol --quiet "..testExecTarget
     }))
     tInsert(clobberTargets, nameClobberTarget(testExecSrc))
   end
