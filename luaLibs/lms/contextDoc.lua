@@ -23,7 +23,7 @@ local function compileDocument(ctxDef)
 end
 
 
-function context.targets(ctxDef)
+function contextDoc.targets(ctxDef)
 
   ctxDef.dependencies = { }
   tInsert(ctxDef.docFiles, 1, ctxDef.mainDoc)
