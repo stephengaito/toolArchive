@@ -104,6 +104,19 @@ targets    = {}
 targetList = {}
 alreadyRun = {}
 
+function runCmdIn(cmd, subDir)
+  local curDir = lfs.currentdir()
+  print('\n========================================================')
+  print('working in ['..subDir..']')
+  print('running    ['..cmd..']')
+  lfs.chdir(subDir)
+  if not os.execute(cmd) then
+    print('FAILED to run: ['..cmd..']')
+    os.exit(-1)
+  end
+  lfs.chdir(curDir)
+end
+
 function executeCmd(aCmd)
   lmsMessage('running: ['..aCmd..']')
   return os.execute(aCmd)
