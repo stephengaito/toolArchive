@@ -47,3 +47,25 @@ function contextDoc.targets(ctxDef)
     nameCleanTarget(docTarget:gsub('%.pdf$', '.tuc')))
 
 end
+
+function contextDoc.multiDocument(mainDoc)
+  local docFiles = { }
+  local texFileList = io.popen('find -name "*.tex"')
+  for docTexFilePath in texFileList:lines('*l') do
+    if not docTexFilePath:find('releases') and
+        not docTexFilePath:find('buildDir') and
+        not docTexFilePath:find('bin')      then
+      if docTexFilePath:match('^%.%/doc%/') then
+        docTexFilePath = docTexFilePath:gsub('^%.%/doc%/','')
+      else
+        docTexFilePath = '.'..docTexFilePath
+      end
+      table.insert(docFiles, docTexFilePath)
+    end
+  end
+  contextDoc.targets{
+    mainDoc  = mainDoc,
+    docFiles = docFiles,
+    docDir   = 'doc'
+  }
+end

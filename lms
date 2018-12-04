@@ -128,6 +128,19 @@ function chDir(aNewDir)
   end
 end
 
+function collectSubDirectories(ignoredDirs)
+  subDirs = { }
+  for entry in lfs.dir('.') do
+    if not entry:match('^%..*$') and
+      (lfs.attributes(entry, 'mode') == 'directory') and
+      not ignoredDirs:match(entry) then
+      tInsert(subDirs, entry)
+    end
+  end
+  tSort(subDirs)
+  return subDirs
+end
+
 function target(tDef)
   if 0 < #tDef then tDef.target       = tRemove(tDef, 1) end
   if 0 < #tDef then tDef.dependencies = tRemove(tDef, 1) end
