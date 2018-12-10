@@ -141,6 +141,17 @@ function collectSubDirectories(ignoredDirs)
   return subDirs
 end
 
+function addDependency(aTarget, aDependency)
+  if not targets[aTarget] then
+    targets[aTarget] = {
+      dependencies = { },
+      target       = aTarget
+    }
+    tInsert(targetList, aTarget)
+  end
+  tInsert(targets[aTarget]['dependencies'], aDependency)
+end
+
 function target(tDef)
   if 0 < #tDef then tDef.target       = tRemove(tDef, 1) end
   if 0 < #tDef then tDef.dependencies = tRemove(tDef, 1) end

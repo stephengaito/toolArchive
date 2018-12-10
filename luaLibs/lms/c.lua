@@ -145,7 +145,12 @@ function c.targets(defaultDef, cDef)
     cDef.srcFiles = aAppend(cDef.cHeaderFiles, cDef.cCodeFiles)
     tInsert(cDependencies, srcTarget)
     for j, aSrcFile in ipairs(cDef.srcFiles) do
-      tInsert(cDependencies, makePath{ cDef.buildDir, aSrcFile })
+      local aSrcPath = makePath{ cDef.buildDir, aSrcFile }
+      local aParentPath = getParentPath(aSrcPath)
+      ensurePathExists(aParentPath)
+      addDependency(makePath{cDef.docDir, cDef.mainDoc}, aParentPath)
+      addDependency(aSrcPath, aParentPath)
+      tInsert(cDependencies, aSrcPath)
     end
     local pDef = hMerge(c, cDef)
 --    tInsert(pDef.cIncs, 1, '-I'..cTests.cTestsIncDir)

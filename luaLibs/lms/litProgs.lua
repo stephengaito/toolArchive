@@ -54,11 +54,6 @@ function litProgs.targets(defaultDef, lpDef)
   lpDef.buildDir = lpDef.buildDir or 'buildDir'
   ensurePathExists(lpDef.buildDir)
   tInsert(lpDef.dependencies, lpDef.buildDir)
---  target(hMerge(lpDef, {
---    dependencies = { },
---    target       = lpDef.buildDir,
---    command      = 'mkdir -p '..lpDef.buildDir
---  }))
   
   local srcTarget = makePath{ lpDef.buildDir, 'lmsfile' }
   tInsert(buildTargets, srcTarget)
