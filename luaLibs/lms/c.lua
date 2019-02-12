@@ -132,12 +132,28 @@ function c.targets(defaultDef, cDef)
     tInsert(cDef.dependencies, makePath{ cDef.docDir, aDocFile })
   end
 
+  for i, anInclude in ipairs(cDef.cHeaderFiles) do
+    if anInclude:match('%.h$') and
+      not anInclude:match('-private%.') then
+      local anIncludeDep = makePath {
+        cDef.buildDir,
+        anInclude
+      }
+      local includeDeps = { anIncludeDep }
+      tInsert(headerTargets, anIncludeDep)
+      target(hMerge(cDef, {
+        target  = anIncludeDep,
+        command = cDef.compileLitProg
+      }))
+    end
+  end
+
   for i, aProgram in ipairs(cDef.programs) do
   
     local srcTarget = makePath{ cDef.buildDir, aProgram..'.c' }
     target(hMerge(cDef, {
       target  = srcTarget,
-      command = litProgs.compileLitProg
+      command = cDef.compileLitProg
     }))
     
     local programTarget = makePath{ cDef.buildDir, aProgram }
@@ -152,35 +168,8 @@ function c.targets(defaultDef, cDef)
       addDependency(aSrcPath, aParentPath)
       tInsert(cDependencies, aSrcPath)
     end
+
     local pDef = hMerge(c, cDef)
---    tInsert(pDef.cIncs, 1, '-I'..cTests.cTestsIncDir)
---    tInsert(pDef.cIncs, 1, tConcat{
---      '-I',
---      makePath{
---        getEnv('HOME'),
---        '.joylol',
---        'include'
---      }
---    })
---    if cDef.testLibDirs then
---      for j, aLibDir in ipairs(cDef.testLibDirs) do
---        aLibDir = aLibDir:gsub('<HOME>', getEnv('HOME'))
---        tInsert(pDef.libs, tConcat({
---          '-L',
---          aLibDir
---        }, ''))
---      end
---    end
---    if cDef.testLibs then
---      for j, aLib in ipairs(cDef.testLibs) do
---        aLib = aLib:gsub('<HOME>', getEnv('HOME'))
---        if aLib:match('^-l') then
---          tInsert(pDef.libs, aLib)
---        else
---          tInsert(pDef.libs, aLib..'.so')
---        end
---      end
---    end
     c.program(hMerge(pDef, {
       target       = programTarget,
       dependencies = c.collectCDependencies(cDependencies),
