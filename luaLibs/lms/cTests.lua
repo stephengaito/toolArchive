@@ -29,6 +29,13 @@ function cTests.targets(defaultDef, cDef)
     tInsert(cDef.dependencies, makePath{ cDef.docDir, aDocFile })
   end
 
+  local mainCFile = (cDef.mainDoc):gsub('%.tex', '.c')
+  local mainCFileIndex = -1
+  for i, aCFile in ipairs(cDef.cCodeFiles) do
+    if mainCFile == aCFile then mainCFileIndex = i end
+  end
+  if 0 <= mainCFileIndex then tRemove(cDef.cCodeFiles, mainCFileIndex) end
+
   for i, aTestExec in ipairs(cDef.testExecs) do
   
     local srcTarget = makePath{ cDef.buildDir, aTestExec..'.c' }
