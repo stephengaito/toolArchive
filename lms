@@ -167,6 +167,11 @@ function target(tDef)
 end
 
 function needsToBuild(aTargetDef)
+  if type(aTargetDef['mustBuild']) ~= 'nil' then
+    lmsMessage('  must build')
+    return true
+  end
+
   tTime = lfs.attributes(aTargetDef.target, 'modification')
   if (tTime) then
     lmsMessageCont('  ('..os.date('%Y/%m/%d %H:%M:%S', tTime)..')['..tTime..']')
@@ -408,6 +413,11 @@ function listTargets()
     aTDef = targets[aTarget]
     if aTDef then
       print(aTDef.target..':')
+      if aTDef.command then
+        print('  '..prettyPrint(aTDef.command))
+      else
+        print('  no command')
+      end
       if aTDef.dependencies then
         tSort(aTDef.dependencies)
         for i, aDependency in ipairs(aTDef.dependencies) do
@@ -494,16 +504,82 @@ function aAppend(...)
   return newArray
 end
 
+-- Deal with sub-directory recursion
+
+function findSubDirs(aDef)
+  if type(aDef['subDirs']) ~= 'nil' then
+    if type(aDef['subDirs']) ~= 'table' then
+      aDef['subDirs'] = { aDef['subDirs'] }
+    end
+    return
+  end
+
+  local subDirs = { }
+  local ignoreDirs = { }
+  for i, aDir in ipairs(aDef['ignoreDirs']) do
+    ignoreDirs[aDir] = true
+  end
+  for entry in lfs.dir('.') do
+    if not entry:match('^%..*$') and
+       (lfs.attributes(entry, 'mode') == 'directory') and
+       not ignoreDirs[entry] then
+      table.insert(subDirs, entry)
+    end
+  end
+  aDef['subDirs'] = subDirs
+end
+
+function recurseCurrentTarget(aDef)
+  if type(aDef['subDirs']) ~= 'table' then
+    print('  No subdirs to recurse into...')
+    return
+  end
+
+  if type(aDef['recurseCmd']) ~= 'string' then
+    print('  No recurse command to run...')
+    return
+  end
+
+  for i, subDir in ipairs(aDef['subDirs']) do
+    runCmdIn(aDef['recurseCmd'], subDir)
+  end
+
+  print("\n========================================================")
+  print('finished running ['..aDef['recurseCmd']..'] in all sub dirs')
+  print("")
+  return true
+end
+
+function recurseTargets(aDef)
+  local recurseDefaults = {
+    ignoreDirs = { 'release', 'buildDir', 'bin', 'doc' }
+  }
+  aDef = hMerge(recurseDefaults, aDef)
+  findSubDirs(aDef)
+
+  for aTarget, aTargetDef in pairs(targets) do
+    if aTargetDef then
+      if (#aTargetDef.dependencies < 1) and
+         type(aTargetDef.command) == 'nil' then
+        aTargetDef.command    = recurseCurrentTarget
+        aTargetDef.subDirs    = aDef['subDirs']
+        aTargetDef.recurseCmd = 'lms -c '..aTargetDef['target']
+        aTargetDef.mustBuild  = true
+      end
+    end
+  end
+end
+
 -- Create the standard targets
 
-cleanTargets   = cleanTargets   or { }
-clobberTargets = clobberTargets or { }
-docTargets     = docTargets     or { }
-buildTargets   = buildTargets   or { }
-headerTargets  = headerTargets  or { }
-installTargets = installTargets or { }
-diffTargets    = diffTargets    or { }
-testTargets    = testTargets    or { }
+function createNewTarget(targetName, targetVarName, targetCommand)
+  _G[targetVarName] = _G[targetVarName] or { }
+  target{
+    target       = targetName,
+    dependencies = _G[targetVarName],
+    command      = targetCommand
+  }
+end
 
 function nameCleanTarget(theTarget)
   return 'clean-'..theTarget
@@ -520,18 +596,11 @@ function cleanAllTargets(cDef)
   return true
 end
 
-target{
-  target       = 'clean',
-  dependencies = cleanTargets,
-  command      = cleanAllTargets
-}
+createNewTarget('clean', 'cleanTargets', cleanAllTargets)
 
 function nameClobberTarget(theTarget)
   return 'clobber-'..theTarget
 end
-
-tInsert(clobberTargets, nameClobberTarget('buildDir'))
-tInsert(clobberTargets, nameClobberTarget('installDir'))
 
 function clobberAllTargets(cDef)
   runTarget('clean')
@@ -546,19 +615,19 @@ function clobberAllTargets(cDef)
   return true
 end
 
-target{
-  target       = 'clobber',
-  dependencies = clobberTargets,
-  command      = clobberAllTargets
-}
+createNewTarget('clobber', 'clobberTargets', clobberAllTargets)
 
-target{'doc',     docTargets}
-target{'build',   buildTargets}
-target{'headers', headerTargets}
-target{'install', installTargets}
-target{'diff',    diffTargets}
-target{'tests',   testTargets}
-target{'default', buildTargets}
+tInsert(clobberTargets, nameClobberTarget('buildDir'))
+tInsert(clobberTargets, nameClobberTarget('installDir'))
+
+createNewTarget('doc',     'docTargets')
+createNewTarget('bib',     'bibTargets')
+createNewTarget('build',   'buildTargets')
+createNewTarget('headers', 'headerTargets')
+createNewTarget('install', 'installTargets')
+createNewTarget('diff',    'diffTargets')
+createNewTarget('tests',   'testTargets')
+createNewTarget('default', 'buildTargets')
 
 parseArguments()
 
