@@ -16,6 +16,7 @@ contextDoc = hMerge(contextDefaults, lms.contextDoc, contextDoc)
 function createNewDocTarget(targetName, targetVarName, targetCommand)
   createNewTarget('doc-'..targetName, 'doc'..targetVarName, targetCommand)
   createNewTarget('bib-'..targetName, 'bib'..targetVarName, targetCommand)
+  createNewTarget('pub-'..targetName, 'pub'..targetVarName, targetCommand)
 end
 
 local function compileDocument(ctxDef)
@@ -34,6 +35,23 @@ local function gatherBibReferences(ctxDef)
   if type(ctxDef['docDir']) == 'nil' then return end
 
   runCmdIn('diSimp bib', ctxDef['docDir'])
+  return true
+end
+
+local function publishDocument(ctxDef)
+  lmsMessage('Publishing document using pdf2htmlEX')
+  if type(ctxDef['releaseOpts']) == 'nil' then
+    ctxDef['releaseOpts'] =
+      '--zoom 1.3 --embed cfijo --bg-format svg --split-pages 1 '
+  end
+  local pageDoc = ctxDef.mainDoc:gsub('%.tex', '-%%d.page')
+  local pdfDoc  = ctxDef.mainDoc:gsub('%.tex$', '.pdf')
+  local pubCmd  = 
+    'pdf2htmlEX ' .. ctxDef['releaseOpts'] ..
+    ' --dest-dir ' .. ctxDef['releaseDir'] ..
+    ' --page-filename ' .. pageDoc ..
+    ' ' .. pdfDoc
+  runCmdIn(pubCmd, ctxDef['docDir'])
   return true
 end
 
@@ -59,7 +77,7 @@ function contextDoc.targets(ctxDef)
   findDocuments(ctxDef)
 
   ctxDef.dependencies = { }
-  tInsert(ctxDef.docFiles, 1, ctxDef.mainDoc)
+  tInsert(ctxDef.docFiles, 1, makePath{ '.', ctxDef.docDir, ctxDef.mainDoc})
   for i, aDocFile in ipairs(ctxDef.docFiles) do
     local docPath = aDocFile
     if not docPath:find('^%.') then
@@ -85,6 +103,32 @@ function contextDoc.targets(ctxDef)
   target(hMerge(ctxDef, {
     target  = bibTarget,
     command = gatherBibReferences
+  }))
+
+  if type(ctxDef['releaseType']) == 'nil' then
+    ctxDef['releaseType'] = 'workingDrafts'
+  end
+  if type(ctxDef['releaseDir']) == 'nil' then
+    print('WARNING: No document publishing release directory specified (using ".")')
+  end
+  if type(ctxDef['releaseName']) == 'nil' then
+    ctxDef['releaseName'] = ctxDef.mainDoc:gsub('%.tex','')
+  end
+  ctxDef['releaseDir'] = makePath{
+    ctxDef['releaseDir'],
+    ctxDef['releaseType'],
+    os.date('%Y'),
+    os.date('%m'),
+    ctxDef['releaseName']
+  }
+  ensurePathExists(ctxDef['releaseDir'])
+  local pubMainDoc = ctxDef.mainDoc:gsub('%.tex$', '.html')
+  local pubTarget = makePath{ ctxDef.releaseDir, pubMainDoc }
+  tInsert(_G['pub'..ctxDef['globalTargetVar']], pubTarget)
+  target(hMerge(ctxDef, {
+    target       = pubTarget,
+    dependencies = { docTarget, ctxDef['releaseDir'] },
+    command      = publishDocument
   }))
 
   tInsert(clobberTargets, nameClobberTarget(docTarget))
