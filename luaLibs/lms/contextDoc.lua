@@ -38,6 +38,25 @@ local function gatherBibReferences(ctxDef)
   return true
 end
 
+local function copyAbstract(ctxDef)
+  local inFile, inErr  = io.open('Abstract.md', 'r')
+  if inErr then lmsError('Could not open the file [Abstract.md]') end
+  inFile:read('L')
+
+  local outFile, outErr = io.open(ctxDef.abstractPath, 'w')
+  if outErr then lmsError('Could not open the file ['..ctxDef.abstractPath..']') end
+  outFile:write("---\nlayout: paper\n")
+
+  for aLine in inFile:lines('L') do
+    outFile:write(aLine)
+  end
+
+  inFile:close()
+  outFile:close()
+
+  return true
+end
+
 local function publishDocument(ctxDef)
   lmsMessage('Publishing document using pdf2htmlEX')
   if type(ctxDef['releaseOpts']) == 'nil' then
@@ -53,6 +72,64 @@ local function publishDocument(ctxDef)
     ' ' .. pdfDoc
   runCmdIn(pubCmd, ctxDef['docDir'])
   return true
+end
+
+local function setupDocumentPublish(ctxDef)
+  local absDoc    = ctxDef.mainDoc:gsub('%.tex', '.md')
+  local absDocInd = ctxDef.mainDoc:sub(1,2)
+  ctxDef['abstractDir'] = makePath{
+    ctxDef.releaseDir,
+    'papers',
+    absDocInd,
+  }
+  ensurePathExists(ctxDef['abstractDir'])
+  ctxDef['abstractPath'] = makePath{ ctxDef.abstractDir, absDoc }
+  local absTarget = ctxDef.abstractPath
+
+  tInsert(_G['pub'..ctxDef['globalTargetVar']], absTarget)
+  target(hMerge(ctxDef, {
+    target       = absTarget,
+    dependencies = { 
+      'Abstract.md',
+      ctxDef.abstractDir
+    },
+    command      = copyAbstract
+  }))
+
+  if type(ctxDef['releaseType']) == 'nil' then
+    ctxDef['releaseType'] = 'workingDrafts'
+  end
+  if type(ctxDef['releaseDir']) == 'nil' then
+    print('WARNING: No document publishing release directory specified (using ".")')
+  end
+  if type(ctxDef['releaseName']) == 'nil' then
+    ctxDef['releaseName'] = ctxDef.mainDoc:gsub('%.tex','')
+  end
+  ctxDef['releaseDir'] = makePath{
+    ctxDef['releaseDir'],
+    ctxDef['releaseType'],
+    os.date('%Y'),
+    os.date('%m'),
+    ctxDef['releaseName']
+  }
+  ensurePathExists(ctxDef['releaseDir'])
+
+  local pdfMainDoc = ctxDef.mainDoc:gsub('%.tex$', '.pdf')
+  local docTarget = makePath{ ctxDef.docDir, pdfMainDoc }
+  local pubMainDoc = ctxDef.mainDoc:gsub('%.tex$', '.html')
+  local pubTarget = makePath{ ctxDef.releaseDir, pubMainDoc }
+
+  tInsert(_G['pub'..ctxDef['globalTargetVar']], pubTarget)
+  target(hMerge(ctxDef, {
+    target       = pubTarget,
+    dependencies = { 
+      docTarget,
+      ctxDef.releaseDir,
+      'Abstract.md',
+      ctxDef.abstractDir
+    },
+    command      = publishDocument
+  }))
 end
 
 local function findDocuments(ctxDef)
@@ -105,31 +182,7 @@ function contextDoc.targets(ctxDef)
     command = gatherBibReferences
   }))
 
-  if type(ctxDef['releaseType']) == 'nil' then
-    ctxDef['releaseType'] = 'workingDrafts'
-  end
-  if type(ctxDef['releaseDir']) == 'nil' then
-    print('WARNING: No document publishing release directory specified (using ".")')
-  end
-  if type(ctxDef['releaseName']) == 'nil' then
-    ctxDef['releaseName'] = ctxDef.mainDoc:gsub('%.tex','')
-  end
-  ctxDef['releaseDir'] = makePath{
-    ctxDef['releaseDir'],
-    ctxDef['releaseType'],
-    os.date('%Y'),
-    os.date('%m'),
-    ctxDef['releaseName']
-  }
-  ensurePathExists(ctxDef['releaseDir'])
-  local pubMainDoc = ctxDef.mainDoc:gsub('%.tex$', '.html')
-  local pubTarget = makePath{ ctxDef.releaseDir, pubMainDoc }
-  tInsert(_G['pub'..ctxDef['globalTargetVar']], pubTarget)
-  target(hMerge(ctxDef, {
-    target       = pubTarget,
-    dependencies = { docTarget, ctxDef['releaseDir'] },
-    command      = publishDocument
-  }))
+  setupDocumentPublish(ctxDef)
 
   tInsert(clobberTargets, nameClobberTarget(docTarget))
   tInsert(clobberTargets,
