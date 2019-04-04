@@ -45,7 +45,11 @@ local function copyAbstract(ctxDef)
 
   local outFile, outErr = io.open(ctxDef.abstractPath, 'w')
   if outErr then lmsError('Could not open the file ['..ctxDef.abstractPath..']') end
-  outFile:write("---\nlayout: paper\n")
+  outFile:write("---\n")
+  outFile:write("layout: paperVersion\n")
+  outFile:write("year: "..os.date('%Y').."\n")
+  outFile:write("month: "..os.date('%m').."\n")
+
 
   for aLine in inFile:lines('L') do
     outFile:write(aLine)
@@ -71,33 +75,16 @@ local function publishDocument(ctxDef)
     ' --page-filename ' .. pageDoc ..
     ' ' .. pdfDoc
   runCmdIn(pubCmd, ctxDef['docDir'])
+  local cpCmd = 
+    'cp ' .. pdfDoc .. ' ' .. ctxDef.releaseDir
+  runCmdIn(cpCmd, ctxDef.docDir)
   return true
 end
 
 local function setupDocumentPublish(ctxDef)
-  local absDoc    = ctxDef.mainDoc:gsub('%.tex', '.md')
-  local absDocInd = ctxDef.mainDoc:sub(1,2)
-  ctxDef['abstractDir'] = makePath{
-    ctxDef.releaseDir,
-    'papers',
-    absDocInd,
-  }
-  ensurePathExists(ctxDef['abstractDir'])
-  ctxDef['abstractPath'] = makePath{ ctxDef.abstractDir, absDoc }
-  local absTarget = ctxDef.abstractPath
-
-  tInsert(_G['pub'..ctxDef['globalTargetVar']], absTarget)
-  target(hMerge(ctxDef, {
-    target       = absTarget,
-    dependencies = { 
-      'Abstract.md',
-      ctxDef.abstractDir
-    },
-    command      = copyAbstract
-  }))
 
   if type(ctxDef['releaseType']) == 'nil' then
-    ctxDef['releaseType'] = 'workingDrafts'
+    ctxDef['releaseType'] = 'workingDraft'
   end
   if type(ctxDef['releaseDir']) == 'nil' then
     print('WARNING: No document publishing release directory specified (using ".")')
@@ -130,6 +117,19 @@ local function setupDocumentPublish(ctxDef)
     },
     command      = publishDocument
   }))
+
+  local absTarget = ctxDef.releaseDir..'.md'
+  ctxDef['abstractPath'] = absTarget
+  tInsert(_G['pub'..ctxDef['globalTargetVar']], absTarget)
+  target(hMerge(ctxDef, {
+    target       = absTarget,
+    dependencies = { 
+      'Abstract.md',
+      ctxDef.releaseDir
+    },
+    command      = copyAbstract
+  }))
+
 end
 
 local function findDocuments(ctxDef)
