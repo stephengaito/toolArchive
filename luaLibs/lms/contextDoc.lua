@@ -106,6 +106,12 @@ local function setupDocumentPublish(ctxDef)
   local pubMainDoc = ctxDef.mainDoc:gsub('%.tex$', '.html')
   local pubTarget = makePath{ ctxDef.releaseDir, pubMainDoc }
 
+  ctxDef['globalTargetVar'] = ctxDef['globalTargetVar'] or 'Targets'
+  local pubVar = 'pub'..ctxDef['globalTargetVar']
+  if type(_G[pubVar]) == 'nil' then
+    createNewTarget('pub', 'pubTargets')
+  end
+
   tInsert(_G['pub'..ctxDef['globalTargetVar']], pubTarget)
   target(hMerge(ctxDef, {
     target       = pubTarget,
