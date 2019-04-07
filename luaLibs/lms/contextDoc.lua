@@ -65,7 +65,7 @@ local function publishDocument(ctxDef)
   lmsMessage('Publishing document using pdf2htmlEX')
   if type(ctxDef['releaseOpts']) == 'nil' then
     ctxDef['releaseOpts'] =
-      '--zoom 1.3 --embed cfijo --bg-format svg --split-pages 1 '
+      '--zoom 1.3 --embed cfij --bg-format svg --split-pages 1 '
   end
   local pageDoc = ctxDef.mainDoc:gsub('%.tex', '-%%d.page')
   local pdfDoc  = ctxDef.mainDoc:gsub('%.tex$', '.pdf')
