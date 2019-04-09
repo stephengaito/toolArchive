@@ -17,6 +17,8 @@ release = hMerge(releaseDefaults, lms.release, release)
 dirsToIgnore = '|archive|tmp|installDir|bin|'
 
 function findReleaseFiles(dir, filesIO)
+  testProbe = directorySeparator..'test'
+
   local dirList = { }
   for anEntry in lfs.dir(dir) do
     table.insert(dirList, anEntry)

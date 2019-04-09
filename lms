@@ -48,6 +48,7 @@ lms = lmsConfig
 clearScreen = lms.clearScreen or true
 verbose     = lms.verbose     or false
 veryVerbose = lms.veryVerbose or false
+recurse     = lms.recurse     or true
 
 function lmsError(aMessage)
   print('ERROR: '..aMessage)
@@ -389,6 +390,14 @@ addOption('-C', '--clear-screen', 'Clear screen', function()
   os.execute('reset')
 end)
 
+addOption('-r', '--no-recurse', 'Do not recurse into sub-directories', function()
+  recurse = false
+end)
+
+addOption('-R', '--recurse', 'Recurse into sub-directories', function()
+  recurse = true
+end)
+
 addOption('-v', '--verbose', 'Provide extra output', function()
   verbose = true
 end)
@@ -540,34 +549,51 @@ function recurseCurrentTarget(aDef)
     return
   end
 
+  tSort(aDef['subDirs'])
   for i, subDir in ipairs(aDef['subDirs']) do
     runCmdIn(aDef['recurseCmd'], subDir)
   end
 
   print("\n========================================================")
-  print('finished running ['..aDef['recurseCmd']..'] in all sub dirs')
+  print('finished running ['..aDef['recurseCmd']..']')
+  curDir = lfs.currentdir()
+  curDir = curDir:gsub('(.*[/\\])', '')
+  print('  in all sub dirs of ['..curDir..']')
   print("")
   return true
 end
 
 function recurseTargets(aDef)
+  if not recurse then return end
+
   local recurseDefaults = {
     ignoreDirs = { 'release', 'buildDir', 'bin', 'doc' }
   }
   aDef = hMerge(recurseDefaults, aDef)
   findSubDirs(aDef)
 
-  for aTarget, aTargetDef in pairs(targets) do
-    if aTargetDef then
-      if (#aTargetDef.dependencies < 1) and
-         type(aTargetDef.command) == 'nil' then
-        aTargetDef.command    = recurseCurrentTarget
-        aTargetDef.subDirs    = aDef['subDirs']
-        aTargetDef.recurseCmd = 'lms -c '..aTargetDef['target']
-        aTargetDef.mustBuild  = true
-      end
-    end
+  recurseTargets = { }
+  for i, aTarget in ipairs(targetsToRun) do
+    anRTargetName = aTarget..'-recurse'
+    anRTargetDef  = targets[anRTargetName] or { }
+
+    anRTargetDef.target = anRTargetName
+    anRTargetDef.dependencies =
+      anRTargetDef.dependencies or { }
+
+    anRTargetDef.command    = recurseCurrentTarget
+    anRTargetDef.subDirs    = aDef['subDirs']
+    anRTargetDef.recurseCmd = 'lms -c '..aTarget
+    anRTargetDef.mustBuild  = true
+
+    targets[anRTargetName] = anRTargetDef
+
+    tInsert(recurseTargets, anRTargetName)
   end
+
+  for i, aTarget in ipairs(recurseTargets) do
+    tInsert(targetsToRun, aTarget)
+  end  
 end
 
 -- Create the standard targets
