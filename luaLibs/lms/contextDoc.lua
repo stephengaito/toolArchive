@@ -61,15 +61,13 @@ end
 
 local function publishDocument(ctxDef)
   lmsMessage('Publishing document using pdf2htmlEX')
-  if type(ctxDef['releaseOpts']) == 'nil' then
-    ctxDef['releaseOpts'] =
+  ctxDef['releaseOpts'] = ctxDef['releaseOpts']  or 
       '--zoom 1.3 --embed cfij --bg-format svg --split-pages 1 '
-  end
   local pageDoc = ctxDef.mainDoc:gsub('%.tex', '-%%d.page')
   local pdfDoc  = ctxDef.mainDoc:gsub('%.tex$', '.pdf')
   local pubCmd  = 
     'pdf2htmlEX ' .. ctxDef['releaseOpts'] ..
-    ' --dest-dir ' .. ctxDef['releaseDir'] ..
+    ' --dest-dir ' .. makePath { ctxDef['releaseDir'], 'docHtml' } ..
     ' --page-filename ' .. pageDoc ..
     ' ' .. pdfDoc
   runCmdIn(pubCmd, ctxDef['docDir'])
@@ -81,21 +79,17 @@ end
 
 local function setupDocumentPublish(ctxDef)
 
-  if type(ctxDef['releaseType']) == 'nil' then
-    ctxDef['releaseType'] = 'workingDraft'
-  end
+  ctxDef['releaseType'] = ctxDef['releaseType'] or 'workingDraft'
   if type(ctxDef['releaseDir']) == 'nil' then
     print('WARNING: No document publishing release directory specified (using ".")')
   end
-  if type(ctxDef['releaseName']) == 'nil' then
-    ctxDef['releaseName'] = ctxDef.mainDoc:gsub('%.tex','')
-  end
+  ctxDef['releasePath'] = ctxDef['releasePath'] or dirPrefix
   ctxDef['releaseDir'] = makePath{
     ctxDef['releaseDir'],
     ctxDef['releaseType'],
     os.date('%Y'),
     os.date('%m'),
-    ctxDef['releaseName']
+    ctxDef['releasePath']
   }
   ensurePathExists(ctxDef['releaseDir'])
 

@@ -45,11 +45,14 @@ lms = lmsConfig
 
 -- Now define some functions to help communicate with the user 
 
+currentDir = lfs.currentdir()
+currentDir = currentDir:gsub('(.*[/\\])', '')
+
 clearScreen = lms.clearScreen or true
 verbose     = lms.verbose     or false
 veryVerbose = lms.veryVerbose or false
 recurse     = lms.recurse     or true
-dirPrefix   = lms.dirPrefix   or ''
+dirPrefix   = lms.dirPrefix   or currentDir
 
 function lmsError(aMessage)
   print('ERROR: '..aMessage)
@@ -108,12 +111,10 @@ alreadyRun = {}
 
 function runCmdIn(cmd, subDir)
   subDirPath = subDir
-  if 0 < dirPrefix:len() then
-    cmd = cmd .. '/' .. subDir
-    subDirPath = dirPrefix .. '/' .. subDir
-  else
-    cmd = cmd .. ' -d=' .. subDir
+  if cmd:find('^lms') then
+    cmd = makePath { cmd, subDir }
   end
+  subDirPath = makePath { dirPrefix, subDir }
   local curDir = lfs.currentdir()
   print('\n========================================================')
   print('working in ['..subDirPath..']')
@@ -620,10 +621,7 @@ function recurseTargets(aDef)
 
     anRTargetDef.command    = recurseCurrentTarget
     anRTargetDef.subDirs    = aDef['subDirs']
-    recurseCmd              = 'lms -c ' .. aTarget
-    if 0 < dirPrefix:len() then
-      recurseCmd = recurseCmd .. ' -d=' .. dirPrefix
-    end
+    recurseCmd              = 'lms -c ' .. aTarget .. ' -d=' .. dirPrefix
     anRTargetDef.recurseCmd = recurseCmd
     anRTargetDef.mustBuild  = true
 
