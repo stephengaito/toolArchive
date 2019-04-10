@@ -49,6 +49,7 @@ clearScreen = lms.clearScreen or true
 verbose     = lms.verbose     or false
 veryVerbose = lms.veryVerbose or false
 recurse     = lms.recurse     or true
+dirPrefix   = lms.dirPrefix   or ''
 
 function lmsError(aMessage)
   print('ERROR: '..aMessage)
@@ -106,9 +107,16 @@ targetList = {}
 alreadyRun = {}
 
 function runCmdIn(cmd, subDir)
+  subDirPath = subDir
+  if 0 < dirPrefix:len() then
+    cmd = cmd .. '/' .. subDir
+    subDirPath = dirPrefix .. '/' .. subDir
+  else
+    cmd = cmd .. ' -d=' .. subDir
+  end
   local curDir = lfs.currentdir()
   print('\n========================================================')
-  print('working in ['..subDir..']')
+  print('working in ['..subDirPath..']')
   print('running    ['..cmd..']')
   lfs.chdir(subDir)
   if not os.execute(cmd) then
@@ -381,6 +389,12 @@ addOption('-h', '--help', 'Provide this list of options', function()
   os.exit(0)
 end)
 
+addOption('-d', '--directory-prefix', 'The current directory prefix',
+  function(key, value)
+    dirPrefix = value
+  end
+)
+
 addOption('-c', '--no-clear-screen', 'Do not clear screen', function()
   clearScreen = false
 end)
@@ -556,9 +570,9 @@ function recurseCurrentTarget(aDef)
 
   print("\n========================================================")
   print('finished running ['..aDef['recurseCmd']..']')
-  curDir = lfs.currentdir()
-  curDir = curDir:gsub('(.*[/\\])', '')
-  print('  in all sub dirs of ['..curDir..']')
+--  curDir = lfs.currentdir()
+--  curDir = curDir:gsub('(.*[/\\])', '')
+  print('  in all sub dirs of ['..dirPrefix..']')
   print("")
   return true
 end
@@ -583,7 +597,11 @@ function recurseTargets(aDef)
 
     anRTargetDef.command    = recurseCurrentTarget
     anRTargetDef.subDirs    = aDef['subDirs']
-    anRTargetDef.recurseCmd = 'lms -c '..aTarget
+    recurseCmd              = 'lms -c ' .. aTarget
+    if 0 < dirPrefix:len() then
+      recurseCmd = recurseCmd .. ' -d=' .. dirPrefix
+    end
+    anRTargetDef.recurseCmd = recurseCmd
     anRTargetDef.mustBuild  = true
 
     targets[anRTargetName] = anRTargetDef
