@@ -23,11 +23,7 @@ function cTests.targets(defaultDef, cDef)
 
   cDef = hMerge(defaultDef, cDef or { })
 
-  cDef.dependencies = { }
-  tInsert(cDef.docFiles, 1, cDef.mainDoc)
-  for i, aDocFile in ipairs(cDef.docFiles) do
-    tInsert(cDef.dependencies, makePath{ cDef.docDir, aDocFile })
-  end
+  cDef.dependencies = cDef.dependencies or { }
 
   local mainCFile = (cDef.mainDoc):gsub('%.tex', '.c')
   local mainCFileIndex = -1
@@ -39,6 +35,7 @@ function cTests.targets(defaultDef, cDef)
   for i, aTestExec in ipairs(cDef.testExecs) do
   
     local srcTarget = makePath{ cDef.buildDir, aTestExec..'.c' }
+    tInsert(codeTargets, srcTarget)
     tInsert(buildTargets, srcTarget)
     target(hMerge(cDef, {
       target  = srcTarget,
@@ -50,7 +47,12 @@ function cTests.targets(defaultDef, cDef)
     cDef.srcFiles = aAppend(cDef.cHeaderFiles, cDef.cCodeFiles)
     tInsert(cDependencies, srcTarget)
     for j, aSrcFile in ipairs(cDef.srcFiles) do
-      tInsert(cDependencies, makePath{ cDef.buildDir, aSrcFile })
+      local srcTarget = makePath{ cDef.buildDir, aSrcFile }
+      tInsert(codeTargets, srcTarget)
+      target(hMerge(cDef, {
+        target = srcTarget
+      }))
+      tInsert(cDependencies, srcTarget)
     end
     local pDef = hMerge(c, cDef)
     tInsert(pDef.cOpts, tConcat({

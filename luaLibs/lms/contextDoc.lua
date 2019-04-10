@@ -6,9 +6,7 @@
 contextDoc     = contextDoc     or { }
 lms.contextDoc = lms.contextDoc or { }
 
-local contextDefaults = {
-  findRegexp = ".*\\.tex\\|.*Bib\\.lua",
-  ignoreDirs = { 'releases', 'buildDir', 'bin' },
+local contextDefaults = { 
 }
 
 contextDoc = hMerge(contextDefaults, lms.contextDoc, contextDoc)
@@ -136,21 +134,6 @@ local function setupDocumentPublish(ctxDef)
     command      = copyAbstract
   }))
 
-end
-
-local function findDocuments(ctxDef)
-  if type(ctxDef['docFiles']) ~= 'nil' then return end
-  local docFiles = { }
-  for i, aDir in ipairs(ctxDef['subDirs']) do
-    local findCmd  = 'find '..aDir..' -iregex "'..ctxDef['findRegexp']..'"'
-    lmsMessageVery('Dynamically finding documents using ['..findCmd..']')
-    local texFileList = io.popen(findCmd)
-    for docTexFilePath in texFileList:lines('*l') do
-      docTexFilePath = './'..docTexFilePath
-      table.insert(docFiles, docTexFilePath)
-    end
-  end
-  ctxDef.docFiles = docFiles
 end
 
 function contextDoc.targets(ctxDef)

@@ -14,7 +14,11 @@ joylol = hMerge(lms.joylol, joylol)
 
 function joylol.targets(defaultDef, jDef)
 
+  print('joylol.targets')
+
   jDef = hMerge(defaultDef, jDef or { })
+
+  print(prettyPrint(jDef))
 
 --  local buildJoylol = makePath{jDef.buildDir, 'joylol'}
 --  ensurePathExists(buidlJoylol)
@@ -109,6 +113,7 @@ function joylol.targets(defaultDef, jDef)
         jDef.buildDir,
         anInclude
       }
+      tInsert(codeTargets, anIncludeDep)
       local installPath = makePath{
         getEnv('HOME'),
         '.joylol',
@@ -124,7 +129,6 @@ function joylol.targets(defaultDef, jDef)
         ensurePathExists(parentPath)
         tInsert(includeDeps, parentPath)
       end
-      tInsert(headerTargets, installTarget)
       tInsert(installTargets, installTarget)
       target(hMerge(jDef, {
         target = installTarget,

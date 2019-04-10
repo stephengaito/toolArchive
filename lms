@@ -527,6 +527,27 @@ function aAppend(...)
   return newArray
 end
 
+-- find documents
+
+function findDocuments(aDef)
+  if type(aDef['docFiles']) ~= 'nil' then return end
+
+  aDef['findRegexp'] = aDef['findRegexp'] or ".*\\.tex\\|.*Bib\\.lua"
+  aDef['subDirs']    = aDef['subDirs']    or aDef['docDir']
+
+  local docFiles = { }
+  for i, aDir in ipairs(aDef['subDirs']) do
+    local findCmd  = 'find '..aDir..' -iregex "'..aDef['findRegexp']..'"'
+    lmsMessageVery('Dynamically finding documents using ['..findCmd..']')
+    local texFileList = io.popen(findCmd)
+    for docTexFilePath in texFileList:lines('*l') do
+      docTexFilePath = './'..docTexFilePath
+      table.insert(docFiles, docTexFilePath)
+    end
+  end
+  aDef.docFiles = docFiles
+end
+
 -- Deal with sub-directory recursion
 
 function findSubDirs(aDef)
@@ -536,6 +557,8 @@ function findSubDirs(aDef)
     end
     return
   end
+
+  aDef['ignoreDirs'] = aDef['ignoreDirs'] or { 'releases', 'buildDir', 'bin' }
 
   local subDirs = { }
   local ignoreDirs = { }
@@ -666,8 +689,8 @@ tInsert(clobberTargets, nameClobberTarget('installDir'))
 
 createNewTarget('doc',     'docTargets')
 createNewTarget('bib',     'bibTargets')
+createNewTarget('code',    'codeTargets')
 createNewTarget('build',   'buildTargets')
-createNewTarget('headers', 'headerTargets')
 createNewTarget('install', 'installTargets')
 createNewTarget('diff',    'diffTargets')
 createNewTarget('tests',   'testTargets')

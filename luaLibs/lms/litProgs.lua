@@ -42,13 +42,20 @@ function litProgs.targets(defaultDef, lpDef)
 
   lpDef = hMerge(defaultDef, lpDef or { })
 
+  findSubDirs(lpDef)
+  findDocuments(lpDef)
+
   lpDef.compileDocument = compileDocument
   lpDef.compileLitProg  = compileLitProg
   
   lpDef.dependencies = { }
   tInsert(lpDef.docFiles, 1, lpDef.mainDoc)
   for i, aDocFile in ipairs(lpDef.docFiles) do
-    tInsert(lpDef.dependencies, makePath{ lpDef.docDir, aDocFile })
+    local docPath = aDocFile
+    if not docPath:find('^%.') then
+      docPath = makePath{ lpDef.docDir, docPath }
+    end
+    tInsert(lpDef.dependencies, docPath)
   end
   
   lpDef.buildDir = lpDef.buildDir or 'buildDir'
