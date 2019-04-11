@@ -173,6 +173,7 @@ function target(tDef)
     targets[tDef.target] = tDef
     tInsert(targetList, tDef.target)
   end
+  tDef.recurse = tDef.recurse or true
   return tDef.target
 end
 
@@ -551,6 +552,12 @@ end
 
 -- Deal with sub-directory recursion
 
+function doNotRecurseTarget(aTarget)
+  if type(targets[aTarget]) ~= 'nil' then
+    targets[aTarget].recurse = false
+  end
+end
+
 function findSubDirs(aDef)
   if type(aDef['subDirs']) ~= 'nil' then
     if type(aDef['subDirs']) ~= 'table' then
@@ -612,22 +619,24 @@ function recurseTargets(aDef)
 
   recurseTargets = { }
   for i, aTarget in ipairs(targetsToRun) do
-    anRTargetName = aTarget..'-recurse'
-    anRTargetDef  = targets[anRTargetName] or { }
+    if targets[aTarget].recurse then
+      anRTargetName = aTarget..'-recurse'
+      anRTargetDef  = targets[anRTargetName] or { }
 
-    anRTargetDef.target = anRTargetName
-    anRTargetDef.dependencies =
-      anRTargetDef.dependencies or { }
+      anRTargetDef.target = anRTargetName
+      anRTargetDef.dependencies =
+        anRTargetDef.dependencies or { }
 
-    anRTargetDef.command    = recurseCurrentTarget
-    anRTargetDef.subDirs    = aDef['subDirs']
-    recurseCmd              = 'lms -c ' .. aTarget .. ' -d=' .. dirPrefix
-    anRTargetDef.recurseCmd = recurseCmd
-    anRTargetDef.mustBuild  = true
+      anRTargetDef.command    = recurseCurrentTarget
+      anRTargetDef.subDirs    = aDef['subDirs']
+      recurseCmd              = 'lms -c ' .. aTarget .. ' -d=' .. dirPrefix
+      anRTargetDef.recurseCmd = recurseCmd
+      anRTargetDef.mustBuild  = true
 
-    targets[anRTargetName] = anRTargetDef
+      targets[anRTargetName] = anRTargetDef
 
-    tInsert(recurseTargets, anRTargetName)
+      tInsert(recurseTargets, anRTargetName)
+    end
   end
 
   for i, aTarget in ipairs(recurseTargets) do

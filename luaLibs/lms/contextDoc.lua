@@ -13,8 +13,11 @@ contextDoc = hMerge(contextDefaults, lms.contextDoc, contextDoc)
 
 function createNewDocTarget(targetName, targetVarName, targetCommand)
   createNewTarget('doc-'..targetName, 'doc'..targetVarName, targetCommand)
+  doNotRecurseTarget('doc-'..targetName)
   createNewTarget('bib-'..targetName, 'bib'..targetVarName, targetCommand)
+  doNotRecurseTarget('bib-'..targetName)
   createNewTarget('pub-'..targetName, 'pub'..targetVarName, targetCommand)
+  doNotRecurseTarget('pub-'..targetName)
 end
 
 local function compileDocument(ctxDef)
