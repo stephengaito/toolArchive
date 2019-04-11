@@ -14,11 +14,7 @@ joylol = hMerge(lms.joylol, joylol)
 
 function joylol.targets(defaultDef, jDef)
 
-  print('joylol.targets')
-
   jDef = hMerge(defaultDef, jDef or { })
-
-  print(prettyPrint(jDef))
 
 --  local buildJoylol = makePath{jDef.buildDir, 'joylol'}
 --  ensurePathExists(buidlJoylol)
