@@ -82,6 +82,7 @@ local function setupDocumentPublish(ctxDef)
   ctxDef['releaseType'] = ctxDef['releaseType'] or 'workingDraft'
   if type(ctxDef['releaseDir']) == 'nil' then
     print('WARNING: No document publishing release directory specified (using ".")')
+    ctxDef['releaseDir'] = '.'
   end
   ctxDef['releasePath'] = ctxDef['releasePath'] or dirPrefix
   ctxDef['releaseDir'] = makePath{
@@ -148,9 +149,7 @@ function contextDoc.targets(ctxDef)
 
   local pdfMainDoc = ctxDef.mainDoc:gsub('%.tex$', '.pdf')
   local docTarget = makePath{ ctxDef.docDir, pdfMainDoc }
-  if type(ctxDef['globalTargetVar']) == 'nil' then 
-    ctxDef['globalTargetVar'] = 'Targets'
-  end
+  ctxDef['globalTargetVar'] = ctxDef['globalTargetVar'] or 'Targets'
   tInsert(_G['doc'..ctxDef['globalTargetVar']], docTarget)
   target(hMerge(ctxDef, {
     target  = docTarget,
