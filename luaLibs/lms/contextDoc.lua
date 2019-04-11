@@ -39,6 +39,33 @@ local function gatherBibReferences(ctxDef)
   return true
 end
 
+local function copyCodeFiles(ctxDef)
+  local inFile, inErr = io.open(ctxDef.buildFilePath, 'r')
+  if inErr then lmsError('Could not open the file ['..ctxDef.buildFilePath..']') end
+  local codeFile, codeErr = io.open(ctxDef.target, 'w')
+  if codeErr then lmsError('Could not open the file ['..ctxDef.target..']') end
+  local mdFilePath = ctxDef.target..'.md'
+  local mdFile, mdErr = io.open(mdFilePath, 'w')
+  if mdErr then lmsError('Could not open the file ['..mdFilePath..']') end
+  mdFile:write("---\n")
+  mdFile:write("layout: codeFile\n")
+  mdFile:write("---\n")
+  mdFile:write("```\n")
+
+  for aLine in inFile:lines('L') do
+    codeFile:write(aLine)
+    mdFile:write(aLine)
+  end
+
+  mdFile:write("\n```\n")
+
+  mdFile:close()
+  codeFile:close()
+  inFile:close()
+
+  return true
+end
+
 local function copyAbstract(ctxDef)
   local inFile, inErr  = io.open('Abstract.md', 'r')
   if inErr then lmsError('Could not open the file [Abstract.md]') end
@@ -67,21 +94,53 @@ local function publishDocument(ctxDef)
   ctxDef['releaseOpts'] = ctxDef['releaseOpts']  or 
       '--zoom 1.3 --embed cfij --bg-format svg --split-pages 1 '
   local pageDoc = ctxDef.mainDoc:gsub('%.tex', '-%%d.page')
+  local htmlDir = ctxDef.mainDoc:gsub('%.tex', '')
   local pdfDoc  = ctxDef.mainDoc:gsub('%.tex$', '.pdf')
   local pubCmd  = 
     'pdf2htmlEX ' .. ctxDef['releaseOpts'] ..
-    ' --dest-dir ' .. makePath { ctxDef['releaseDir'], 'docHtml' } ..
+    ' --dest-dir ' .. makePath { ctxDef['releaseDir'], 'doc', htmlDir } ..
     ' --page-filename ' .. pageDoc ..
     ' ' .. pdfDoc
   runCmdIn(pubCmd, ctxDef['docDir'])
   local cpCmd = 
-    'cp ' .. pdfDoc .. ' ' .. ctxDef.releaseDir
+    'cp ' .. pdfDoc .. ' ' .. makePath{ ctxDef.releaseDir, 'doc' }
   runCmdIn(cpCmd, ctxDef.docDir)
   return true
 end
 
+local function setupCodeFilePublish(ctxDef)
+  if lfs.attributes('buildDir', 'mode') == 'directory' then
+    local findCmd  = 'find buildDir'
+    lmsMessageVery('Dynamically finding code files using ['..findCmd..']')
+    local texFileList = io.popen(findCmd)
+    for buildFilePath in texFileList:lines('*l') do
+      local codeFileTarget = buildFilePath:gsub('buildDir', 'code')
+      codeFileTarget = makePath{ 
+        ctxDef.releaseDir,
+        codeFileTarget
+      }
+      if lfs.attributes(buildFilePath, 'mode') == 'directory' then
+        ensurePathExists(codeFileTarget)
+      else
+        tInsert(_G['pub'..ctxDef['globalTargetVar']], codeFileTarget)
+        target(hMerge(ctxDef, {
+          target        = codeFileTarget,
+          buildFilePath = buildFilePath,
+          dependencies  = {
+            buildFilePath,
+            getBaseDirPath(codeFileTarget)
+          },
+          command       = copyCodeFiles
+        }))
+      end
+    end
+  end
+end
+
 local function setupDocumentPublish(ctxDef)
 
+  -- determine the release directory
+  --
   ctxDef['releaseType'] = ctxDef['releaseType'] or 'workingDraft'
   if type(ctxDef['releaseDir']) == 'nil' then
     print('WARNING: No document publishing release directory specified (using ".")')
@@ -97,6 +156,8 @@ local function setupDocumentPublish(ctxDef)
   }
   ensurePathExists(ctxDef['releaseDir'])
 
+  -- determine how to publish the document (using pdf2htmlEX)
+  --
   local pdfMainDoc = ctxDef.mainDoc:gsub('%.tex$', '.pdf')
   local docTarget = makePath{ ctxDef.docDir, pdfMainDoc }
   local pubMainDoc = ctxDef.mainDoc:gsub('%.tex$', '.html')
@@ -120,6 +181,12 @@ local function setupDocumentPublish(ctxDef)
     command      = publishDocument
   }))
 
+  -- determine code path dependencies
+  --
+  setupCodeFilePublish(ctxDef)
+
+  -- determine how to publish the abstract
+  --
   local absTarget = ctxDef.releaseDir..'.md'
   ctxDef['abstractPath'] = absTarget
   tInsert(_G['pub'..ctxDef['globalTargetVar']], absTarget)
@@ -180,24 +247,3 @@ function contextDoc.targets(ctxDef)
 
 end
 
-function contextDoc.multiDocument(mainDoc)
-  local docFiles = { }
-  local texFileList = io.popen('find -name "*.tex"')
-  for docTexFilePath in texFileList:lines('*l') do
-    if not docTexFilePath:find('releases') and
-        not docTexFilePath:find('buildDir') and
-        not docTexFilePath:find('bin')      then
-      if docTexFilePath:match('^%.%/doc%/') then
-        docTexFilePath = docTexFilePath:gsub('^%.%/doc%/','')
-      else
-        docTexFilePath = '.'..docTexFilePath
-      end
-      table.insert(docFiles, docTexFilePath)
-    end
-  end
-  contextDoc.targets{
-    mainDoc  = mainDoc,
-    docFiles = docFiles,
-    docDir   = 'doc'
-  }
-end

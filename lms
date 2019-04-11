@@ -18,6 +18,12 @@ function makePath(pathTable)
   return tConcat(pathTable, directorySeparator)
 end
 
+function getBaseDirPath(aPath)
+  basePath = aPath:gsub('[^/\\]*$', '')
+  basePath = basePath:gsub('[/\\]$', '')
+  return basePath
+end
+
 package.path = tConcat({
   makePath{'.', '?'},
   makePath{'.', 'lib', '?'},
@@ -629,7 +635,10 @@ function recurseTargets(aDef)
 
       anRTargetDef.command    = recurseCurrentTarget
       anRTargetDef.subDirs    = aDef['subDirs']
-      recurseCmd              = 'lms -c ' .. aTarget .. ' -d=' .. dirPrefix
+      local switches          = ''
+      if verbose then switches = switches .. ' -v ' end
+      if veryVerbose then switches = switches .. ' -vv ' end
+      recurseCmd              = 'lms -c ' .. switches .. aTarget .. ' -d=' .. dirPrefix
       anRTargetDef.recurseCmd = recurseCmd
       anRTargetDef.mustBuild  = true
 
