@@ -47,17 +47,27 @@ local function copyCodeFiles(ctxDef)
   local mdFilePath = ctxDef.target..'.md'
   local mdFile, mdErr = io.open(mdFilePath, 'w')
   if mdErr then lmsError('Could not open the file ['..mdFilePath..']') end
+  languageType = 'lua'
+  local filePath = ctxDef.buildFilePath
+  if     filePath:match('%.c')    then languageType = 'c'
+  elseif filePath:match('%.h')    then languageType = 'c'
+  elseif filePath:match('%.joy')  then languageType = 'racket'
+  elseif filePath:match('%.lua')  then languageType = 'lua'
+  elseif filePath:match('%.mkiv') then languageType = 'tex'
+  else                                 languageType = 'lua'
+  end
+  
   mdFile:write("---\n")
   mdFile:write("layout: codeFile\n")
   mdFile:write("---\n")
-  mdFile:write("```\n")
+  mdFile:write("\n{% highlight "..languageType.." linenos %}\n")
 
   for aLine in inFile:lines('L') do
     codeFile:write(aLine)
     mdFile:write(aLine)
   end
 
-  mdFile:write("\n```\n")
+  mdFile:write("\n{% endhighlight %}\n\n")
 
   mdFile:close()
   codeFile:close()
@@ -67,7 +77,7 @@ local function copyCodeFiles(ctxDef)
 end
 
 local function copyAbstract(ctxDef)
-  local inFile, inErr  = io.open('Abstract.md', 'r')
+  local inFile, inErr  = io.open(ctxDef.abstract, 'r')
   if inErr then lmsError('Could not open the file [Abstract.md]') end
   inFile:read('L')
 
@@ -114,25 +124,30 @@ local function setupCodeFilePublish(ctxDef)
     lmsMessageVery('Dynamically finding code files using ['..findCmd..']')
     local texFileList = io.popen(findCmd)
     for buildFilePath in texFileList:lines('*l') do
-      local codeFileTarget = buildFilePath:gsub('buildDir', 'code')
-      codeFileTarget = makePath{ 
-        ctxDef.releaseDir,
-        codeFileTarget
-      }
-      if lfs.attributes(buildFilePath, 'mode') == 'directory' then
-        ensurePathExists(codeFileTarget)
-      else
-        tInsert(_G['pub'..ctxDef['globalTargetVar']], codeFileTarget)
-        target(hMerge(ctxDef, {
-          target        = codeFileTarget,
-          buildFilePath = buildFilePath,
-          dependencies  = {
-            buildFilePath,
-            getBaseDirPath(codeFileTarget)
-          },
-          command       = copyCodeFiles
-        }))
+      local fileTypePOpen = io.popen('file '..buildFilePath, 'r')
+      local fileType = fileTypePOpen:read('*all')
+      if fileType:match('text') or fileType:match('directory') then
+        local codeFileTarget = buildFilePath:gsub('buildDir', 'code')
+        codeFileTarget = makePath{ 
+          ctxDef.releaseDir,
+          codeFileTarget
+        }
+        if lfs.attributes(buildFilePath, 'mode') == 'directory' then
+          ensurePathExists(codeFileTarget)
+        else
+          tInsert(_G['pub'..ctxDef['globalTargetVar']], codeFileTarget)
+          target(hMerge(ctxDef, {
+            target        = codeFileTarget,
+            buildFilePath = buildFilePath,
+            dependencies  = {
+              buildFilePath,
+              getBaseDirPath(codeFileTarget)
+            },
+            command       = copyCodeFiles
+          }))
+        end
       end
+      fileTypePOpen:close()
     end
   end
 end
@@ -187,13 +202,17 @@ local function setupDocumentPublish(ctxDef)
 
   -- determine how to publish the abstract
   --
-  local absTarget = ctxDef.releaseDir..'.md'
+  ctxDef['abstract'] = ctxDef['abstract'] or 'Abstract.md'
+  local absTarget = makePath {
+    ctxDef.releaseDir,
+    changeFileExtension(ctxDef.mainDoc, '.md')
+  }
   ctxDef['abstractPath'] = absTarget
   tInsert(_G['pub'..ctxDef['globalTargetVar']], absTarget)
   target(hMerge(ctxDef, {
     target       = absTarget,
     dependencies = { 
-      'Abstract.md',
+      ctxDef.abstract,
       ctxDef.releaseDir
     },
     command      = copyAbstract

@@ -24,6 +24,11 @@ function getBaseDirPath(aPath)
   return basePath
 end
 
+function changeFileExtension(aPath, newExt)
+  newPath = aPath:gsub('%.[^%.]+$', newExt)
+  return newPath
+end
+
 package.path = tConcat({
   makePath{'.', '?'},
   makePath{'.', 'lib', '?'},
@@ -706,6 +711,7 @@ tInsert(clobberTargets, nameClobberTarget('installDir'))
 createNewTarget('doc',     'docTargets')
 createNewTarget('bib',     'bibTargets')
 createNewTarget('code',    'codeTargets')
+createNewTarget('headers', 'headerTargets')
 createNewTarget('build',   'buildTargets')
 createNewTarget('install', 'installTargets')
 createNewTarget('diff',    'diffTargets')
