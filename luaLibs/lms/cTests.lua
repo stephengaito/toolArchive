@@ -74,7 +74,8 @@ function cTests.targets(defaultDef, cDef)
     })
     if cDef.testLibDirs then
       for j, aLibDir in ipairs(cDef.testLibDirs) do
-        aLibDir = aLibDir:gsub('<HOME>', getEnv('HOME'))
+        -- aLibDir = aLibDir:gsub('<HOME>', getEnv('HOME')) -- OLD
+        aLibDir = replaceEnvironmentVarsInPath(aLibDir)
         tInsert(pDef.libs, tConcat({
           '-L',
           aLibDir

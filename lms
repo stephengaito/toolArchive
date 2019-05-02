@@ -1,4 +1,4 @@
-#!/usr/bin/env lua
+#!/usr/bin/env texlua
 
 -- Start with some local convenience functions
 
@@ -13,6 +13,25 @@ lfs     = require 'lfs'
 -- be searched 
 
 directorySeparator = package.config:sub(1,1)
+
+function setEnvironment(envKey, envValue)
+  os.setenv(envKey, envValue)
+end
+
+function setEnvironmentDefault(envKey, envValue)
+  if type(os.getenv(envKey)) == 'nil' then
+    os.setenv(envKey, envValue)
+  end
+end
+
+function clearEnvironment(envKey)
+  os.setenv(envKey, nil)
+end
+
+function replaceEnvironmentVarsInPath( aPath )
+  aNewPath = aPath:gsub('<([^>]+)>', os.env)
+  return(aNewPath)
+end
 
 function makePath(pathTable)
   return tConcat(pathTable, directorySeparator)
