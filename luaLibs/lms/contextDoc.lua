@@ -62,9 +62,9 @@ local function copyCodeFiles(ctxDef)
   mdFile:write("---\n")
   mdFile:write("\n{% highlight "..languageType.." linenos %}\n")
 
-  for aLine in inFile:lines('L') do
-    codeFile:write(aLine)
-    mdFile:write(aLine)
+  for aLine in inFile:lines('l') do
+    codeFile:write(aLine..'\n')
+    mdFile:write(aLine..'\n')
   end
 
   mdFile:write("\n{% endhighlight %}\n\n")
@@ -89,8 +89,8 @@ local function copyAbstract(ctxDef)
   outFile:write("month: "..os.date('%m').."\n")
 
 
-  for aLine in inFile:lines('L') do
-    outFile:write(aLine)
+  for aLine in inFile:lines('l') do
+    outFile:write(aLine..'\n')
   end
 
   inFile:close()
