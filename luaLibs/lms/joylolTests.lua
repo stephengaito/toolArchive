@@ -20,6 +20,7 @@ joylolTests = hMerge(joylolTestsDefaults, lms.joylolTests, joylolTests)
 function joylolTests.targets(defaultDef, jtDef)
 
   jtDef = hMerge(defaultDef, jtDef or { })
+  jtDef.targets = 'joylolTests'
 
   jtDef.dependencies = { }
   tInsert(jtDef.docFiles, 1, jtDef.mainDoc)

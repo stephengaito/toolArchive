@@ -11,6 +11,7 @@ contextMod = hMerge(lms.contextMod, contextMod)
 function contextMod.targets(defaultDef, ctxModDef)
 
   ctxModDef = hMerge(defaultDef, ctxModDef or { })
+  ctxModDef.targets = 'contextMod'
 
   ctxModDef.moduleDir = ctxModDef.moduleDir or 'installDir'
   ctxModDef.moduleDir =

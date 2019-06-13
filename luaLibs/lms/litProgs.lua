@@ -41,6 +41,7 @@ end
 function litProgs.targets(defaultDef, lpDef)
 
   lpDef = hMerge(defaultDef, lpDef or { })
+  lpDef.targets = 'litProgs'
 
   findSubDirs(lpDef)
   findDocuments(lpDef)

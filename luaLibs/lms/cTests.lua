@@ -22,6 +22,7 @@ cTests = hMerge(cTestsDefaults, lms.cTests, cTests)
 function cTests.targets(defaultDef, cDef)
 
   cDef = hMerge(defaultDef, cDef or { })
+  cDef.targets = 'cTests'
 
   cDef.dependencies = cDef.dependencies or { }
 

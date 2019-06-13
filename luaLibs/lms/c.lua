@@ -125,6 +125,9 @@ end
 function c.targets(defaultDef, cDef)
 
   cDef = hMerge(defaultDef, cDef or { })
+  cDef.targets = 'c'
+
+--  print(prettyPrint(cDef))
 
   cDef.dependencies = { }
   tInsert(cDef.docFiles, 1, cDef.mainDoc)
@@ -141,10 +144,17 @@ function c.targets(defaultDef, cDef)
       }
       local includeDeps = { anIncludeDep }
       tInsert(headerTargets, anIncludeDep)
-      target(hMerge(cDef, {
+      test = hMerge(cDef, {
         target  = anIncludeDep,
-        command = cDef.compileLitProg
-      }))
+        command = cDef.compileDocument
+      })
+      print(prettyPrint(test))
+      target(test)
+--      target(hMerge(cDef, {
+--        target  = anIncludeDep,
+--        command = cDef.compileDocument
+--      }))
+      showTarget(anIncludeDep)
     end
   end
 

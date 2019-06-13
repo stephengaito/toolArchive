@@ -199,7 +199,10 @@ function target(tDef)
   if not tDef.target then 
     lmsError(debug.traceback('target method did not supply a target')) 
   end
-  if not targets[tDef.target] then -- first definition wins!
+  if targets[tDef.target] then -- first definition wins!
+    print('Sorry the target: ['..tDef.target..'] already exists -- ignored!')
+    showTarget(tDef.target)
+  else
     targets[tDef.target] = tDef
     tInsert(targetList, tDef.target)
   end

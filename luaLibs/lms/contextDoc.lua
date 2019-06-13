@@ -222,6 +222,7 @@ end
 
 function contextDoc.targets(ctxDef)
   ctxDef = hMerge(contextDoc, ctxDef)
+  ctxDef.targets = 'contextDoc'
 
   findSubDirs(ctxDef)
   findDocuments(ctxDef)
