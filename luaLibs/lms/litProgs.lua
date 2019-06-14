@@ -10,18 +10,6 @@ lms.litProgs = lms.litProgs or { }
 
 litProgs = hMerge(lms.litProgs, litProgs)
 
-local function compileDocument(lpDef)
-  local curDir = lfs.currentdir()
-  chDir(lpDef.docDir)
-  --
-  -- build the complete context document
-  --
-  local result = executeCmd('context '..lpDef.mainDoc)
-  --
-  chDir(curDir)
-  return result
-end
-
 local function compileLitProg(lpDef)
   local curDir = lfs.currentdir()
   chDir(lpDef.docDir)
@@ -38,70 +26,47 @@ local function compileLitProg(lpDef)
   return result
 end
 
-function litProgs.targets(defaultDef, lpDef)
-
-  lpDef = hMerge(defaultDef, lpDef or { })
-  lpDef.targets = 'litProgs'
-
-  findSubDirs(lpDef)
-  findDocuments(lpDef)
-
-  lpDef.compileDocument = compileDocument
-  lpDef.compileLitProg  = compileLitProg
-  
-  lpDef.dependencies = { }
-  tInsert(lpDef.docFiles, 1, lpDef.mainDoc)
-  for i, aDocFile in ipairs(lpDef.docFiles) do
-    local docPath = aDocFile
-    if not docPath:find('^%.') then
-      docPath = makePath{ lpDef.docDir, docPath }
-    end
-    tInsert(lpDef.dependencies, docPath)
-  end
-  
-  lpDef.buildDir = lpDef.buildDir or 'buildDir'
-  ensurePathExists(lpDef.buildDir)
-  tInsert(lpDef.dependencies, lpDef.buildDir)
-  
-  local srcTarget = makePath{ lpDef.buildDir, 'lmsfile' }
-  tInsert(buildTargets, srcTarget)
-  target(hMerge(lpDef, {
-    target  = srcTarget,
+local function installAndDiff(aDef, aFile)
+  local buildTarget = makePath{ aDef.buildDir, 'lmsfile' }
+  tInsert(buildTargets, buildTarget)
+  target(hMerge(aDef, {
+    target  = buildTarget,
     command = compileLitProg
   }))
       
-  local diffTarget   = 'diff-lmsfile'
-  local moduleTarget = 'lmsfile'
+  local diffTarget      = 'diff-'..aFile
+  local installedTarget = 'lmsfile'
   tInsert(diffTargets, diffTarget)
-  target(hMerge(lpDef, {
+  target(hMerge(aDef, {
     target       = diffTarget,
-    dependencies = { srcTarget },
-    command      = 'diff '..srcTarget..' '..moduleTarget
+    dependencies = { buildTarget },
+    command      = 'diff '..buildTarget..' '..installedTarget
   }))
 
-  tInsert(installTargets, moduleTarget)
-  target(hMerge(lpDef, {
-    target       = moduleTarget,
-    dependencies = { srcTarget },
-    command      = 'cp '..srcTarget..' '..moduleTarget
+  tInsert(installTargets, installedTarget)
+  target(hMerge(aDef, {
+    target       = installedTarget,
+    dependencies = { buildTarget },
+    command      = 'cp '..buildTarget..' '..installedTarget
   }))
   
-  tInsert(cleanTargets, nameCleanTarget(srcTarget))
+  tInsert(cleanTargets, nameCleanTarget(buildTarget))
+end
 
-  local pdfMainDoc = lpDef.mainDoc:gsub('%.tex$', '.pdf')
-  local docTarget = makePath{ lpDef.docDir, pdfMainDoc }
-  tInsert(docTargets, docTarget)
-  target(hMerge(lpDef, {
-    target  = docTarget,
-    command = compileDocument
-  }))
+function litProgs.targets(defaultDef, lpDef)
 
-  tInsert(clobberTargets, nameClobberTarget(docTarget))
+  lpDef = hMerge(defaultDef, lpDef or { })
+  lpDef.creator = 'litProgs-targets'
   
-  tInsert(cleanTargets, 
-    nameCleanTarget(docTarget:gsub('%.pdf', '.log')))
-  tInsert(cleanTargets, 
-    nameCleanTarget(docTarget:gsub('%.pdf$', '.tuc')))
+  findSubDirs(lpDef)
+  findDocuments(lpDef)
+
+  lpDef.compileLitProg = compileLitProg
+  lpDef.installAndDiff = installAndDiff
+  
+  lpDef.dependencies = lpDef.dependencies or { }
+
+  installAndDiff(lpDef, 'lmsfile')
     
   return lpDef
 end

@@ -22,39 +22,36 @@ cTests = hMerge(cTestsDefaults, lms.cTests, cTests)
 function cTests.targets(defaultDef, cDef)
 
   cDef = hMerge(defaultDef, cDef or { })
-  cDef.targets = 'cTests'
+  cDef.creator = 'cTests-targets'
 
+  print("cTests.targets>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+  print(prettyPrint(cDef))
+  print("cTests.targets<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
+  
   cDef.dependencies = cDef.dependencies or { }
 
-  local mainCFile = (cDef.mainDoc):gsub('%.tex', '.c')
-  local mainCFileIndex = -1
-  for i, aCFile in ipairs(cDef.cCodeFiles) do
-    if mainCFile == aCFile then mainCFileIndex = i end
-  end
-  if 0 <= mainCFileIndex then tRemove(cDef.cCodeFiles, mainCFileIndex) end
-
   for i, aTestExec in ipairs(cDef.testExecs) do
-  
-    local srcTarget = makePath{ cDef.buildDir, aTestExec..'.c' }
-    tInsert(codeTargets, srcTarget)
-    tInsert(buildTargets, srcTarget)
+
+    local cDependencies = { }
+
+    local testSrcTarget = makePath{ cDef.buildDir, aTestExec..'.c' }
+    tInsert(cDependencies, testSrcTarget)
+    aInsertOnce(codeTargets, testSrcTarget)
+    aInsertOnce(buildTargets, testSrcTarget)
     target(hMerge(cDef, {
-      target  = srcTarget,
-      command = litProgs.compileLitProg
+      target  = testSrcTarget,
+      command = cDef.compileLitProg
     }))
+    aInsertOnce(cleanTargets, nameCleanTarget(testSrcTarget))
     
     local testExecTarget = makePath{ cDef.buildDir, aTestExec }
-    local cDependencies = { }
-    cDef.srcFiles = aAppend(cDef.cHeaderFiles, cDef.cCodeFiles)
-    tInsert(cDependencies, srcTarget)
-    for j, aSrcFile in ipairs(cDef.srcFiles) do
-      local srcTarget = makePath{ cDef.buildDir, aSrcFile }
-      tInsert(codeTargets, srcTarget)
-      target(hMerge(cDef, {
-        target = srcTarget
-      }))
-      tInsert(cDependencies, srcTarget)
+    local mainCFile = (cDef.mainDoc):gsub('%.tex', '.c')
+    for j, aSrcFile in ipairs(cDef.cSrcFiles) do
+      if not aSrcFile:match(mainCFile) then
+        tInsert(cDependencies, makePath{ cDef.buildDir, aSrcFile })
+      end
     end
+
     local pDef = hMerge(c, cDef)
     tInsert(pDef.cOpts, tConcat({
       '-DCTESTS_STARTUP=\\"',
@@ -106,7 +103,6 @@ function cTests.targets(defaultDef, cDef)
       dependencies = { testExecTarget },
       command      = testExecTarget
     }))
-    tInsert(cleanTargets, nameCleanTarget(srcTarget))
   end
   
 end

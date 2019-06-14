@@ -189,7 +189,9 @@ function addDependency(aTarget, aDependency)
     }
     tInsert(targetList, aTarget)
   end
-  tInsert(targets[aTarget]['dependencies'], aDependency)
+  if not aHasValue(targets[aTarget]['dependencies'], aDependency) then
+    tInsert(targets[aTarget]['dependencies'], aDependency)
+  end
 end
 
 function target(tDef)
@@ -202,12 +204,19 @@ function target(tDef)
   if targets[tDef.target] then -- first definition wins!
     print('Sorry the target: ['..tDef.target..'] already exists -- ignored!')
     showTarget(tDef.target)
+    print("The NEW target is:")
+    print(prettyPrint(tDef))
+    print("=======================================")
   else
     targets[tDef.target] = tDef
     tInsert(targetList, tDef.target)
   end
   tDef.recurse = tDef.recurse or true
   return tDef.target
+end
+
+function getTargetFor(aTarget)
+  return targets[aTarget]
 end
 
 function needsToBuild(aTargetDef)
@@ -379,11 +388,16 @@ function ensurePathExists(aPath)
     ensurePathExists(parentPath)
     paths = { parentPath }
   end
-  return target({
-    dependencies = paths,
-    target       = aPath,
-    command      = createPath
-  })
+  pathTarget = getTargetFor(aPath)
+  if not pathTarget then
+    pathTarget = target({
+      dependencies = paths,
+      target       = aPath,
+      command      = createPath,
+      creator      = 'ensurePathExists'
+    })
+  end
+  return pathTarget
 end
 
 -- Now we create a helper tools to be able to deal with options 
@@ -562,6 +576,21 @@ function aAppend(...)
   return newArray
 end
 
+function aHasValue(anArray, aValue)
+    for index, value in ipairs(anArray) do
+        if value == aValue then
+            return true
+        end
+    end
+    return false
+end
+
+function aInsertOnce(anArray, aValue)
+  if not aHasValue(anArray, aValue) then
+    tInsert(anArray, aValue)
+  end
+end
+
 -- find documents
 
 function findDocuments(aDef)
@@ -687,7 +716,8 @@ function createNewTarget(targetName, targetVarName, targetCommand)
   target{
     target       = targetName,
     dependencies = _G[targetVarName],
-    command      = targetCommand
+    command      = targetCommand,
+    creator      = 'createNewTarget'
   }
 end
 

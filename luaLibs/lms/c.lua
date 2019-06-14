@@ -102,11 +102,13 @@ function c.program(cDef)
   collectCSrc(cDef)
   tInsert(cDef.cIncs, 1, '-I'..cDef.buildDir)
   for i, anOFile in ipairs(cDef.oFiles) do
-    target(hMerge(cDef, {
-      target = anOFile,
-      command = cCompile
-    }))
-    tInsert(cleanTargets, nameCleanTarget(anOFile))
+    if not getTargetFor(anOFile) then
+      target(hMerge(cDef, {
+        target = anOFile,
+        command = cCompile
+      }))
+      tInsert(cleanTargets, nameCleanTarget(anOFile))
+    end
   end
   target(hMerge(cDef, { 
     dependencies = cDef.oFiles,
@@ -122,73 +124,57 @@ function c.shared(cDef)
   c.program(cDef)
 end
 
+function c.makeSrcTarget(cDef, cDependencies, aSrcFile)
+  local aSrcPath = makePath {
+    cDef.buildDir,
+    aSrcFile
+  }
+  if aSrcFile:match('%.h$') then
+    tInsert(headerTargets, aSrcPath)
+  end
+  target(hMerge(cDef, {
+    target  = aSrcPath,
+    command = cDef.compileLitProg
+  }))
+
+  local aParentPath = getParentPath(aSrcPath)
+  ensurePathExists(aParentPath)
+  addDependency(makePath{cDef.docDir, cDef.mainDoc}, aParentPath)
+  addDependency(aSrcPath, aParentPath)
+
+  aInsertOnce(cDependencies, aSrcPath)
+end
+
 function c.targets(defaultDef, cDef)
 
   cDef = hMerge(defaultDef, cDef or { })
-  cDef.targets = 'c'
+  cDef.creator = 'c-targets'
 
---  print(prettyPrint(cDef))
+  cDef.dependencies = cDef.dependencies or { }
+  local cDependencies = { }
 
-  cDef.dependencies = { }
-  tInsert(cDef.docFiles, 1, cDef.mainDoc)
-  for i, aDocFile in ipairs(cDef.docFiles) do
-    tInsert(cDef.dependencies, makePath{ cDef.docDir, aDocFile })
+  cDef.cSrcFiles = aAppend(cDef.cHeaderFiles, cDef.cCodeFiles)
+  for i, aSrcFile in ipairs(cDef.cSrcFiles) do
+    c.makeSrcTarget(cDef, cDependencies, aSrcFile)
   end
-
-  for i, anInclude in ipairs(cDef.cHeaderFiles) do
-    if anInclude:match('%.h$') and
-      not anInclude:match('-private%.') then
-      local anIncludeDep = makePath {
-        cDef.buildDir,
-        anInclude
-      }
-      local includeDeps = { anIncludeDep }
-      tInsert(headerTargets, anIncludeDep)
-      test = hMerge(cDef, {
-        target  = anIncludeDep,
-        command = cDef.compileDocument
-      })
-      print(prettyPrint(test))
-      target(test)
---      target(hMerge(cDef, {
---        target  = anIncludeDep,
---        command = cDef.compileDocument
---      }))
-      showTarget(anIncludeDep)
-    end
-  end
-
+  
   for i, aProgram in ipairs(cDef.programs) do
   
     local srcTarget = makePath{ cDef.buildDir, aProgram..'.c' }
-    target(hMerge(cDef, {
-      target  = srcTarget,
-      command = cDef.compileLitProg
-    }))
+    if not getTargetFor(srcTarget) then
+      c.makeSrcTarget(cDef, cDependencies, aSrcTarget)
+    end
     
     local programTarget = makePath{ cDef.buildDir, aProgram }
-    local cDependencies = { }
-    cDef.srcFiles = aAppend(cDef.cHeaderFiles, cDef.cCodeFiles)
-    tInsert(cDependencies, srcTarget)
-    for j, aSrcFile in ipairs(cDef.srcFiles) do
-      local aSrcPath = makePath{ cDef.buildDir, aSrcFile }
-      local aParentPath = getParentPath(aSrcPath)
-      ensurePathExists(aParentPath)
-      addDependency(makePath{cDef.docDir, cDef.mainDoc}, aParentPath)
-      addDependency(aSrcPath, aParentPath)
-      tInsert(cDependencies, aSrcPath)
-    end
-
-    local pDef = hMerge(c, cDef)
-    c.program(hMerge(pDef, {
+    c.program(hMerge(cDef, {
       target       = programTarget,
       dependencies = c.collectCDependencies(cDependencies),
       needs        = { },
     }))
     tInsert(buildTargets, programTarget)
     
-    tInsert(cleanTargets, nameCleanTarget(srcTarget))
   end
   
+  return cDef
 end
 

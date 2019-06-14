@@ -11,6 +11,18 @@ local contextDefaults = {
 
 contextDoc = hMerge(contextDefaults, lms.contextDoc, contextDoc)
 
+local function compileDocument(lpDef)
+  local curDir = lfs.currentdir()
+  chDir(lpDef.docDir)
+  --
+  -- build the complete context document
+  --
+  local result = executeCmd('context '..lpDef.mainDoc)
+  --
+  chDir(curDir)
+  return result
+end
+
 function createNewDocTarget(targetName, targetVarName, targetCommand)
   createNewTarget('doc-'..targetName, 'doc'..targetVarName, targetCommand)
   doNotRecurseTarget('doc-'..targetName)
@@ -222,11 +234,13 @@ end
 
 function contextDoc.targets(ctxDef)
   ctxDef = hMerge(contextDoc, ctxDef)
-  ctxDef.targets = 'contextDoc'
-
+  ctxDef.creator = 'contextDoc-targets'
+  
   findSubDirs(ctxDef)
   findDocuments(ctxDef)
 
+  ctxDef.compileDocument = compileDocument
+  
   ctxDef.dependencies = { }
   tInsert(ctxDef.docFiles, 1, makePath{ '.', ctxDef.docDir, ctxDef.mainDoc})
   for i, aDocFile in ipairs(ctxDef.docFiles) do
@@ -236,6 +250,10 @@ function contextDoc.targets(ctxDef)
     end
     tInsert(ctxDef.dependencies, docPath)
   end
+
+  ctxDef.buildDir = ctxDef.buildDir or 'buildDir'
+  ensurePathExists(ctxDef.buildDir)
+  tInsert(ctxDef.dependencies, ctxDef.buildDir)
 
   local pdfMainDoc = ctxDef.mainDoc:gsub('%.tex$', '.pdf')
   local docTarget = makePath{ ctxDef.docDir, pdfMainDoc }
@@ -265,5 +283,6 @@ function contextDoc.targets(ctxDef)
   tInsert(cleanTargets, 
     nameCleanTarget(docTarget:gsub('%.pdf$', '.tuc')))
 
+  return ctxDef
 end
 
