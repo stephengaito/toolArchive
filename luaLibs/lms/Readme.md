@@ -12,4 +12,6 @@ This collection of lms build scripts has the following dependencies:
 
 2. release
 
+## TO DO:
 
+We still need to refactor the joylol and joylolTests
