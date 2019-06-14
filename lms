@@ -341,7 +341,7 @@ function runTarget(targetToRun)
 
   lmsMessage('(re)checking: '..targetToRun)
   if aTarget.command then
-    lmsMessageCont('  has command')
+    lmsMessageCont('  has command ('..toStr(aTarget.command)..')')
   else
     lmsMessageCont('  has NO command')
   end

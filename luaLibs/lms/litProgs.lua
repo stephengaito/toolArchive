@@ -26,27 +26,41 @@ local function compileLitProg(lpDef)
   return result
 end
 
-local function installAndDiff(aDef, aFile)
-  local buildTarget = makePath{ aDef.buildDir, 'lmsfile' }
-  tInsert(buildTargets, buildTarget)
+local function installAndDiff(aDef, installDir, aFile)
+  local buildTarget = makePath{ aDef.buildDir, aFile }
+  local parentPath  = getParentPath(buildTarget)
+  if parentPath then
+    ensurePathExists(parentPath)
+    tInsert(aDef.dependencies, parentPath)
+  end
+  aInsertOnce(buildTargets, buildTarget)
   target(hMerge(aDef, {
     target  = buildTarget,
     command = compileLitProg
   }))
       
   local diffTarget      = 'diff-'..aFile
-  local installedTarget = 'lmsfile'
-  tInsert(diffTargets, diffTarget)
+  local installedTarget = aFile
+  if installDir then
+    installedTarget = makePath{ installDir, aFile }
+  end
+  aInsertOnce(diffTargets, diffTarget)
   target(hMerge(aDef, {
     target       = diffTarget,
     dependencies = { buildTarget },
     command      = 'diff '..buildTarget..' '..installedTarget
   }))
 
-  tInsert(installTargets, installedTarget)
+  local installDep = { buildTarget }
+  parentPath = getParentPath(installedTarget)
+  if parentPath then
+    ensurePathExists(parentPath)
+    aInsertOnce(installDep, parentPath)
+  end
+  aInsertOnce(installTargets, installedTarget)
   target(hMerge(aDef, {
     target       = installedTarget,
-    dependencies = { buildTarget },
+    dependencies = installDep,
     command      = 'cp '..buildTarget..' '..installedTarget
   }))
   
@@ -66,7 +80,7 @@ function litProgs.targets(defaultDef, lpDef)
   
   lpDef.dependencies = lpDef.dependencies or { }
 
-  installAndDiff(lpDef, 'lmsfile')
+  installAndDiff(lpDef, nil, 'lmsfile')
     
   return lpDef
 end
