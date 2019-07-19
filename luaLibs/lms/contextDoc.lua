@@ -17,7 +17,7 @@ local function compileDocument(lpDef)
   --
   -- build the complete context document
   --
-  local result = executeCmd('context '..lpDef.mainDoc)
+  local result = executeCmd('context --silent=all '..lpDef.mainDoc)
   --
   chDir(curDir)
   return result
@@ -38,7 +38,7 @@ local function compileDocument(ctxDef)
   --
   -- build the complete context document
   --
-  local result = executeCmd('context '..ctxDef.mainDoc)
+  local result = executeCmd('context --silent=all '..ctxDef.mainDoc)
   --
   chDir(curDir)
   return result

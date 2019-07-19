@@ -16,7 +16,7 @@ local function compileLitProg(lpDef)
   --
   -- build the litProg output usning simple one context pass...
   --
-  local result = executeCmd('context --once '..lpDef.mainDoc)
+  local result = executeCmd('context --silent=all --once '..lpDef.mainDoc)
   --
   -- remove the PDF file since we only want the litProg output
   --
