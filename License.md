@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2017 stephengaito
+Copyright (c) 2019 PerceptiSys Ltd (Stephen Gaito)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +19,16 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+----------------------------------------------------------------------------
+
+The file luaLibs/lms/sha2.lua has been taken from:
+
+  https://github.com/Egor-Skriptunoff/pure_lua_SHA2
+
+on 2019-07-20 and is being used under a MIT License.
+
+(see the top of the file luaLibs/lms/sha2.lua for details)
+
+----------------------------------------------------------------------------
+
