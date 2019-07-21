@@ -257,6 +257,22 @@ end
 
 local toStr   = tostring
 
+function saveFileInfo(fileInfo)
+  fileInfoFile = io.open('lmsFileInfo', 'w')
+  fileInfoFile:write('-- This is a automatically generated lua module\n')
+  fileInfoFile:write('-- it is NOT wise to make any changes\n\n')
+  fileInfoFile:write('local M = {}\n')
+  fileInfoFile:write('local N = {}\n')
+  for key, value in pairs(fileInfo) do
+    fileInfoFile:write('    N = {}\n')
+    fileInfoFile:write('    N["sha256"] = "'..fileInfo[key]['sha256']..'"\n')
+    fileInfoFile:write('    N["size"] = '..toStr(fileInfo[key]['size'])..'\n')
+    fileInfoFile:write('  M["'..key..'"] = N\n')
+  end
+  fileInfoFile:write('return M\n')
+  fileInfoFile:close()
+end
+
 local function compareKeyValues(a, b)
   return (a[1] < b[1])
 end
@@ -759,6 +775,7 @@ createNewTarget('clobber', 'clobberTargets', clobberAllTargets)
 
 tInsert(clobberTargets, nameClobberTarget('buildDir'))
 tInsert(clobberTargets, nameClobberTarget('installDir'))
+tInsert(clobberTargets, nameClobberTarget('lmsFileInfo'))
 
 createNewTarget('doc',     'docTargets')
 createNewTarget('bib',     'bibTargets')
@@ -780,5 +797,20 @@ if shouldListTargets then listTargets() end
 
 -- execute it!
 
-if clearScreen then os.execute('reset') end
+-- The following conditional require is adapted from: shuva's answer to 
+--  "How to check if a module exists in Lua?"
+-- see: http://stackoverflow.com/a/22686090
+
+local hasLmsFileInfo, lmsFileInfo = pcall(require, "lmsFileInfo")
+if not hasLmsFileInfo then
+  print(lmsFileInfo)
+  lmsFileInfo = { }
+end
+lms.fileInfo = lmsFileInfo
+
+
+--if clearScreen then os.execute('reset') end
+
 runTargets()
+
+saveFileInfo(lms.fileInfo)
