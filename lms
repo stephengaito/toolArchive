@@ -219,6 +219,21 @@ function getTargetFor(aTarget)
   return targets[aTarget]
 end
 
+sha2 = require 'lms.sha2'
+
+function computeSha256(aFilePath)
+  local fileIO    = io.open(aFilePath, 'rb')
+  if not fileIO then
+    return nil
+  end
+  local appendSha = sha2.sha256()
+  repeat
+    local someBytes = fileIO:read(2^12)
+    appendSha(someBytes)
+  until not someBytes
+  return appendSha()
+end
+
 function needsToBuild(aTargetDef)
   if type(aTargetDef['mustBuild']) ~= 'nil' then
     lmsMessage('  must build')
@@ -235,7 +250,15 @@ function needsToBuild(aTargetDef)
     lmsMessage('need to build ['..aTargetDef.target..']\nsince target does not exist')
     return true
   end
-  
+
+  local newFileSha256 = computeSha256(aTargetDef.target)
+  local oldFileSha256 = lms.fileInfo[aTargetDef.target] or ""
+  if newFileSha256 == oldFileSha256 then
+    lmsMessageCont('  (sha256 match so no need to rebuild)')
+    return false
+  end
+  lms.fileInfo[aTargetDef.target] = newFileSha256
+
   for i, aDependency in ipairs(aTargetDef.dependencies) do
     if lfs.attributes(aDependency, 'mode') ~= 'directory' then
       dTime = lfs.attributes(aDependency, 'modification')
@@ -262,12 +285,8 @@ function saveFileInfo(fileInfo)
   fileInfoFile:write('-- This is a automatically generated lua module\n')
   fileInfoFile:write('-- it is NOT wise to make any changes\n\n')
   fileInfoFile:write('local M = {}\n')
-  fileInfoFile:write('local N = {}\n')
   for key, value in pairs(fileInfo) do
-    fileInfoFile:write('    N = {}\n')
-    fileInfoFile:write('    N["sha256"] = "'..fileInfo[key]['sha256']..'"\n')
-    fileInfoFile:write('    N["size"] = '..toStr(fileInfo[key]['size'])..'\n')
-    fileInfoFile:write('  M["'..key..'"] = N\n')
+    fileInfoFile:write('  M["'..key..'"] = "'..value..'"\n')
   end
   fileInfoFile:write('return M\n')
   fileInfoFile:close()
