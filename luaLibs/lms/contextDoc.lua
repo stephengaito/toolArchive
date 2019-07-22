@@ -11,16 +11,17 @@ local contextDefaults = {
 
 contextDoc = hMerge(contextDefaults, lms.contextDoc, contextDoc)
 
-local function compileDocument(lpDef)
+local function compileDocument(aDef, onExit)
   local curDir = lfs.currentdir()
-  chDir(lpDef.docDir)
+  chDir(aDef.docDir)
   --
   -- build the complete context document
   --
-  local result = executeCmd('context --silent=all '..lpDef.mainDoc)
-  --
-  chDir(curDir)
-  return result
+  executeCmd('context --silent=all '..aDef.mainDoc, function(code, signal)
+    --
+    chDir(curDir)
+    onExit(code, signal)
+  end)
 end
 
 function createNewDocTarget(targetName, targetVarName, targetCommand)
@@ -32,26 +33,13 @@ function createNewDocTarget(targetName, targetVarName, targetCommand)
   doNotRecurseTarget('pub-'..targetName)
 end
 
-local function compileDocument(ctxDef)
-  local curDir = lfs.currentdir()
-  chDir(ctxDef.docDir)
-  --
-  -- build the complete context document
-  --
-  local result = executeCmd('context --silent=all '..ctxDef.mainDoc)
-  --
-  chDir(curDir)
-  return result
-end
-
-local function gatherBibReferences(ctxDef)
+local function gatherBibReferences(ctxDef, onExit)
   if type(ctxDef['docDir']) == 'nil' then return end
 
-  runCmdIn('diSimp bib', ctxDef['docDir'])
-  return true
+  runCmdIn('diSimp bib', ctxDef['docDir'], onExit)
 end
 
-local function copyCodeFiles(ctxDef)
+local function copyCodeFiles(ctxDef, onExit)
   local inFile, inErr = io.open(ctxDef.buildFilePath, 'r')
   if inErr then lmsError('Could not open the file ['..ctxDef.buildFilePath..']') end
   local codeFile, codeErr = io.open(ctxDef.target, 'w')
@@ -85,10 +73,10 @@ local function copyCodeFiles(ctxDef)
   codeFile:close()
   inFile:close()
 
-  return true
+  onExit(0,0)
 end
 
-local function copyAbstract(ctxDef)
+local function copyAbstract(ctxDef, onExit)
   local inFile, inErr  = io.open(ctxDef.abstract, 'r')
   if inErr then lmsError('Could not open the file [Abstract.md]') end
   inFile:read('L')
@@ -108,10 +96,10 @@ local function copyAbstract(ctxDef)
   inFile:close()
   outFile:close()
 
-  return true
+  onExit(0,0)
 end
 
-local function publishDocument(ctxDef)
+local function publishDocument(ctxDef, onExit)
   lmsMessage('Publishing document using pdf2htmlEX')
   ctxDef['releaseOpts'] = ctxDef['releaseOpts']  or 
       '--zoom 1.3 --embed cfij --bg-format svg --split-pages 1 '
@@ -123,11 +111,15 @@ local function publishDocument(ctxDef)
     ' --dest-dir ' .. makePath { ctxDef['releaseDir'], 'doc', htmlDir } ..
     ' --page-filename ' .. pageDoc ..
     ' ' .. pdfDoc
-  runCmdIn(pubCmd, ctxDef['docDir'])
-  local cpCmd = 
-    'cp ' .. pdfDoc .. ' ' .. makePath{ ctxDef.releaseDir, 'doc' }
-  runCmdIn(cpCmd, ctxDef.docDir)
-  return true
+  runCmdIn(pubCmd, ctxDef['docDir'], function(code, signal)
+    if code == 0 then
+      local cpCmd = 
+        'cp ' .. pdfDoc .. ' ' .. makePath{ ctxDef.releaseDir, 'doc' }
+      runCmdIn(cpCmd, ctxDef.docDir, onExit)
+    else
+      onExit(code, signal)
+    end
+  end)
 end
 
 local function setupCodeFilePublish(ctxDef)

@@ -94,6 +94,11 @@ verbose     = lms.verbose     or false
 veryVerbose = lms.veryVerbose or false
 recurse     = lms.recurse     or true
 dirPrefix   = lms.dirPrefix   or currentDir
+useLUV      = lms.useLUV      or false
+if useLUV and not luv.spawn then
+  lmsMessage('Sorry... external commands can only be run in parallel IF the luv luarock is installed')
+  useLUV = false
+end
 
 function lmsError(aMessage)
   print('ERROR: '..aMessage)
@@ -151,7 +156,7 @@ targets    = {}
 targetList = {}
 alreadyRun = {}
 
-function runCmdIn(cmd, subDir)
+function runCmdIn(cmd, subDir, onExit)
   subDirPath = subDir
   if cmd:find('^lms') then
     cmd = makePath { cmd, subDir }
@@ -162,26 +167,28 @@ function runCmdIn(cmd, subDir)
   print('working in ['..subDirPath..']')
   print('running    ['..cmd..']')
   lfs.chdir(subDir)
-  if not executeCmd(cmd) then
-    print('FAILED to run: ['..cmd..']')
-    if lms.fileInfo then saveFileInfo(lms.fileInfo) end
-    os.exit(-1)
-  end
-  lfs.chdir(curDir)
+  executeCmd(cmd, function(code, signal)
+    lfs.chdir(curDir)
+    if code != 0 then
+      lmsError('FAILED to run: ['..cmd..']')
+    end
+    onExit(code, signal)
+  end)
 end
 
-function executeCmd(aCmd)
-  if luv.spawn then
-    if useLUV then
-      lmsMessage('running: ['..aCmd..'] using luv.spawn BUT NOT YET')
-      return os.execute(aCmd)
-    else
-      lmsMessage('running: ['..aCmd..'] using os.execute BUT COULD USE LUV')
-      return os.execute(aCmd)
-    end
+function executeCmd(aCmd, onExit)
+  if useLUV then
+    lmsMessage('running: ['..aCmd..'] using luv.spawn BUT NOT YET')
+    local result = os.execute(aCmd)
+    local code = 0
+    if not result then code = -1 end
+    onExit(code, 0)
   else
-    lmsMessage('running: ['..aCmd..'] using os.execute (luv not installed)')
-    return os.execute(aCmd)
+    lmsMessage('running: ['..aCmd..'] using os.execute')
+    local result = os.execute(aCmd)
+    local code = 0
+    if not result then code = -1 end
+    onExit(code, 0)
   end
 end
 
@@ -231,7 +238,6 @@ function target(tDef)
     print(prettyPrint(tDef))
     print("=======================================")
   else
-    tDef['coroutine'] = coroutine.create(runTarget)
     targets[tDef.target] = tDef
     tInsert(targetList, tDef.target)
   end
@@ -376,35 +382,45 @@ function mustHaveTarget(targetToRun)
   end
 end
 
-function runTarget(targetToRun)
-  if alreadyRun[targetToRun] then
-    lmsMessageVery('already run '..targetToRun)
-    return
-  end
-  
+function runTarget(targetToRun)  
   lmsMessage('checking: '..targetToRun)
   
   local aTarget = targets[targetToRun]
   if not aTarget then
     lmsMessageVery('nothing to do')
-    return
-  end  
+    return true
+  end
 
+  if aTarget.targetState == 'completed' then 
+    lmsMessageVery('already run '..targetToRun)
+    return true
+  end
+  
+  local dependenciesCompleted = true
   if aTarget.dependencies then
     for i, aDependency in ipairs(aTarget.dependencies) do
-      depCoroutine = targets[aDependency]['coroutine']
-      if depCoroutine then
-        coroutine.resume(depCoroutine, aDependency)
-      else
-        lmsError('no coroutine created for '..aDependency)
-        -- runTarget(aDependency)
+        if not runTarget(aDependency) then
+          dependenciesCompleted = false
+        end
       end
     end
   else
     lmsMessageCont('no dependencies key found')
   end
+  
+  if not dependenciesCompleted then
+    lmsMessageVery('waiting for dependencies')
+    return false
+  end
 
-  coroutine.yield()
+  if aTarget.targetState != 'running' then
+    if not needsToBuild(aTarget) then
+      lmsMessageVery('no need to rebuild')
+      aTarget.targetState = 'completed'
+      return true
+    end
+  end
+  aTarget.targetState = 'running'
   
   lmsMessage('(re)checking: '..targetToRun)
   if aTarget.command then
@@ -413,24 +429,30 @@ function runTarget(targetToRun)
     lmsMessageCont('  has NO command')
   end
   
-  if aTarget.command and needsToBuild(aTarget) then
+  if aTarget.command then
     if type(aTarget.command) == 'string' then
       lmsMessageCont(
        'building ['..aTarget.target..']\nusing ['..aTarget.command..']'
       )
-      if not os.execute(aTarget.command) then
-        lmsError('could not run ['..aTarget.command..']')
-      end
+      executeCmd(aTarget.command, function(code, signal)
+        if code != 0 then
+          lmsError('could not run ['..aTarget.command..']')
+        end
+        aTarget.targetState == 'completed'
+      end)
     elseif type(aTarget.command) == 'function' then
       lmsMessageCont('building ['..aTarget.target..']')
-      if not aTarget.command(aTarget) then
-        lmsError('could not run command for ['..aTarget.target..']')
-      end
+      aTarget.command(aTarget, function(code, signal)
+        if code != 0 then
+          lmsError('could not run command for ['..aTarget.target..']')
+        end
+        aTarget.targetState == 'completed'
+      end)
     else
       lmsError('the command for target ['..aTarget.target..'] MUSt be either a string or a function.')
     end
   end
-  alreadyRun[targetToRun] = true
+  return true
 end
 
 -- Now we create some general helper tools
@@ -472,9 +494,7 @@ end
 lmsOptionHelp     = { }
 lmsLongSwitches   = { }
 lmsOption         = { }
-runDefault        = true
 shouldListTargets = false
-useLUV            = true
 
 function addOption( shortSwitch, longSwitch, description, action)
   lmsOptionHelp[longSwitch] = { shortSwitch, longSwitch, description, action }
@@ -484,7 +504,6 @@ function addOption( shortSwitch, longSwitch, description, action)
 end
 
 addOption('-h', '--help', 'Provide this list of options', function()
-  runDefault = false
   print('lms -- Lua Make System\n')
   print('usage: lms [options] [targets]\n')
   print('where: targets is a space delimited list of lms targets to be run,')
@@ -548,7 +567,12 @@ addOption('-T', '--targets', 'List all known targets', function()
 end)
 
 addOption('-p', '--parallel', 'Run external commands in parallel if at all possible (requires "luarocks install luv")', function()
-  useLUV = true
+  if luv.spawn then 
+    useLUV = true
+  else
+    lmsMessage('Sorry... external commands can only be run in parallel IF the luv luarock is installed')
+    useLUV = false
+  end
 end)
 
 addOption('-s', '--sequential', 'Run external commands sequentially (one at a time)', function()
@@ -730,7 +754,7 @@ function findSubDirs(aDef)
   aDef['subDirs'] = subDirs
 end
 
-function recurseCurrentTarget(aDef)
+function recurseCurrentTarget(aDef, onExit)
   if type(aDef['subDirs']) ~= 'table' then
     print('  No subdirs to recurse into...')
     return

@@ -56,7 +56,7 @@ local function collectCSrc(cDef)
   end
 end
 
-local function cCompile(cDef)
+local function cCompile(cDef, onExit)
   local cFile = cDef.target:gsub('%.o$', '.c')
   local cmd = {
     cDef.cc,
@@ -66,10 +66,10 @@ local function cCompile(cDef)
     '-o',
     cDef.target
   }
-  return executeCmd(tConcat(cmd, ' '))
+  return executeCmd(tConcat(cmd, ' '), onExit)
 end
 
-local function cLink(cDef)
+local function cLink(cDef, onExit)
   local cmd = {
     cDef.cc,
     tConcat(removeDuplicates(cDef.oFiles),   ' '),
@@ -78,7 +78,7 @@ local function cLink(cDef)
     '-o',
     cDef.target
   }
-  return executeCmd(tConcat(cmd, ' '))
+  return executeCmd(tConcat(cmd, ' '), onExit)
 end
 
 local function computeNeeds(cDef)

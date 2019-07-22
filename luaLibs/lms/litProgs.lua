@@ -10,20 +10,21 @@ lms.litProgs = lms.litProgs or { }
 
 litProgs = hMerge(lms.litProgs, litProgs)
 
-local function compileLitProg(lpDef)
+local function compileLitProg(lpDef, onExit)
   local curDir = lfs.currentdir()
   chDir(lpDef.docDir)
   --
   -- build the litProg output usning simple one context pass...
   --
-  local result = executeCmd('context --silent=all --once '..lpDef.mainDoc)
-  --
-  -- remove the PDF file since we only want the litProg output
-  --
-  os.remove(lpDef.mainDoc:gsub('%.tex$', '.pdf')) 
-  --
-  chDir(curDir)
-  return result
+  executeCmd('context --silent=all --once '..lpDef.mainDoc, function(code, signal)
+    --
+    -- remove the PDF file since we only want the litProg output
+    --
+    os.remove(lpDef.mainDoc:gsub('%.tex$', '.pdf')) 
+    --
+    chDir(curDir)
+    onExit(code, signal)
+  end)
 end
 
 local function installAndDiff(aDef, installDir, aFile)
