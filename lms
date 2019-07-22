@@ -9,6 +9,17 @@ tSort   = table.sort
 getEnv  = os.getenv
 lfs     = require 'lfs'
 
+-- Now see if we can load the lua libuv bindings (luv)
+
+-- The following conditional require is adapted from: shuva's answer to 
+--  "How to check if a module exists in Lua?"
+-- see: http://stackoverflow.com/a/22686090
+
+--local hasluv, luvLocal = pcall(require, "luv")
+--if not hasluv then luvLocal = { } end
+--luv = luvLocal
+luv = {}
+
 -- Now update the require search paths to ensure lms standard paths will 
 -- be searched 
 
@@ -86,6 +97,7 @@ dirPrefix   = lms.dirPrefix   or currentDir
 
 function lmsError(aMessage)
   print('ERROR: '..aMessage)
+  if lms.fileInfo then saveFileInfo(lms.fileInfo) end
   os.exit(-1)
 end
 
@@ -150,16 +162,27 @@ function runCmdIn(cmd, subDir)
   print('working in ['..subDirPath..']')
   print('running    ['..cmd..']')
   lfs.chdir(subDir)
-  if not os.execute(cmd) then
+  if not executeCmd(cmd) then
     print('FAILED to run: ['..cmd..']')
+    if lms.fileInfo then saveFileInfo(lms.fileInfo) end
     os.exit(-1)
   end
   lfs.chdir(curDir)
 end
 
 function executeCmd(aCmd)
-  lmsMessage('running: ['..aCmd..']')
-  return os.execute(aCmd)
+  if luv.spawn then
+    if useLUV then
+      lmsMessage('running: ['..aCmd..'] using luv.spawn BUT NOT YET')
+      return os.execute(aCmd)
+    else
+      lmsMessage('running: ['..aCmd..'] using os.execute BUT COULD USE LUV')
+      return os.execute(aCmd)
+    end
+  else
+    lmsMessage('running: ['..aCmd..'] using os.execute (luv not installed)')
+    return os.execute(aCmd)
+  end
 end
 
 function chDir(aNewDir)
@@ -208,6 +231,7 @@ function target(tDef)
     print(prettyPrint(tDef))
     print("=======================================")
   else
+    tDef['coroutine'] = coroutine.create(runTarget)
     targets[tDef.target] = tDef
     tInsert(targetList, tDef.target)
   end
@@ -368,12 +392,20 @@ function runTarget(targetToRun)
 
   if aTarget.dependencies then
     for i, aDependency in ipairs(aTarget.dependencies) do
-      runTarget(aDependency)
+      depCoroutine = targets[aDependency]['coroutine']
+      if depCoroutine then
+        coroutine.resume(depCoroutine, aDependency)
+      else
+        lmsError('no coroutine created for '..aDependency)
+        -- runTarget(aDependency)
+      end
     end
   else
     lmsMessageCont('no dependencies key found')
   end
 
+  coroutine.yield()
+  
   lmsMessage('(re)checking: '..targetToRun)
   if aTarget.command then
     lmsMessageCont('  has command ('..toStr(aTarget.command)..')')
@@ -442,6 +474,7 @@ lmsLongSwitches   = { }
 lmsOption         = { }
 runDefault        = true
 shouldListTargets = false
+useLUV            = true
 
 function addOption( shortSwitch, longSwitch, description, action)
   lmsOptionHelp[longSwitch] = { shortSwitch, longSwitch, description, action }
@@ -514,6 +547,13 @@ addOption('-T', '--targets', 'List all known targets', function()
   shouldListTargets = true
 end)
 
+addOption('-p', '--parallel', 'Run external commands in parallel if at all possible (requires "luarocks install luv")', function()
+  useLUV = true
+end)
+
+addOption('-s', '--sequential', 'Run external commands sequentially (one at a time)', function()
+  useLUV = false
+end)
 function listTargets()
   tSort(targetList)
   for i, aTarget in ipairs(targetList) do
@@ -560,8 +600,18 @@ end
 local function runTargets()
   for i, aTarget in ipairs(targetsToRun) do
     mustHaveTarget(aTarget)
-    runTarget(aTarget)
+    targetCoroutine = targets[aTarget]['coroutine']
+    if targetCoroutine then
+      coroutine.resume(targetCoroutine, aTarget)
+    else
+      lmsError('no coroutine created for '..aTarget)
+      -- runTarget(aTarget)
+    end
   end
+end
+
+local function checkTargets()
+  here be dragons!!!!
 end
 
 function tCopy(origTable)
@@ -831,5 +881,7 @@ lms.fileInfo = lmsFileInfo
 --if clearScreen then os.execute('reset') end
 
 runTargets()
+
+checkTargets()
 
 saveFileInfo(lms.fileInfo)
