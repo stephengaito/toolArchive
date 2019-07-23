@@ -154,7 +154,6 @@ end
 
 targets    = {}
 targetList = {}
-alreadyRun = {}
 
 function runCmdIn(cmd, subDir, onExit)
   subDirPath = subDir
@@ -238,6 +237,8 @@ function target(tDef)
     print(prettyPrint(tDef))
     print("=======================================")
   else
+    tDef.targetRunning = false
+    tDef.targetCompleted = false
     targets[tDef.target] = tDef
     tInsert(targetList, tDef.target)
   end
@@ -388,19 +389,20 @@ function runTarget(targetToRun)
   local aTarget = targets[targetToRun]
   if not aTarget then
     lmsMessageVery('nothing to do')
-    return true
+    return
   end
 
-  if aTarget.targetState == 'completed' then 
+  if aTarget.targetCompleted then 
     lmsMessageVery('already run '..targetToRun)
-    return true
+    return
   end
   
   local dependenciesCompleted = true
   if aTarget.dependencies then
     for i, aDependency in ipairs(aTarget.dependencies) do
-        if not runTarget(aDependency) then
+        if targets[aDependency] and not targets[aDependency].targetCompleted then
           dependenciesCompleted = false
+          runTarget(aDependency)
         end
       end
     end
@@ -410,17 +412,17 @@ function runTarget(targetToRun)
   
   if not dependenciesCompleted then
     lmsMessageVery('waiting for dependencies')
-    return false
+    return
   end
 
-  if aTarget.targetState != 'running' then
+  if not aTarget.targetRunning then
     if not needsToBuild(aTarget) then
       lmsMessageVery('no need to rebuild')
-      aTarget.targetState = 'completed'
-      return true
+      aTarget.targetCompleted = true
+      return
     end
   end
-  aTarget.targetState = 'running'
+  aTarget.targetRunning = true
   
   lmsMessage('(re)checking: '..targetToRun)
   if aTarget.command then
@@ -432,27 +434,30 @@ function runTarget(targetToRun)
   if aTarget.command then
     if type(aTarget.command) == 'string' then
       lmsMessageCont(
-       'building ['..aTarget.target..']\nusing ['..aTarget.command..']'
+       'started building ['..aTarget.target..']\nusing ['..aTarget.command..']'
       )
       executeCmd(aTarget.command, function(code, signal)
         if code != 0 then
           lmsError('could not run ['..aTarget.command..']')
         end
-        aTarget.targetState == 'completed'
+        lmsMessageCont(
+         'finished building ['..aTarget.target..']\nusing ['..aTarget.command..']'
+        )
+        aTarget.targetCompleted = true
       end)
     elseif type(aTarget.command) == 'function' then
-      lmsMessageCont('building ['..aTarget.target..']')
+      lmsMessageCont('started building ['..aTarget.target..']')
       aTarget.command(aTarget, function(code, signal)
         if code != 0 then
           lmsError('could not run command for ['..aTarget.target..']')
         end
-        aTarget.targetState == 'completed'
+        lmsMessageCont('finished building ['..aTarget.target..']')
+        aTarget.targetCompleted = true
       end)
     else
       lmsError('the command for target ['..aTarget.target..'] MUSt be either a string or a function.')
     end
   end
-  return true
 end
 
 -- Now we create some general helper tools
@@ -619,23 +624,6 @@ local function parseArguments()
   if #targetsToRun < 1 then
     tInsert(targetsToRun, 'default')
   end
-end
-
-local function runTargets()
-  for i, aTarget in ipairs(targetsToRun) do
-    mustHaveTarget(aTarget)
-    targetCoroutine = targets[aTarget]['coroutine']
-    if targetCoroutine then
-      coroutine.resume(targetCoroutine, aTarget)
-    else
-      lmsError('no coroutine created for '..aTarget)
-      -- runTarget(aTarget)
-    end
-  end
-end
-
-local function checkTargets()
-  here be dragons!!!!
 end
 
 function tCopy(origTable)
@@ -901,10 +889,21 @@ if not hasLmsFileInfo then
 end
 lms.fileInfo = lmsFileInfo
 
+if clearScreen then os.execute('reset') end
 
---if clearScreen then os.execute('reset') end
+local function runTargets()
+  for i, aTarget in ipairs(targetsToRun) do
+    mustHaveTarget(aTarget)
+    runTarget(aTarget)
+  end
+end
 
-runTargets()
+asyncCheckTargets = function() end
+checkTargets      = function() runTargets() end
+if useLUV then
+  asyncCheckTargets = luv.new_async(runTargets)
+  checkTargets      = function() luv.async_send(asyncCheckTargets) end
+end
 
 checkTargets()
 
