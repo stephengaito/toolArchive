@@ -1,4 +1,4 @@
-#!/usr/bin/env texlua
+ffind#!/usr/bin/env 
 
 -- Start with some local convenience functions
 
@@ -178,16 +178,24 @@ end
 function executeCmd(aCmd, onExit)
   if useLUV then
     lmsMessage('running: ['..aCmd..'] using luv.spawn BUT NOT YET')
-    local result = os.execute(aCmd)
-    local code = 0
-    if not result then code = -1 end
-    onExit(code, 0)
+    local result, resultType, code = os.execute(aCmd)
+    if result then
+      onExit(0, 0)
+    elseif resultType == 'signal' then
+      onExit(0, code)
+    else
+      onExit(code, 0)
+    end
   else
     lmsMessage('running: ['..aCmd..'] using os.execute')
-    local result = os.execute(aCmd)
-    local code = 0
-    if not result then code = -1 end
-    onExit(code, 0)
+    local result, resultType, code = os.execute(aCmd)
+    if result then
+      onExit(0, 0)
+    elseif resultType == 'signal' then
+      onExit(0, code)
+    else
+      onExit(code, 0)
+    end
   end
 end
 
@@ -248,6 +256,16 @@ end
 
 function getTargetFor(aTarget)
   return targets[aTarget]
+end
+
+function createNewTarget(targetName, targetVarName, targetCommand)
+  _G[targetVarName] = _G[targetVarName] or { }
+  target{
+    target       = targetName,
+    dependencies = _G[targetVarName],
+    command      = targetCommand,
+    creator      = 'createNewTarget'
+  }
 end
 
 sha2 = require 'lms.sha2'
@@ -607,7 +625,7 @@ function listTargets()
   os.exit(0)
 end
 
-targetsToRun = { }
+createNewTarget('mainTarget', 'targetsToRun')
 
 local function parseArguments()
   for i, anArg in ipairs(arg) do
@@ -743,8 +761,8 @@ function findSubDirs(aDef)
 end
 
 function recurseCurrentTarget(aDef, onExit)
-  if type(aDef['subDirs']) ~= 'table' then
-    print('  No subdirs to recurse into...')
+  if type(aDef['subDir']) ~= 'string' then
+    print('  No subdir to recurse into...')
     return
   end
 
@@ -753,18 +771,7 @@ function recurseCurrentTarget(aDef, onExit)
     return
   end
 
-  tSort(aDef['subDirs'])
-  for i, subDir in ipairs(aDef['subDirs']) do
-    runCmdIn(aDef['recurseCmd'], subDir)
-  end
-
-  print("\n========================================================")
-  print('finished running ['..aDef['recurseCmd']..']')
---  curDir = lfs.currentdir()
---  curDir = curDir:gsub('(.*[/\\])', '')
-  print('  in all sub dirs of ['..dirPrefix..']')
-  print("")
-  return true
+  runCmdIn(aDef['recurseCmd'], aDef['subDir'], onExit)
 end
 
 function recurseTargets(aDef)
@@ -776,28 +783,31 @@ function recurseTargets(aDef)
   aDef = hMerge(recurseDefaults, aDef)
   findSubDirs(aDef)
 
+  local switches          = ''
+  if verbose then switches = switches .. ' -v ' end
+  if veryVerbose then switches = switches .. ' -vv ' end
+
   recurseTargets = { }
   for i, aTarget in ipairs(targetsToRun) do
     if targets[aTarget].recurse then
-      anRTargetName = aTarget..'-recurse'
-      anRTargetDef  = targets[anRTargetName] or { }
+      for i, aSubDir in ipairs(aDef['subDirs']) do
+        anRTargetName = aTarget..'-recurse-'..aSubDir
+        anRTargetDef  = targets[anRTargetName] or { }
 
-      anRTargetDef.target = anRTargetName
-      anRTargetDef.dependencies =
-        anRTargetDef.dependencies or { }
+        anRTargetDef.target = anRTargetName
+        anRTargetDef.dependencies =
+          anRTargetDef.dependencies or { }
 
-      anRTargetDef.command    = recurseCurrentTarget
-      anRTargetDef.subDirs    = aDef['subDirs']
-      local switches          = ''
-      if verbose then switches = switches .. ' -v ' end
-      if veryVerbose then switches = switches .. ' -vv ' end
-      recurseCmd              = 'lms -c ' .. switches .. aTarget .. ' -d=' .. dirPrefix
-      anRTargetDef.recurseCmd = recurseCmd
-      anRTargetDef.mustBuild  = true
+        anRTargetDef.command    = recurseCurrentTarget
+        anRTargetDef.subDir     = aSubDir
+        recurseCmd              = 'lms -c ' .. switches .. aTarget .. ' -d=' .. dirPrefix
+        anRTargetDef.recurseCmd = recurseCmd
+        anRTargetDef.mustBuild  = true
 
-      targets[anRTargetName] = anRTargetDef
+        targets[anRTargetName] = anRTargetDef
 
-      tInsert(recurseTargets, anRTargetName)
+        tInsert(recurseTargets, anRTargetName)
+      end
     end
   end
 
@@ -807,16 +817,6 @@ function recurseTargets(aDef)
 end
 
 -- Create the standard targets
-
-function createNewTarget(targetName, targetVarName, targetCommand)
-  _G[targetVarName] = _G[targetVarName] or { }
-  target{
-    target       = targetName,
-    dependencies = _G[targetVarName],
-    command      = targetCommand,
-    creator      = 'createNewTarget'
-  }
-end
 
 function nameCleanTarget(theTarget)
   return 'clean-'..theTarget
@@ -891,12 +891,7 @@ lms.fileInfo = lmsFileInfo
 
 if clearScreen then os.execute('reset') end
 
-local function runTargets()
-  for i, aTarget in ipairs(targetsToRun) do
-    mustHaveTarget(aTarget)
-    runTarget(aTarget)
-  end
-end
+local function runTargets() runTarget('mainTarget') end
 
 asyncCheckTargets = function() end
 checkTargets      = function() runTargets() end
