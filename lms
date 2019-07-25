@@ -1,4 +1,4 @@
-ffind#!/usr/bin/env 
+#!/usr/bin/env 
 
 -- Start with some local convenience functions
 
