@@ -136,8 +136,8 @@ function c.makeSrcTarget(cDef, cDependencies, aSrcFile)
   end
   target(hMerge(cDef, {
     target      = aSrcPath,
-    command     = cDef.compileLitProg
-    commandName = 'cDef::compileLitProg ('..cDef.commandName..')'
+    command     = cDef.compileLitProg,
+    commandName = 'cDef::compileLitProg'
   }))
 
   local aParentPath = getParentPath(aSrcPath)

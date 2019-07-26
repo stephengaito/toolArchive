@@ -81,8 +81,15 @@ function litProgs.targets(defaultDef, lpDef)
 
   lpDef.compileLitProg = compileLitProg
   lpDef.installAndDiff = installAndDiff
-  
+
   lpDef.dependencies = lpDef.dependencies or { }
+
+  for i, aDir in ipairs(lpDef.directories) do
+    local aLitProgDir = makePath{lpDef.buildDir, aDir}
+    ensurePathExists(aLitProgDir)
+    aInsertOnce(lpDef.dependencies, aLitProgDir)
+  end
+  
 
   installAndDiff(lpDef, nil, 'lmsfile')
     

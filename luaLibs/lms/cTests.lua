@@ -37,7 +37,7 @@ function cTests.targets(defaultDef, cDef)
     target(hMerge(cDef, {
       target      = testSrcTarget,
       command     = cDef.compileLitProg,
-      commandName = 'cDef::compileLitProg ('..cDef.commandName..')'
+      commandName = 'cDef::compileLitProg'
     }))
     aInsertOnce(cleanTargets, nameCleanTarget(testSrcTarget))
     
