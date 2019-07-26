@@ -147,7 +147,8 @@ local function setupCodeFilePublish(ctxDef)
               buildFilePath,
               getBaseDirPath(codeFileTarget)
             },
-            command       = copyCodeFiles
+            command       = copyCodeFiles,
+            commandName   = 'ContextDoc::copyCodeFiles'
           }))
         end
       end
@@ -197,7 +198,8 @@ local function setupDocumentPublish(ctxDef)
       'Abstract.md',
       ctxDef.abstractDir
     },
-    command      = publishDocument
+    command      = publishDocument,
+    commandName  = 'ContextDoc::publishDocument'
   }))
 
   -- determine code path dependencies
@@ -219,7 +221,8 @@ local function setupDocumentPublish(ctxDef)
       ctxDef.abstract,
       ctxDef.releaseDir
     },
-    command      = copyAbstract
+    command      = copyAbstract,
+    commandName  = 'ContextDoc::copyAbstract'
   }))
 
 end
@@ -252,16 +255,18 @@ function contextDoc.targets(ctxDef)
   ctxDef['globalTargetVar'] = ctxDef['globalTargetVar'] or 'Targets'
   tInsert(_G['doc'..ctxDef['globalTargetVar']], docTarget)
   target(hMerge(ctxDef, {
-    target  = docTarget,
-    command = compileDocument
+    target      = docTarget,
+    command     = compileDocument,
+    commandName = 'ContextDoc::compileDocument'
   }))
 
   local bibMainDoc = ctxDef.mainDoc:gsub('%.tex$', 'Bib.lua')
   local bibTarget = makePath{ ctxDef.docDir, bibMainDoc }
   tInsert(_G['bib'..ctxDef['globalTargetVar']], bibTarget)
   target(hMerge(ctxDef, {
-    target  = bibTarget,
-    command = gatherBibReferences
+    target      = bibTarget,
+    command     = gatherBibReferences,
+    commandName = 'ContextDef::gatherBibReferences'
   }))
 
   setupDocumentPublish(ctxDef)

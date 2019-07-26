@@ -1,4 +1,4 @@
-#!/usr/bin/env 
+#!/usr/bin/env texlua
 
 -- Start with some local convenience functions
 
@@ -168,9 +168,10 @@ function runCmdIn(cmd, subDir, onExit)
   lfs.chdir(subDir)
   executeCmd(cmd, function(code, signal)
     lfs.chdir(curDir)
-    if code != 0 then
+    if code ~= 0 then
       lmsError('FAILED to run: ['..cmd..']')
     end
+    lmsMessageVery('running onExit')
     onExit(code, signal)
   end)
 end
@@ -180,20 +181,26 @@ function executeCmd(aCmd, onExit)
     lmsMessage('running: ['..aCmd..'] using luv.spawn BUT NOT YET')
     local result, resultType, code = os.execute(aCmd)
     if result then
+      lmsMessageVery('onExit result true')
       onExit(0, 0)
     elseif resultType == 'signal' then
+      lmsMessageVery('onExit result false (signal: '..toStr(code)..')')
       onExit(0, code)
     else
+      lmsMessageVery('onExit result false (code: '..toStr(code)..')')
       onExit(code, 0)
     end
   else
     lmsMessage('running: ['..aCmd..'] using os.execute')
     local result, resultType, code = os.execute(aCmd)
     if result then
+      lmsMessageVery('onExit result true')
       onExit(0, 0)
     elseif resultType == 'signal' then
+      lmsMessageVery('onExit result false (signal: '..toStr(code)..')')
       onExit(0, code)
     else
+      lmsMessageVery('onExit result false (code: '..toStr(code)..')')
       onExit(code, 0)
     end
   end
@@ -235,6 +242,7 @@ function target(tDef)
   if 0 < #tDef then tDef.target       = tRemove(tDef, 1) end
   if 0 < #tDef then tDef.dependencies = tRemove(tDef, 1) end
   if 0 < #tDef then tDef.command      = tRemove(tDef, 1) end
+  if 0 < #tDef then tDef.commandName  = tRemove(tDef, 1) end
   if not tDef.target then 
     lmsError(debug.traceback('target method did not supply a target')) 
   end
@@ -258,12 +266,16 @@ function getTargetFor(aTarget)
   return targets[aTarget]
 end
 
-function createNewTarget(targetName, targetVarName, targetCommand)
+function createNewTarget(targetName, targetVarName, targetCommand, targetCommandName)
+  if not targetCommandName then
+    targetCommandName = 'LMS::createNewTarget::targetCommand'
+  end
   _G[targetVarName] = _G[targetVarName] or { }
   target{
     target       = targetName,
     dependencies = _G[targetVarName],
     command      = targetCommand,
+    commandName  = targetCommandName,
     creator      = 'createNewTarget'
   }
 end
@@ -285,25 +297,32 @@ end
 
 function needsToBuild(aTargetDef)
   if type(aTargetDef['mustBuild']) ~= 'nil' then
-    lmsMessage('  must build')
+    lmsMessage('  must build '..aTargetDef.target)
     return true
   end
 
   tTime = lfs.attributes(aTargetDef.target, 'modification')
-  if (tTime) then
-    lmsMessageCont('  ('..os.date('%Y/%m/%d %H:%M:%S', tTime)..')['..tTime..']')
-  else
-    lmsMessageCont('  (does not exist)')
-  end
+--  if (tTime) then
+--    lmsMessageCont(
+--      '  ('..os.date('%Y/%m/%d %H:%M:%S', tTime)..')['..tTime..']'..
+--      '<'..aTargetDef.target..'>'
+--    )
+--  else
+--    lmsMessageCont('  ('..aTargetDef.target..' does not exist)')
+--  end
   if not tTime then 
-    lmsMessage('need to build ['..aTargetDef.target..']\nsince target does not exist')
+    lmsMessage(
+      'need to build ['..aTargetDef.target..']\nsince target does not exist'
+    )
     return true
   end
 
   local newFileSha256 = computeSha256(aTargetDef.target)
   local oldFileSha256 = lms.fileInfo[aTargetDef.target] or ""
   if newFileSha256 == oldFileSha256 then
-    lmsMessageCont('  (sha256 match so no need to rebuild)')
+    lmsMessageCont(
+      '  (the '..aTargetDef.target..' sha256 matches so no need to rebuild)'
+    )
     return false
   end
   lms.fileInfo[aTargetDef.target] = newFileSha256
@@ -323,14 +342,16 @@ function needsToBuild(aTargetDef)
       end
     end
   end
-  lmsMessageVery('all dependencies older than target')
+  lmsMessageVery(
+    'all dependencies older than the '..aTargetDef.target..' target'
+  )
   return false
 end
 
 local toStr   = tostring
 
 function saveFileInfo(fileInfo)
-  fileInfoFile = io.open('lmsFileInfo', 'w')
+  fileInfoFile = io.open('lmsfileInfo', 'w')
   fileInfoFile:write('-- This is a automatically generated lua module\n')
   fileInfoFile:write('-- it is NOT wise to make any changes\n\n')
   fileInfoFile:write('local M = {}\n')
@@ -406,7 +427,7 @@ function runTarget(targetToRun)
   
   local aTarget = targets[targetToRun]
   if not aTarget then
-    lmsMessageVery('nothing to do')
+    lmsMessageVery(targetToRun..' does not exist... nothing to do')
     return
   end
 
@@ -418,9 +439,13 @@ function runTarget(targetToRun)
   local dependenciesCompleted = true
   if aTarget.dependencies then
     for i, aDependency in ipairs(aTarget.dependencies) do
-        if targets[aDependency] and not targets[aDependency].targetCompleted then
-          dependenciesCompleted = false
+      if targets[aDependency] then
+        if not targets[aDependency].targetCompleted then
           runTarget(aDependency)
+        end
+        -- IF we are running in sequential mode this is useful
+        if not targets[aDependency].targetCompleted then
+          dependenciesCompleted = false
         end
       end
     end
@@ -429,51 +454,56 @@ function runTarget(targetToRun)
   end
   
   if not dependenciesCompleted then
-    lmsMessageVery('waiting for dependencies')
+    lmsMessageVery('waiting for dependencies of '..targetToRun)
     return
   end
 
   if not aTarget.targetRunning then
     if not needsToBuild(aTarget) then
-      lmsMessageVery('no need to rebuild')
+      lmsMessageVery('no need to rebuild '..targetToRun)
       aTarget.targetCompleted = true
       return
     end
   end
   aTarget.targetRunning = true
   
-  lmsMessage('(re)checking: '..targetToRun)
+  lmsMessage('checking for '..targetToRun..' command:')
   if aTarget.command then
     lmsMessageCont('  has command ('..toStr(aTarget.command)..')')
+    lmsMessageCont('              ('..aTarget.commandName..')')
   else
     lmsMessageCont('  has NO command')
   end
   
   if aTarget.command then
     if type(aTarget.command) == 'string' then
-      lmsMessageCont(
-       'started building ['..aTarget.target..']\nusing ['..aTarget.command..']'
+      lmsMessage(
+       'starting to build ['..aTarget.target..']\nusing ['..aTarget.command..']'
       )
       executeCmd(aTarget.command, function(code, signal)
-        if code != 0 then
+        if code ~= 0 then
           lmsError('could not run ['..aTarget.command..']')
         end
-        lmsMessageCont(
+        lmsMessage(
          'finished building ['..aTarget.target..']\nusing ['..aTarget.command..']'
         )
         aTarget.targetCompleted = true
       end)
     elseif type(aTarget.command) == 'function' then
-      lmsMessageCont('started building ['..aTarget.target..']')
+      lmsMessage('starting to build ['..aTarget.target..']')
       aTarget.command(aTarget, function(code, signal)
-        if code != 0 then
+        if code ~= 0 then
           lmsError('could not run command for ['..aTarget.target..']')
         end
-        lmsMessageCont('finished building ['..aTarget.target..']')
+        lmsMessage('finished building ['..aTarget.target..']')
         aTarget.targetCompleted = true
       end)
     else
-      lmsError('the command for target ['..aTarget.target..'] MUSt be either a string or a function.')
+      lmsError(
+        'the command for target ['..
+        aTarget.target..
+        '] MUST be either a string or a function.'
+      )
     end
   end
 end
@@ -488,8 +518,10 @@ function getParentPath(aPath)
   return parentPath
 end
 
-local function createPath(aTarget)
-  return lfs.mkdir(aTarget.target)
+local function createPath(aTarget, onExit)
+  lfs.mkdir(aTarget.target)
+  lmsMessageVery('running onExit')
+  onExit(0,0)
 end
 
 function ensurePathExists(aPath)
@@ -506,6 +538,7 @@ function ensurePathExists(aPath)
       dependencies = paths,
       target       = aPath,
       command      = createPath,
+      commandName  = 'LMS::createPath',
       creator      = 'ensurePathExists'
     })
   end
@@ -608,7 +641,8 @@ function listTargets()
     if aTDef then
       print(aTDef.target..':')
       if aTDef.command then
-        print('  '..prettyPrint(aTDef.command))
+        print('      command: ['..prettyPrint(aTDef.command)..']')
+        print('  commandName: ['..prettyPrint(aTDef.commandName)..']')
       else
         print('  no command')
       end
@@ -798,13 +832,14 @@ function recurseTargets(aDef)
         anRTargetDef.dependencies =
           anRTargetDef.dependencies or { }
 
-        anRTargetDef.command    = recurseCurrentTarget
-        anRTargetDef.subDir     = aSubDir
-        recurseCmd              = 'lms -c ' .. switches .. aTarget .. ' -d=' .. dirPrefix
-        anRTargetDef.recurseCmd = recurseCmd
-        anRTargetDef.mustBuild  = true
+        anRTargetDef.command      = recurseCurrentTarget
+        anRTargetDef.commandName  = 'LMS::recurseCurrentTarget'
+        anRTargetDef.subDir       = aSubDir
+        recurseCmd                = 'lms -c ' .. switches .. aTarget .. ' -d=' .. dirPrefix
+        anRTargetDef.recurseCmd   = recurseCmd
+        anRTargetDef.mustBuild    = true
 
-        targets[anRTargetName] = anRTargetDef
+        targets[anRTargetName]    = anRTargetDef
 
         tInsert(recurseTargets, anRTargetName)
       end
@@ -822,7 +857,7 @@ function nameCleanTarget(theTarget)
   return 'clean-'..theTarget
 end
 
-function cleanAllTargets(cDef)
+function cleanAllTargets(cDef, onExit)
   if cDef.dependencies then
     for i, aDep in ipairs(cDef.dependencies) do
         local aCmd = 'rm -rf '..aDep:gsub('^clean%-', '')
@@ -830,33 +865,39 @@ function cleanAllTargets(cDef)
       os.execute(aCmd)
     end
   end
-  return true
+  lmsMessageVery('running onExit')
+  onExit(0,0)
 end
 
-createNewTarget('clean', 'cleanTargets', cleanAllTargets)
+createNewTarget('clean', 'cleanTargets', cleanAllTargets, 'LMS::cleanAllTargets')
 
 function nameClobberTarget(theTarget)
   return 'clobber-'..theTarget
 end
 
-function clobberAllTargets(cDef)
+function clobberAllTargets(cDef, onExit)
   runTarget('clean')
   lmsMessage('clobbering...')
   if cDef.dependencies then
     for i, aDep in ipairs(cDef.dependencies) do
-        local aCmd = 'rm -rf '..aDep:gsub('^clobber%-', '')
+      local aCmd = 'rm -rf '..aDep:gsub('^clobber%-', '')
       lmsMessageCont(aCmd)
       os.execute(aCmd)
+      if aDep:find('lmsfileInfo') then
+        lms.fileInfo = {}
+      end
     end
   end
-  return true
+  
+  lmsMessageVery('running onExit')
+  onExit(0,0)
 end
 
-createNewTarget('clobber', 'clobberTargets', clobberAllTargets)
+createNewTarget('clobber', 'clobberTargets', clobberAllTargets, 'LMS::clobberAllTargets')
 
 tInsert(clobberTargets, nameClobberTarget('buildDir'))
 tInsert(clobberTargets, nameClobberTarget('installDir'))
-tInsert(clobberTargets, nameClobberTarget('lmsFileInfo'))
+tInsert(clobberTargets, nameClobberTarget('lmsfileInfo'))
 
 createNewTarget('doc',     'docTargets')
 createNewTarget('bib',     'bibTargets')
@@ -882,7 +923,7 @@ if shouldListTargets then listTargets() end
 --  "How to check if a module exists in Lua?"
 -- see: http://stackoverflow.com/a/22686090
 
-local hasLmsFileInfo, lmsFileInfo = pcall(require, "lmsFileInfo")
+local hasLmsFileInfo, lmsFileInfo = pcall(require, "lmsfileInfo")
 if not hasLmsFileInfo then
   print(lmsFileInfo)
   lmsFileInfo = { }

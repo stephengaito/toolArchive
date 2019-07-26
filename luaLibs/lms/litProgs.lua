@@ -36,8 +36,9 @@ local function installAndDiff(aDef, installDir, aFile)
   end
   aInsertOnce(buildTargets, buildTarget)
   target(hMerge(aDef, {
-    target  = buildTarget,
-    command = compileLitProg
+    target      = buildTarget,
+    command     = compileLitProg,
+    commandName = "LitProgs::compileLitProg"
   }))
       
   local diffTarget      = 'diff-'..aFile
@@ -49,7 +50,8 @@ local function installAndDiff(aDef, installDir, aFile)
   target(hMerge(aDef, {
     target       = diffTarget,
     dependencies = { buildTarget },
-    command      = 'diff '..buildTarget..' '..installedTarget
+    command      = 'diff '..buildTarget..' '..installedTarget,
+    commandName  = 'LitProgs::diffTarget (shell command)'
   }))
 
   local installDep = { buildTarget }
@@ -62,7 +64,8 @@ local function installAndDiff(aDef, installDir, aFile)
   target(hMerge(aDef, {
     target       = installedTarget,
     dependencies = installDep,
-    command      = 'cp '..buildTarget..' '..installedTarget
+    command      = 'cp '..buildTarget..' '..installedTarget,
+    commandName  = 'LitProgs::installedTarget (shell command)'
   }))
   
   tInsert(cleanTargets, nameCleanTarget(buildTarget))

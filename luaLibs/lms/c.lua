@@ -104,15 +104,17 @@ function c.program(cDef)
   for i, anOFile in ipairs(cDef.oFiles) do
     if not getTargetFor(anOFile) then
       target(hMerge(cDef, {
-        target = anOFile,
-        command = cCompile
+        target      = anOFile,
+        command     = cCompile,
+        commandName = 'C::cCompile'
       }))
       tInsert(cleanTargets, nameCleanTarget(anOFile))
     end
   end
   target(hMerge(cDef, { 
     dependencies = cDef.oFiles,
-    command = cLink    
+    command      = cLink,
+    commandName  = 'C::cLink'
   }))
   tInsert(clobberTargets, nameClobberTarget(cDef.target))
 end
@@ -133,8 +135,9 @@ function c.makeSrcTarget(cDef, cDependencies, aSrcFile)
     tInsert(headerTargets, aSrcPath)
   end
   target(hMerge(cDef, {
-    target  = aSrcPath,
-    command = cDef.compileLitProg
+    target      = aSrcPath,
+    command     = cDef.compileLitProg
+    commandName = 'cDef::compileLitProg ('..cDef.commandName..')'
   }))
 
   local aParentPath = getParentPath(aSrcPath)

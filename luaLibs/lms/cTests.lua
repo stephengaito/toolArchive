@@ -35,8 +35,9 @@ function cTests.targets(defaultDef, cDef)
     aInsertOnce(codeTargets, testSrcTarget)
     aInsertOnce(buildTargets, testSrcTarget)
     target(hMerge(cDef, {
-      target  = testSrcTarget,
-      command = cDef.compileLitProg
+      target      = testSrcTarget,
+      command     = cDef.compileLitProg,
+      commandName = 'cDef::compileLitProg ('..cDef.commandName..')'
     }))
     aInsertOnce(cleanTargets, nameCleanTarget(testSrcTarget))
     
@@ -97,7 +98,8 @@ function cTests.targets(defaultDef, cDef)
     target(hMerge(cDef, {
       target       = testTarget,
       dependencies = { testExecTarget },
-      command      = testExecTarget
+      command      = testExecTarget,
+      commandName  = 'CTests::testExecTarget'
     }))
   end
   

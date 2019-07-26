@@ -23,7 +23,8 @@ function joylol.targets(defaultDef, jDef)
 --  target(hMerge(jDef, {
 --    dependencies = { },
 --    target       = buildJoylol,
---    command      = 'mkdir -p '..buildJoylol
+--    command      = 'mkdir -p '..buildJoylol,
+--    commandName  = 'JoyLoL::buildJoylol (mkdir -p)'
 --  }))
   
   tInsert(c.cOpts, '-fPIC')
@@ -43,8 +44,9 @@ function joylol.targets(defaultDef, jDef)
       end
       tInsert(cDependencies, srcTarget)
       target(hMerge(jDef, {
-        target  = srcTarget,
-        command = jDef.compileLitProg
+        target      = srcTarget,
+        command     = jDef.compileLitProg,
+        commandName = 'jDef::compileLitProg ('..jDef.commandName..')'
       }))
     end
 
@@ -93,13 +95,14 @@ function joylol.targets(defaultDef, jDef)
     end
     tInsert(installTargets, installTarget)
     target(hMerge(jDef, {
-      target = installTarget,
+      target       = installTarget,
       dependencies = installDeps,
-      command = tConcat({
+      command      = tConcat({
         'install -T',
         coAlgTarget,
         installTarget
-      }, ' ')
+      }, ' '),
+      commandName  = 'JoyLoL::installTarget (shared object library)'
     }))
   end
   
@@ -128,13 +131,14 @@ function joylol.targets(defaultDef, jDef)
       end
       tInsert(installTargets, installTarget)
       target(hMerge(jDef, {
-        target = installTarget,
+        target       = installTarget,
         dependencies = includeDeps,
-        command = tConcat({
+        command      = tConcat({
           'install -T',
           anIncludeDep,
           installTarget
-        }, ' ')
+        }, ' '),
+        commandName  = 'JoyLoL::installTarget (cHeaderFiles)'
       }))
     end
   end
@@ -161,13 +165,14 @@ function joylol.targets(defaultDef, jDef)
     end
     tInsert(installTargets, installTarget)
     target(hMerge(jDef, {
-      target = installTarget,
+      target       = installTarget,
       dependencies = joylolDeps,
-      command = tConcat({
+      command      = tConcat({
         'install -T',
         aJoylolDep,
         installTarget
-      }, ' ')
+      }, ' '),
+      commandName  = 'JoyLoL::installTarget (joylol code files)'
     }))
   end
 
