@@ -27,9 +27,63 @@
  *
  */
  
- #include <stdio.h>
- 
- int main(int argc, char* argv[]) {
-   printf("Hello world!\n");
- }
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <unistd.h>
+#include <getopt.h>
+
+typedef size_t Boolean;
+typedef size_t UInteger;
+#define false 0
+#define true  1
+
+ /* option parser configuration */
+static struct option longOpts[] = {
+  {"trace", no_argument, 0, 't'},
+  {"quite", no_argument, 0, 'q'},
+  {"debug", no_argument, 0, 'd'},
+  {"help",  no_argument, 0, 'h'},
+  {0, 0, 0, 0}
+};
+ /* getopt_long stores the option index here. */
+static int optId = 0;
+
+static void optionHelp(const char* progName) {
+  fprintf(stderr, "Usage: %s [options] [file...]\n\n", progName);
+  fprintf(stderr, "options:\n");
+  fprintf(stderr, "  -d --debug\n");
+  fprintf(stderr, "  -t --trace\n");
+  fprintf(stderr, "  -q --quiet\n\n");
+  fprintf(stderr, "files to load:\n");
+  fprintf(stderr, "  Any remaining options are treated as files to be loaded.\n");
+
+  exit(0);
+}
+
+int main(int argc, char* argv[]) {
+  int opt = 0;
+  Boolean debug     = false;
+  Boolean tracingOn = false;
+
+  while ((opt = getopt_long(argc, argv,
+                            "dtqh",
+                            longOpts, &optId)) != -1) {
+    switch (opt) {
+      case 'd': debug      = true; break;
+      case 't': tracingOn  = true; break;
+      case 'q':
+        tracingOn          = false;
+        break;
+      case 'h':
+      default:
+        optionHelp(argv[0]);
+    }
+  }
+
+  printf("Hello world!\n");
+  if (tracingOn) { }
+  if (debug)     { }
+}
  

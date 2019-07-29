@@ -102,7 +102,7 @@ end
 
 function lmsError(aMessage)
   print('ERROR: '..aMessage)
-  if lms.fileInfo then saveFileInfo(lms.fileInfo) end
+  saveFileInfo()
   os.exit(-1)
 end
 
@@ -302,14 +302,6 @@ function needsToBuild(aTargetDef)
   end
 
   tTime = lfs.attributes(aTargetDef.target, 'modification')
---  if (tTime) then
---    lmsMessageCont(
---      '  ('..os.date('%Y/%m/%d %H:%M:%S', tTime)..')['..tTime..']'..
---      '<'..aTargetDef.target..'>'
---    )
---  else
---    lmsMessageCont('  ('..aTargetDef.target..' does not exist)')
---  end
   if not tTime then 
     lmsMessage(
       'need to build ['..aTargetDef.target..']\nsince target does not exist'
@@ -317,18 +309,24 @@ function needsToBuild(aTargetDef)
     return true
   end
 
-  local newFileSha256 = computeSha256(aTargetDef.target)
-  local oldFileSha256 = lms.fileInfo[aTargetDef.target] or ""
-  if newFileSha256 == oldFileSha256 then
-    lmsMessageCont(
-      '  (the '..aTargetDef.target..' sha256 matches so no need to rebuild)'
-    )
-    return false
-  end
-  lms.fileInfo[aTargetDef.target] = newFileSha256
-
   for i, aDependency in ipairs(aTargetDef.dependencies) do
     if lfs.attributes(aDependency, 'mode') ~= 'directory' then
+    
+      -- start by checking sha256
+      lms.newFileInfo[aDependency] =
+        lms.newFileInfo[aDependency] or computeSha256(aDependency)
+      local newFileSha256 = 
+        lms.newFileInfo[aDependency]
+      local oldFileSha256 =
+        lms.oldFileInfo[aDependency] or ""
+      if newFileSha256 ~= oldFileSha256 then
+        lmsMessageCont(
+          '  (the '..aDependency..' sha256s do not match so we need to rebuild)'
+        )
+        return true
+      end
+    
+      -- now check modification times
       dTime = lfs.attributes(aDependency, 'modification')
       if not dTime then lmsError('missing dependency: ['..aDependency..']') end
       if dTime > tTime then
@@ -350,7 +348,8 @@ end
 
 local toStr   = tostring
 
-function saveFileInfo(fileInfo)
+function saveFileInfo()
+  local fileInfo = hMerge(lms.oldFileInfo, lms.newFileInfo)
   fileInfoFile = io.open('lmsfileInfo', 'w')
   fileInfoFile:write('-- This is a automatically generated lua module\n')
   fileInfoFile:write('-- it is NOT wise to make any changes\n\n')
@@ -513,7 +512,6 @@ end
 function getParentPath(aPath)
   local parentPath =
     aPath:gsub(directorySeparator..'?[^'..directorySeparator..']*$', '')
---  print('getParentPath: ['..aPath..']->['..parentPath..']')
   if #parentPath < 1 then parentPath = nil end
   return parentPath
 end
@@ -884,7 +882,7 @@ function clobberAllTargets(cDef, onExit)
       lmsMessageCont(aCmd)
       os.execute(aCmd)
       if aDep:find('lmsfileInfo') then
-        lms.fileInfo = {}
+        lms.oldFileInfo = {}
       end
     end
   end
@@ -928,7 +926,8 @@ if not hasLmsFileInfo then
   print(lmsFileInfo)
   lmsFileInfo = { }
 end
-lms.fileInfo = lmsFileInfo
+lms.oldFileInfo = lmsFileInfo
+lms.newFileInfo = { }
 
 if clearScreen then os.execute('reset') end
 
@@ -943,4 +942,4 @@ end
 
 checkTargets()
 
-saveFileInfo(lms.fileInfo)
+saveFileInfo()
