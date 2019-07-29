@@ -41,10 +41,12 @@ typedef size_t UInteger;
 
  /* option parser configuration */
 static struct option longOpts[] = {
-  {"trace", no_argument, 0, 't'},
-  {"quite", no_argument, 0, 'q'},
-  {"debug", no_argument, 0, 'd'},
-  {"help",  no_argument, 0, 'h'},
+  {"server",  required_argument, 0, 's'},
+  {"port",    required_argument, 0, 'p'},
+  {"type",    required_argument, 0, 't'},
+  {"logFile", required_argument, 0, 'l'},
+  {"debug",   no_argument,       0, 'd'},
+  {"help",    no_argument,       0, 'h'},
   {0, 0, 0, 0}
 };
  /* getopt_long stores the option index here. */
@@ -53,9 +55,16 @@ static int optId = 0;
 static void optionHelp(const char* progName) {
   fprintf(stderr, "Usage: %s [options] [file...]\n\n", progName);
   fprintf(stderr, "options:\n");
-  fprintf(stderr, "  -d --debug\n");
-  fprintf(stderr, "  -t --trace\n");
-  fprintf(stderr, "  -q --quiet\n\n");
+  fprintf(stderr, "  -s <server>       : the machine name of the DMUCS server\n");
+  fprintf(stderr, "  --server <server>\n\n");
+  fprintf(stderr, "  -p <port>         : the port used by the DMUCS server\n");
+  fprintf(stderr, "  --port <port>\n\n");
+  fprintf(stderr, "  -t <type>         : the type of compile machine to request\n");
+  fprintf(stderr, "  --type <type>       from the DMUCS server\n\n");
+  fprintf(stderr, "  -l <path>         : a path to a log file into which all output\n");
+  fprintf(stderr, "  --logFile <path>    (both stdout and stderr) will be collected\n\n");
+  fprintf(stderr, "  -d                : provide a running commentary of what\n");
+  fprintf(stderr, "  --debug             we are doing\n\n");
   fprintf(stderr, "files to load:\n");
   fprintf(stderr, "  Any remaining options are treated as files to be loaded.\n");
 
@@ -63,27 +72,60 @@ static void optionHelp(const char* progName) {
 }
 
 int main(int argc, char* argv[]) {
-  int opt = 0;
-  Boolean debug     = false;
-  Boolean tracingOn = false;
+  int         opt         = 0;
+  const char* server      = "localhost";
+  UInteger    port        = 9714;
+  const char* logFile     = NULL;
+  const char* machineType = "";
+  const char* remoteUser  = "";
+  Boolean     debug       = false;
 
+  const char*        serverEnv     = getenv("DMUCS_SERVER");
+  if (serverEnv)     server        = serverEnv;
+  const char*        portENV       = getenv("DMUCS_PORT");
+  if (portENV)       port          = atol(portENV);
+  const char*        remoteUserEnv = getenv("USER");
+  if (remoteUserEnv) remoteUser    = remoteUserEnv;
+  const char*        logFileEnv    = getenv("LMS_LOG_FILE");
+  if (logFileEnv)    logFile       = logFileEnv;
+  
   while ((opt = getopt_long(argc, argv,
-                            "dtqh",
+                            "s:p:t:l:dh",
                             longOpts, &optId)) != -1) {
     switch (opt) {
-      case 'd': debug      = true; break;
-      case 't': tracingOn  = true; break;
-      case 'q':
-        tracingOn          = false;
-        break;
+      case 's': server      = optarg;       break;
+      case 'p': port        = atol(optarg); break;
+      case 't': machineType = optarg;       break;
+      case 'u': remoteUser  = optarg;       break;
+      case 'l': logFile     = optarg;       break;
+      case 'd': debug       = true;         break;
       case 'h':
+      case '?':
       default:
         optionHelp(argv[0]);
     }
   }
 
-  printf("Hello world!\n");
-  if (tracingOn) { }
-  if (debug)     { }
+  if (debug) {
+    printf("lms DMUCS command runner (v0.0)\n\n");
+    printf(" DMUCS server: [%s]\n", server);
+    printf("   DMUCS port: [%zd]\n", port);
+    printf(" machine type: [%s]\n", machineType);
+    printf("  remote user: [%s]\n", remoteUser);
+    printf("log file path: [%s]\n", logFile);
+    printf("\ncommand: [");
+    for(int i = optind; i < argc; i++) {
+      if (optind < i) printf(" ");
+      printf("%s", argv[i]);
+    }
+    printf("]\n");
+    printf("\n");
+  }
+
+  if (argc <= optind) {
+    fprintf(stderr, "no command found... doing nothing!\n");
+    exit(-1);
+  }  
+  
 }
  
