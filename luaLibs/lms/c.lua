@@ -134,17 +134,22 @@ function c.makeSrcTarget(cDef, cDependencies, aSrcFile)
   if aSrcFile:match('%.h$') then
     tInsert(headerTargets, aSrcPath)
   end
-  target(hMerge(cDef, {
-    target      = aSrcPath,
-    command     = cDef.compileLitProg,
-    commandName = 'cDef::compileLitProg'
-  }))
+  if not getTargetFor(aSrcPath) then
+    target(hMerge(cDef, {
+      target      = aSrcPath,
+      command     = cDef.compileLitProg,
+      commandName = 'cDef::compileLitProg'
+    }))
 
-  local aParentPath = getParentPath(aSrcPath)
-  ensurePathExists(aParentPath)
-  addDependency(makePath{cDef.docDir, cDef.mainDoc}, aParentPath)
-  addDependency(aSrcPath, aParentPath)
-
+    local aParentPath = getParentPath(aSrcPath)
+    ensurePathExists(aParentPath)
+    local docPath = makePath{cDef.docDir, cDef.mainDoc}
+    if docPath ~= '' then
+      addDependency(docPath, aParentPath)
+    end
+    addDependency(aSrcPath, aParentPath)
+  end
+  
   aInsertOnce(cDependencies, aSrcPath)
 end
 
@@ -152,7 +157,7 @@ function c.targets(defaultDef, cDef)
 
   cDef = hMerge(defaultDef, cDef or { })
   cDef.creator = 'c-targets'
-  
+    
   cDef.dependencies = cDef.dependencies or { }
   local cDependencies = { }
 
@@ -160,13 +165,10 @@ function c.targets(defaultDef, cDef)
   for i, aSrcFile in ipairs(cDef.cSrcFiles) do
     c.makeSrcTarget(cDef, cDependencies, aSrcFile)
   end
-  
   for i, aProgram in ipairs(cDef.programs) do
   
-    local srcTarget = makePath{ cDef.buildDir, aProgram..'.c' }
-    if not getTargetFor(srcTarget) then
-      c.makeSrcTarget(cDef, cDependencies, aSrcTarget)
-    end
+    local srcTarget = aProgram..'.c'
+    c.makeSrcTarget(cDef, cDependencies, srcTarget)
     
     local programTarget = makePath{ cDef.buildDir, aProgram }
     c.program(hMerge(cDef, {

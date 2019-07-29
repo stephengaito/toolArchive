@@ -1,3 +1,5 @@
+buildDir
+lmsfileInfo
 *.swp
 
 # Compiled Lua sources

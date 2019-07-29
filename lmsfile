@@ -8,33 +8,21 @@
 -- are automatically promoted to the (hash) table entries 'target', 
 -- 'dependencies', and 'command' in that order. 
 
+-- We begin with the lms description of how to build the lmsDMUCSrun 
+-- binary 
+
+require 'lms.src'
+
+srcTargets = src.targets{
+  cCodeFiles = {
+    'lmsDMUCSrun.c'
+  }
+}
+
 require 'lms.c'
 
-local function doSomething()
-  print('doing something!')
-  return true
-end
-
-local function doNothing()
-  print('doing nothing!')
-  return true
-end
-
-target{
-  'silly',
-  { 'sillyer', 'silliest' },
-  'echo doing something'
-}
-
-target{
-  'sillyer',
-  { 'silliest' },
-  doNothing
-}
-
-target{
-  'silliest',
-  { },
-  doNothing
-}
-
+c.targets(srcTargets, {
+  programs = {
+    'lmsDMUCSrun'
+  }
+})

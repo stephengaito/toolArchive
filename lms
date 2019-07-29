@@ -243,7 +243,7 @@ function target(tDef)
   if 0 < #tDef then tDef.dependencies = tRemove(tDef, 1) end
   if 0 < #tDef then tDef.command      = tRemove(tDef, 1) end
   if 0 < #tDef then tDef.commandName  = tRemove(tDef, 1) end
-  if not tDef.target then 
+  if not tDef.target or tDef.target:match('^%s*$') then 
     lmsError(debug.traceback('target method did not supply a target')) 
   end
   if targets[tDef.target] then -- first definition wins!
