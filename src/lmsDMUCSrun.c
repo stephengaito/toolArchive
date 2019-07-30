@@ -33,10 +33,11 @@
 #include <assert.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <errno.h>
 #include <sys/socket.h>
 #include <netinet/ip.h>
+#include <arpa/inet.h>
 //#include <sys/types.h>
-//#include <arpa/inet.h>
 #include <netdb.h>
 
 #define bufferLen 1024
@@ -82,33 +83,33 @@ static void optionHelp(const char* progName) {
 }
 
 int main(int argc, char* argv[]) {
-  int         opt         = 0;
-  const char* server      = "localhost";
-  uint32_t    port        = 9714;
-  const char* logFile     = NULL;
-  const char* machineType = "";
-  const char* remoteUser  = "";
-  Boolean     debug       = false;
+  int         opt           = 0;
+  const char* dmucsHostName = "localhost";
+  uint32_t    dmucsPort     = 9714;
+  const char* logFile       = NULL;
+  const char* machineType   = "";
+  const char* remoteUser    = "";
+  Boolean     debug         = false;
 
-  const char*        serverEnv     = getenv("DMUCS_SERVER");
-  if (serverEnv)     server        = serverEnv;
-  const char*        portENV       = getenv("DMUCS_PORT");
-  if (portENV)       port          = atol(portENV);
-  const char*        remoteUserEnv = getenv("USER");
-  if (remoteUserEnv) remoteUser    = remoteUserEnv;
-  const char*        logFileEnv    = getenv("LMS_LOG_FILE");
-  if (logFileEnv)    logFile       = logFileEnv;
+  const char*           dmucsHostNameEnv = getenv("DMUCS_SERVER");
+  if (dmucsHostNameEnv) dmucsHostName    = dmucsHostNameEnv;
+  const char*           dmucsPortENV     = getenv("DMUCS_PORT");
+  if (dmucsPortENV)     dmucsPort        = atol(dmucsPortENV);
+  const char*           remoteUserEnv    = getenv("USER");
+  if (remoteUserEnv)    remoteUser       = remoteUserEnv;
+  const char*           logFileEnv       = getenv("LMS_LOG_FILE");
+  if (logFileEnv)       logFile          = logFileEnv;
   
   while ((opt = getopt_long(argc, argv,
                             "s:p:t:l:dh",
                             longOpts, &optId)) != -1) {
     switch (opt) {
-      case 's': server      = optarg;       break;
-      case 'p': port        = atol(optarg); break;
-      case 't': machineType = optarg;       break;
-      case 'u': remoteUser  = optarg;       break;
-      case 'l': logFile     = optarg;       break;
-      case 'd': debug       = true;         break;
+      case 's': dmucsHostName = optarg;       break;
+      case 'p': dmucsPort     = atol(optarg); break;
+      case 't': machineType   = optarg;       break;
+      case 'u': remoteUser    = optarg;       break;
+      case 'l': logFile       = optarg;       break;
+      case 'd': debug         = true;         break;
       case 'h':
       case '?':
       default:
@@ -118,8 +119,8 @@ int main(int argc, char* argv[]) {
 
   if (debug) {
     printf("lms DMUCS command runner (v0.0)\n\n");
-    printf(" DMUCS server: [%s]\n", server);
-    printf("   DMUCS port: [%d]\n", port);
+    printf(" DMUCS server: [%s]\n", dmucsHostName);
+    printf("   DMUCS port: [%d]\n", dmucsPort);
     printf(" machine type: [%s]\n", machineType);
     printf("  remote user: [%s]\n", remoteUser);
     printf("log file path: [%s]\n", logFile);
@@ -138,35 +139,106 @@ int main(int argc, char* argv[]) {
   }  
 
   //////////////////////////////////////////////
+  // Now connect to the DMUCS server
+  
+  int dmucsSocketFD = 0;
+  if((dmucsSocketFD = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    fprintf(stderr, "Could not open a tcp socket to the DMUCS server\n");
+    exit(-1);
+  }
+  
+  printf("dmucsSocketFD: [%d]\n", dmucsSocketFD);
+  
+  struct sockaddr_in dmucsAddress;
+  memset(&dmucsAddress, 0, sizeof(dmucsAddress));
+  dmucsAddress.sin_family = AF_INET;
+  dmucsAddress.sin_port   = htons(dmucsPort);
+
+  struct hostent *dmucsHostEntity = gethostbyname(dmucsHostName);
+  if (dmucsHostEntity == NULL) {
+    fprintf(stderr, "Could not get the DMUCS host IP entity information");
+    close(dmucsSocketFD);
+    exit(-1);
+  }
+  
+  printf("dmucsHost: [%s]\n", dmucsHostEntity->h_name);
+  dmucsAddress.sin_addr = * ((struct in_addr *) dmucsHostEntity->h_addr);
+  
+  if (connect(
+        dmucsSocketFD,
+        (struct sockaddr *)&dmucsAddress,
+        sizeof(dmucsAddress)
+      ) < 0) {
+    fprintf(
+      stderr,
+      "Could not connect to the DMUCS server: %s\n",
+      strerror(errno)
+    );
+    close(dmucsSocketFD);
+    exit(-1);
+  }
+  
+  //////////////////////////////////////////////
   // Now get our hostname
 
   char hostName[bufferLen];
   if (gethostname(hostName, bufferLen)) {
     fprintf(stderr, "Could not get our host name\n");
+    close(dmucsSocketFD);
     exit(-1);
   }
 
-  printf("hostName: [%s]\n", hostName);
+  printf("client hostName: [%s]\n", hostName);
 
-  struct hostent *hostEntity = gethostbyname(hostName);
-  if (hostEntity == NULL) {
+  struct hostent *clientHostEntity = gethostbyname(hostName);
+  if (clientHostEntity == NULL) {
     fprintf(stderr, "Could not get our host IP entity information");
+    close(dmucsSocketFD);
+    exit(-1);
+  }
+  printf("client host: [%s]\n", clientHostEntity->h_name);
+  
+  struct in_addr clientHostIP;
+  memcpy(&clientHostIP, clientHostEntity->h_addr, sizeof(clientHostIP));
+  
+  //////////////////////////////////////////////
+  // Now build and send the DMUCS host request
+  
+  char hostRequest[bufferLen];
+  memset(hostRequest, 0, bufferLen);
+  
+  strncat(hostRequest, "host ", 5);
+  strncat(hostRequest, inet_ntoa(clientHostIP), 16);
+  strncat(hostRequest, " ", 1);
+  strncat(hostRequest, machineType, 900);
+  
+  printf("DMUCS host request: [%s]\n", hostRequest);
+
+  if (write(dmucsSocketFD, hostRequest, strlen(hostRequest)+1) < 0) {
+    fprintf(
+      stderr,
+      "Could not send hostRequest to DMUCS server: %s\n",
+      strerror(errno)
+    );
+    close(dmucsSocketFD);
     exit(-1);
   }
   
-  printf("host: [%s]\n", hostEntity->h_name);
+  char hostResponse[bufferLen];
+  memset(hostResponse, 0, bufferLen);
   
-  int socketFD = 0;
-  if((socketFD = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-    fprintf(stderr, "Could not open a tcp socket\n");
+  if (read(dmucsSocketFD, hostResponse, bufferLen-1) < 0) {
+    fprintf(
+      stderr,
+      "Could not read hostResponse from DMUCS server: %s\n",
+      strerror(errno)
+    );
+    close(dmucsSocketFD);
+    exit(-1);
   }
   
-  printf("socketFD: [%d]\n", socketFD);
+  printf("DMUCS host response: [%s]\n", hostResponse);
   
-  struct sockaddr_in socketAddress;
-  memset(&socketAddress, 0, sizeof(socketAddress));
-  socketAddress.sin_family = AF_INET;
-  socketAddress.sin_port   = htons(port);
-//  socketAddress.sin_addr   = ???;
+  close(dmucsSocketFD);
 }
  
