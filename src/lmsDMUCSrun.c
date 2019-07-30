@@ -37,13 +37,13 @@
 #include <sys/socket.h>
 #include <netinet/ip.h>
 #include <arpa/inet.h>
-//#include <sys/types.h>
 #include <netdb.h>
+#include <sys/wait.h>
 
 #define bufferLen 1024
 #define noHostAvailable "0.0.0.0"
-#define hostRequestSleep 10
-#define hostRequestTryMax 10
+#define dmucsHostRequestSleep 10
+#define dmucsHostRequestTryMax 10
 
 typedef size_t Boolean;
 typedef size_t UInteger;
@@ -184,16 +184,16 @@ int main(int argc, char* argv[]) {
   //////////////////////////////////////////////
   // Now get our hostname
 
-  char hostName[bufferLen];
-  if (gethostname(hostName, bufferLen)) {
+  char clientHostName[bufferLen];
+  if (gethostname(clientHostName, bufferLen)) {
     fprintf(stderr, "Could not get our host name\n");
     close(dmucsSocketFD);
     exit(-1);
   }
 
-  printf("client hostName: [%s]\n", hostName);
+  printf("client host name: [%s]\n", clientHostName);
 
-  struct hostent *clientHostEntity = gethostbyname(hostName);
+  struct hostent *clientHostEntity = gethostbyname(clientHostName);
   if (clientHostEntity == NULL) {
     fprintf(stderr, "Could not get our host IP entity information");
     close(dmucsSocketFD);
@@ -203,63 +203,135 @@ int main(int argc, char* argv[]) {
   
   struct in_addr clientHostIP;
   memcpy(&clientHostIP, clientHostEntity->h_addr, sizeof(clientHostIP));
+  char clientHostIPv4Addr[bufferLen];
+  memset(&clientHostIPv4Addr, 0, bufferLen);
+  strncat(clientHostIPv4Addr, inet_ntoa(clientHostIP), 16);
+  
+  printf("Client Host IPv4 addr: [%s]\n", clientHostIPv4Addr);
   
   //////////////////////////////////////////////
   // Now build and send the DMUCS host request
   
-  char hostRequest[bufferLen];
-  char hostResponse[bufferLen];
-  memset(hostRequest,  0, bufferLen);
-  memset(hostResponse, 0, bufferLen);
+  char dmucsHostRequest[bufferLen];
+  char dmucsHostResponse[bufferLen];
+  memset(dmucsHostRequest,  0, bufferLen);
+  memset(dmucsHostResponse, 0, bufferLen);
   
-  strncat(hostRequest, "host ", 5);
-  strncat(hostRequest, inet_ntoa(clientHostIP), 16);
-  strncat(hostRequest, " ", 1);
-  strncat(hostRequest, machineType, 900);
+  strncat(dmucsHostRequest, "host ", 5);
+  strncat(dmucsHostRequest, clientHostIPv4Addr, 16);
+  strncat(dmucsHostRequest, " ", 1);
+  strncat(dmucsHostRequest, machineType, 900);
   
-  printf("DMUCS host request: [%s]\n", hostRequest);
+  printf("DMUCS host request: [%s]\n", dmucsHostRequest);
 
-  for(int try = hostRequestTryMax; 0 < try; try--) {
-    if (write(dmucsSocketFD, hostRequest, strlen(hostRequest)+1) < 0) {
+  for(int try = dmucsHostRequestTryMax; 0 < try; try--) {
+    if (write(dmucsSocketFD, dmucsHostRequest, strlen(dmucsHostRequest)+1) < 0) {
       fprintf(
         stderr,
-        "Could not send hostRequest to DMUCS server: %s\n",
+        "Could not send dmucsHostRequest to DMUCS server: %s\n",
         strerror(errno)
       );
       close(dmucsSocketFD);
       exit(-1);
     }
   
-    memset(hostResponse, 0, bufferLen);
+    memset(dmucsHostResponse, 0, bufferLen);
   
-    if (read(dmucsSocketFD, hostResponse, bufferLen-1) < 0) {
+    if (read(dmucsSocketFD, dmucsHostResponse, bufferLen-1) < 0) {
       fprintf(
         stderr,
-        "Could not read hostResponse from DMUCS server: %s\n",
+        "Could not read dmucsHostResponse from DMUCS server: %s\n",
         strerror(errno)
       );
       close(dmucsSocketFD);
       exit(-1);
     }
   
-    printf("DMUCS host response: [%s]\n", hostResponse);
+    printf("DMUCS host response: [%s]\n", dmucsHostResponse);
     
-    if (strncmp(hostResponse, noHostAvailable, strlen(noHostAvailable)) == 0){
+    if (strncmp(dmucsHostResponse, noHostAvailable, strlen(noHostAvailable)) == 0){
       printf("DMUCS has no available hosts... trying %d more times\n", try);
     } else {
       break;
     }
-    sleep(hostRequestSleep);
+    sleep(dmucsHostRequestSleep);
   }
   
-  if (strncmp(hostResponse, noHostAvailable, strlen(noHostAvailable)) == 0) {
+  if (strncmp(dmucsHostResponse, noHostAvailable, strlen(noHostAvailable)) == 0) {
     fprintf(stderr, "DMUCS has no available hosts\n");
     close(dmucsSocketFD);
     exit(-1);
   }
   
-  printf("DMUCS has assigned us the host: [%s]\n", hostResponse);
+  printf("DMUCS has assigned us the host: [%s]\n", dmucsHostResponse);
+  
+  struct in_addr compileServerAddr;
+  inet_pton(AF_INET, dmucsHostResponse, &compileServerAddr);
+  struct hostent *compileServerEntity =
+    gethostbyaddr(&compileServerAddr, sizeof(compileServerAddr), AF_INET);
+
+  printf("Compile server host name: [%s]\n", compileServerEntity->h_name);
+
+  //////////////////////////////////////////////
+  // Now fork to a child process...
+  //
+  // ... in the child...  exec the command (possibly using ssh)
+  // ... in the parent... wait for the child (and return the child's status)
+
+  int childStatus = 0;
+  int forkedPID = fork();
+  if (forkedPID == 0) {
+    // child process
+    printf("Hello from the child!\n");
+    printf(
+      "hostname: [%s] dmucsHostResponse: [%s]\n", 
+      clientHostIPv4Addr, dmucsHostResponse
+    );
+
+    const char *cmdArgs[argc+10];
+    int cmdArgNum = 0;
+    memset(cmdArgs, 0, sizeof(cmdArgs));
+    
+    if (strncmp(clientHostIPv4Addr, dmucsHostResponse, bufferLen-1) == 0) {
+      // we are calling a process on the same machine
+      // so we do not need to use ssh
+    } else {
+      // we are calling a process on a different machine
+      // so we need to use ssh
+      cmdArgs[cmdArgNum++] = "ssh";
+      cmdArgs[cmdArgNum++] = compileServerEntity->h_name;
+    }
+    for(int i = optind; i < argc; i++) {
+      cmdArgs[cmdArgNum++] = argv[i];
+    }
+
+    printf("exec'ing the command: [");
+    for(int i = 0; i < cmdArgNum; i++) {
+      printf("%s ", cmdArgs[i]);
+    }
+    printf("]\n");
+
+    if (execvp(cmdArgs[0], (char**)cmdArgs) < 0) {
+      fprintf(stderr, "execvp failed: %s\n", strerror(errno));
+      exit(-1);
+    }
+
+    printf("Goodbye from the child!\n"); // we should never reach here!!
+    exit(0);
+  } else {
+    // parent process
+    fprintf(stderr, "Hello from the parent!\n");
+    wait(&childStatus);
+    fprintf(stderr, "Finished waiting for the child process!\n");
+  }
   
   close(dmucsSocketFD);
+  
+  int parentStatus = -1;
+  if (WIFEXITED(childStatus)) parentStatus = WEXITSTATUS(childStatus);
+  
+  printf("Exit status: %d\n", parentStatus);
+  
+  exit(parentStatus);
 }
  
