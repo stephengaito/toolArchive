@@ -41,6 +41,9 @@
 #include <netdb.h>
 
 #define bufferLen 1024
+#define noHostAvailable "0.0.0.0"
+#define hostRequestSleep 10
+#define hostRequestTryMax 10
 
 typedef size_t Boolean;
 typedef size_t UInteger;
@@ -205,7 +208,9 @@ int main(int argc, char* argv[]) {
   // Now build and send the DMUCS host request
   
   char hostRequest[bufferLen];
-  memset(hostRequest, 0, bufferLen);
+  char hostResponse[bufferLen];
+  memset(hostRequest,  0, bufferLen);
+  memset(hostResponse, 0, bufferLen);
   
   strncat(hostRequest, "host ", 5);
   strncat(hostRequest, inet_ntoa(clientHostIP), 16);
@@ -214,30 +219,46 @@ int main(int argc, char* argv[]) {
   
   printf("DMUCS host request: [%s]\n", hostRequest);
 
-  if (write(dmucsSocketFD, hostRequest, strlen(hostRequest)+1) < 0) {
-    fprintf(
-      stderr,
-      "Could not send hostRequest to DMUCS server: %s\n",
-      strerror(errno)
-    );
+  for(int try = hostRequestTryMax; 0 < try; try--) {
+    if (write(dmucsSocketFD, hostRequest, strlen(hostRequest)+1) < 0) {
+      fprintf(
+        stderr,
+        "Could not send hostRequest to DMUCS server: %s\n",
+        strerror(errno)
+      );
+      close(dmucsSocketFD);
+      exit(-1);
+    }
+  
+    memset(hostResponse, 0, bufferLen);
+  
+    if (read(dmucsSocketFD, hostResponse, bufferLen-1) < 0) {
+      fprintf(
+        stderr,
+        "Could not read hostResponse from DMUCS server: %s\n",
+        strerror(errno)
+      );
+      close(dmucsSocketFD);
+      exit(-1);
+    }
+  
+    printf("DMUCS host response: [%s]\n", hostResponse);
+    
+    if (strncmp(hostResponse, noHostAvailable, strlen(noHostAvailable)) == 0){
+      printf("DMUCS has no available hosts... trying %d more times\n", try);
+    } else {
+      break;
+    }
+    sleep(hostRequestSleep);
+  }
+  
+  if (strncmp(hostResponse, noHostAvailable, strlen(noHostAvailable)) == 0) {
+    fprintf(stderr, "DMUCS has no available hosts\n");
     close(dmucsSocketFD);
     exit(-1);
   }
   
-  char hostResponse[bufferLen];
-  memset(hostResponse, 0, bufferLen);
-  
-  if (read(dmucsSocketFD, hostResponse, bufferLen-1) < 0) {
-    fprintf(
-      stderr,
-      "Could not read hostResponse from DMUCS server: %s\n",
-      strerror(errno)
-    );
-    close(dmucsSocketFD);
-    exit(-1);
-  }
-  
-  printf("DMUCS host response: [%s]\n", hostResponse);
+  printf("DMUCS has assigned us the host: [%s]\n", hostResponse);
   
   close(dmucsSocketFD);
 }
