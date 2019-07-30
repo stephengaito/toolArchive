@@ -33,11 +33,21 @@
 #include <assert.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <sys/socket.h>
+#include <netinet/ip.h>
+//#include <sys/types.h>
+//#include <arpa/inet.h>
+#include <netdb.h>
+
+#define bufferLen 1024
 
 typedef size_t Boolean;
 typedef size_t UInteger;
 #define false 0
 #define true  1
+
+//////////////////////////////////////////////
+// Start by handling the options
 
  /* option parser configuration */
 static struct option longOpts[] = {
@@ -74,7 +84,7 @@ static void optionHelp(const char* progName) {
 int main(int argc, char* argv[]) {
   int         opt         = 0;
   const char* server      = "localhost";
-  UInteger    port        = 9714;
+  uint32_t    port        = 9714;
   const char* logFile     = NULL;
   const char* machineType = "";
   const char* remoteUser  = "";
@@ -109,7 +119,7 @@ int main(int argc, char* argv[]) {
   if (debug) {
     printf("lms DMUCS command runner (v0.0)\n\n");
     printf(" DMUCS server: [%s]\n", server);
-    printf("   DMUCS port: [%zd]\n", port);
+    printf("   DMUCS port: [%d]\n", port);
     printf(" machine type: [%s]\n", machineType);
     printf("  remote user: [%s]\n", remoteUser);
     printf("log file path: [%s]\n", logFile);
@@ -126,6 +136,37 @@ int main(int argc, char* argv[]) {
     fprintf(stderr, "no command found... doing nothing!\n");
     exit(-1);
   }  
+
+  //////////////////////////////////////////////
+  // Now get our hostname
+
+  char hostName[bufferLen];
+  if (gethostname(hostName, bufferLen)) {
+    fprintf(stderr, "Could not get our host name\n");
+    exit(-1);
+  }
+
+  printf("hostName: [%s]\n", hostName);
+
+  struct hostent *hostEntity = gethostbyname(hostName);
+  if (hostEntity == NULL) {
+    fprintf(stderr, "Could not get our host IP entity information");
+    exit(-1);
+  }
   
+  printf("host: [%s]\n", hostEntity->h_name);
+  
+  int socketFD = 0;
+  if((socketFD = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    fprintf(stderr, "Could not open a tcp socket\n");
+  }
+  
+  printf("socketFD: [%d]\n", socketFD);
+  
+  struct sockaddr_in socketAddress;
+  memset(&socketAddress, 0, sizeof(socketAddress));
+  socketAddress.sin_family = AF_INET;
+  socketAddress.sin_port   = htons(port);
+//  socketAddress.sin_addr   = ???;
 }
  
