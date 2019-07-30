@@ -39,11 +39,22 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <sys/wait.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #define bufferLen 1024
 #define noHostAvailable "0.0.0.0"
-#define dmucsHostRequestSleep 10
-#define dmucsHostRequestTryMax 10
+
+#define DEBUG(frmt, ...)    \
+if (debug) printf(frmt, ##__VA_ARGS__)
+
+#define ERROREXIT(frmt, ...)                    \
+{                                               \
+  fprintf(stderr, frmt, ##__VA_ARGS__);         \
+  if (-1 < dmucsSocketFD) close(dmucsSocketFD); \
+  exit(-1);                                     \
+}
 
 typedef size_t Boolean;
 typedef size_t UInteger;
@@ -55,44 +66,60 @@ typedef size_t UInteger;
 
  /* option parser configuration */
 static struct option longOpts[] = {
-  {"server",  required_argument, 0, 's'},
-  {"port",    required_argument, 0, 'p'},
-  {"type",    required_argument, 0, 't'},
-  {"logFile", required_argument, 0, 'l'},
-  {"debug",   no_argument,       0, 'd'},
-  {"help",    no_argument,       0, 'h'},
+  {"server",     required_argument, 0, 's'},
+  {"port",       required_argument, 0, 'p'},
+  {"type",       required_argument, 0, 't'},
+  {"user",       required_argument, 0, 'u'},
+  {"logFile",    required_argument, 0, 'l'},
+  {"maxRetries", required_argument, 0, 'm'},
+  {"retrySleep", required_argument, 0, 'r'},
+  {"debug",      no_argument,       0, 'd'},
+  {"help",       no_argument,       0, 'h'},
   {0, 0, 0, 0}
 };
  /* getopt_long stores the option index here. */
 static int optId = 0;
 
 static void optionHelp(const char* progName) {
-  fprintf(stderr, "Usage: %s [options] [file...]\n\n", progName);
+  fprintf(stderr, "Usage: lmsDMUCSrun [options] [compile command to be run ...]\n\n");
   fprintf(stderr, "options:\n");
-  fprintf(stderr, "  -s <server>       : the machine name of the DMUCS server\n");
+  fprintf(stderr, "  -s <server>              : the machine name of the DMUCS server\n");
   fprintf(stderr, "  --server <server>\n\n");
-  fprintf(stderr, "  -p <port>         : the port used by the DMUCS server\n");
+  fprintf(stderr, "  -p <port>                : the port used by the DMUCS server\n");
   fprintf(stderr, "  --port <port>\n\n");
-  fprintf(stderr, "  -t <type>         : the type of compile machine to request\n");
-  fprintf(stderr, "  --type <type>       from the DMUCS server\n\n");
-  fprintf(stderr, "  -l <path>         : a path to a log file into which all output\n");
-  fprintf(stderr, "  --logFile <path>    (both stdout and stderr) will be collected\n\n");
-  fprintf(stderr, "  -d                : provide a running commentary of what\n");
-  fprintf(stderr, "  --debug             we are doing\n\n");
-  fprintf(stderr, "files to load:\n");
-  fprintf(stderr, "  Any remaining options are treated as files to be loaded.\n");
+  fprintf(stderr, "  -t <type>                : the type of compile machine to request\n");
+  fprintf(stderr, "  --type <type>              from the DMUCS server\n\n");
+  fprintf(stderr, "  -u <remoteUser>          : the remote user used to run the compile command\n");
+  fprintf(stderr, "  -remoteUser <remoteUser>\n\n");
+  fprintf(stderr, "  -l <path>                : a path to a log file into which all output\n");
+  fprintf(stderr, "  --logFile <path>           (both stdout and stderr) will be collected\n\n");
+  fprintf(stderr, "  -m <maxRetries>          : the maximum number of DMUCS host request retries\n");
+  fprintf(stderr, "  -maxRetries <maxRetries>\n\n");
+  fprintf(stderr, "  -r <retrySleep>          : the number of seconds to sleep between DMUCS\n");
+  fprintf(stderr, "  -retrySleep <retrySleep>   host request retries\n\n");
+  fprintf(stderr, "  -d                       : provide a running commentary of what\n");
+  fprintf(stderr, "  --debug                    we are doing\n\n");
+  fprintf(stderr, "  -h                       : this help description\n");
+  fprintf(stderr, "  --help\n\n");
+  fprintf(stderr, "compile command to be run:\n");
+  fprintf(stderr, "  Any remaining options are treated as the compile command to be run.\n\n");
+  fprintf(stderr, "  NOTE: that ALL lmsDMUCSrun specific options\n");
+  fprintf(stderr, "        MUST come BEFORE the command to be run.\n");
 
   exit(0);
 }
 
 int main(int argc, char* argv[]) {
-  int         opt           = 0;
-  const char* dmucsHostName = "localhost";
-  uint32_t    dmucsPort     = 9714;
-  const char* logFile       = NULL;
-  const char* machineType   = "";
-  const char* remoteUser    = "";
-  Boolean     debug         = false;
+  int         opt                        = 0;
+  const char* dmucsHostName              = "localhost";
+  uint32_t    dmucsPort                  = 9714;
+  const char* logFile                    = NULL;
+  const char* machineType                = "";
+  const char* remoteUser                 = "";
+  Boolean     debug                      = false;
+  int         dmucsHostRequestRetrySleep = 2;
+  int         dmucsHostRequestRetryMax   = 1000;
+  int         dmucsSocketFD              = -1;
 
   const char*           dmucsHostNameEnv = getenv("DMUCS_SERVER");
   if (dmucsHostNameEnv) dmucsHostName    = dmucsHostNameEnv;
@@ -107,12 +134,14 @@ int main(int argc, char* argv[]) {
                             "s:p:t:l:dh",
                             longOpts, &optId)) != -1) {
     switch (opt) {
-      case 's': dmucsHostName = optarg;       break;
-      case 'p': dmucsPort     = atol(optarg); break;
-      case 't': machineType   = optarg;       break;
-      case 'u': remoteUser    = optarg;       break;
-      case 'l': logFile       = optarg;       break;
-      case 'd': debug         = true;         break;
+      case 's': dmucsHostName              = optarg;       break;
+      case 'p': dmucsPort                  = atol(optarg); break;
+      case 't': machineType                = optarg;       break;
+      case 'u': remoteUser                 = optarg;       break;
+      case 'l': logFile                    = optarg;       break;
+      case 'm': dmucsHostRequestRetryMax   = atol(optarg); break;
+      case 'r': dmucsHostRequestRetrySleep = atol(optarg); break;
+      case 'd': debug                      = true;         break;
       case 'h':
       case '?':
       default:
@@ -120,14 +149,33 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  //////////////////////////////////////////////
+  // Now we want to redirect all output (stdout/stderr)
+  // IF the user has specified a logFile
+  
+  if (logFile) {
+    DEBUG("lmsDMUCSrun: redirecting all output to [%s]\n", logFile);
+    int logFileFD = open(logFile, O_WRONLY|O_CREAT|O_TRUNC, 0666);
+    if (logFileFD < 0) {
+      ERROREXIT(
+        "lmsDMUCSrun: Could not redirect output to [%s] error: %s\n",
+        logFile, strerror(errno)
+      );
+    }
+    dup2(logFileFD, 1); // redirect stdout
+    dup2(logFileFD, 2); // redirect stderr
+    DEBUG("lmsDMUCSrun: redirected all output to [%s]\n", logFile);
+  }
+
+  
   if (debug) {
-    printf("lms DMUCS command runner (v0.0)\n\n");
-    printf(" DMUCS server: [%s]\n", dmucsHostName);
-    printf("   DMUCS port: [%d]\n", dmucsPort);
-    printf(" machine type: [%s]\n", machineType);
-    printf("  remote user: [%s]\n", remoteUser);
-    printf("log file path: [%s]\n", logFile);
-    printf("\ncommand: [");
+    printf("lmsDMUCSrun: lms DMUCS command runner (v0.0)\n\n");
+    printf("lmsDMUCSrun:  DMUCS server: [%s]\n", dmucsHostName);
+    printf("lmsDMUCSrun:    DMUCS port: [%d]\n", dmucsPort);
+    printf("lmsDMUCSrun:  machine type: [%s]\n", machineType);
+    printf("lmsDMUCSrun:   remote user: [%s]\n", remoteUser);
+    printf("lmsDMUCSrun: log file path: [%s]\n", logFile);
+    printf("\nlmsDMUCSrun: command: [");
     for(int i = optind; i < argc; i++) {
       if (optind < i) printf(" ");
       printf("%s", argv[i]);
@@ -137,20 +185,17 @@ int main(int argc, char* argv[]) {
   }
 
   if (argc <= optind) {
-    fprintf(stderr, "no command found... doing nothing!\n");
-    exit(-1);
+    ERROREXIT("lmsDMUCSrun: no command found... doing nothing!\n");
   }  
 
   //////////////////////////////////////////////
   // Now connect to the DMUCS server
   
-  int dmucsSocketFD = 0;
   if((dmucsSocketFD = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-    fprintf(stderr, "Could not open a tcp socket to the DMUCS server\n");
-    exit(-1);
+    ERROREXIT("lmsDMUCSrun: Could not open a tcp socket to the DMUCS server\n");
   }
   
-  printf("dmucsSocketFD: [%d]\n", dmucsSocketFD);
+  DEBUG("lmsDMUCSrun: dmucsSocketFD: [%d]\n", dmucsSocketFD);
   
   struct sockaddr_in dmucsAddress;
   memset(&dmucsAddress, 0, sizeof(dmucsAddress));
@@ -159,12 +204,11 @@ int main(int argc, char* argv[]) {
 
   struct hostent *dmucsHostEntity = gethostbyname(dmucsHostName);
   if (dmucsHostEntity == NULL) {
-    fprintf(stderr, "Could not get the DMUCS host IP entity information");
     close(dmucsSocketFD);
-    exit(-1);
+    ERROREXIT("lmsDMUCSrun: Could not get the DMUCS host IP entity information");
   }
   
-  printf("dmucsHost: [%s]\n", dmucsHostEntity->h_name);
+  DEBUG("lmsDMUCSrun: dmucsHost: [%s]\n", dmucsHostEntity->h_name);
   dmucsAddress.sin_addr = * ((struct in_addr *) dmucsHostEntity->h_addr);
   
   if (connect(
@@ -172,13 +216,10 @@ int main(int argc, char* argv[]) {
         (struct sockaddr *)&dmucsAddress,
         sizeof(dmucsAddress)
       ) < 0) {
-    fprintf(
-      stderr,
-      "Could not connect to the DMUCS server: %s\n",
+    ERROREXIT(
+      "lmsDMUCSrun: Could not connect to the DMUCS server: %s\n",
       strerror(errno)
     );
-    close(dmucsSocketFD);
-    exit(-1);
   }
   
   //////////////////////////////////////////////
@@ -186,20 +227,16 @@ int main(int argc, char* argv[]) {
 
   char clientHostName[bufferLen];
   if (gethostname(clientHostName, bufferLen)) {
-    fprintf(stderr, "Could not get our host name\n");
-    close(dmucsSocketFD);
-    exit(-1);
+    ERROREXIT("lmsDMUCSrun: Could not get our host name\n");
   }
 
-  printf("client host name: [%s]\n", clientHostName);
+  DEBUG("lmsDMUCSrun: client host name: [%s]\n", clientHostName);
 
   struct hostent *clientHostEntity = gethostbyname(clientHostName);
   if (clientHostEntity == NULL) {
-    fprintf(stderr, "Could not get our host IP entity information");
-    close(dmucsSocketFD);
-    exit(-1);
+    ERROREXIT("lmsDMUCSrun: Could not get our host IP entity information");
   }
-  printf("client host: [%s]\n", clientHostEntity->h_name);
+  DEBUG("lmsDMUCSrun: client host: [%s]\n", clientHostEntity->h_name);
   
   struct in_addr clientHostIP;
   memcpy(&clientHostIP, clientHostEntity->h_addr, sizeof(clientHostIP));
@@ -207,7 +244,7 @@ int main(int argc, char* argv[]) {
   memset(&clientHostIPv4Addr, 0, bufferLen);
   strncat(clientHostIPv4Addr, inet_ntoa(clientHostIP), 16);
   
-  printf("Client Host IPv4 addr: [%s]\n", clientHostIPv4Addr);
+  DEBUG("lmsDMUCSrun: Client Host IPv4 addr: [%s]\n", clientHostIPv4Addr);
   
   //////////////////////////////////////////////
   // Now build and send the DMUCS host request
@@ -222,55 +259,47 @@ int main(int argc, char* argv[]) {
   strncat(dmucsHostRequest, " ", 1);
   strncat(dmucsHostRequest, machineType, 900);
   
-  printf("DMUCS host request: [%s]\n", dmucsHostRequest);
+  DEBUG("lmsDMUCSrun: DMUCS host request: [%s]\n", dmucsHostRequest);
 
-  for(int try = dmucsHostRequestTryMax; 0 < try; try--) {
+  for(int try = dmucsHostRequestRetryMax; 0 < try; try--) {
     if (write(dmucsSocketFD, dmucsHostRequest, strlen(dmucsHostRequest)+1) < 0) {
-      fprintf(
-        stderr,
-        "Could not send dmucsHostRequest to DMUCS server: %s\n",
+      ERROREXIT(
+        "lmsDMUCSrun: Could not send dmucsHostRequest to DMUCS server: %s\n",
         strerror(errno)
       );
-      close(dmucsSocketFD);
-      exit(-1);
     }
   
     memset(dmucsHostResponse, 0, bufferLen);
   
     if (read(dmucsSocketFD, dmucsHostResponse, bufferLen-1) < 0) {
-      fprintf(
-        stderr,
-        "Could not read dmucsHostResponse from DMUCS server: %s\n",
+      ERROREXIT(
+        "lmsDMUCSrun: Could not read dmucsHostResponse from DMUCS server: %s\n",
         strerror(errno)
       );
-      close(dmucsSocketFD);
-      exit(-1);
     }
   
-    printf("DMUCS host response: [%s]\n", dmucsHostResponse);
+    DEBUG("lmsDMUCSrun: DMUCS host response: [%s]\n", dmucsHostResponse);
     
     if (strncmp(dmucsHostResponse, noHostAvailable, strlen(noHostAvailable)) == 0){
-      printf("DMUCS has no available hosts... trying %d more times\n", try);
+      DEBUG("lmsDMUCSrun: DMUCS has no available hosts... trying %d more times\n", try);
     } else {
       break;
     }
-    sleep(dmucsHostRequestSleep);
+    sleep(dmucsHostRequestRetrySleep);
   }
   
   if (strncmp(dmucsHostResponse, noHostAvailable, strlen(noHostAvailable)) == 0) {
-    fprintf(stderr, "DMUCS has no available hosts\n");
-    close(dmucsSocketFD);
-    exit(-1);
+    ERROREXIT("lmsDMUCSrun: DMUCS has no available hosts\n");
   }
   
-  printf("DMUCS has assigned us the host: [%s]\n", dmucsHostResponse);
+  DEBUG("lmsDMUCSrun: DMUCS has assigned us the host: [%s]\n", dmucsHostResponse);
   
   struct in_addr compileServerAddr;
   inet_pton(AF_INET, dmucsHostResponse, &compileServerAddr);
   struct hostent *compileServerEntity =
     gethostbyaddr(&compileServerAddr, sizeof(compileServerAddr), AF_INET);
 
-  printf("Compile server host name: [%s]\n", compileServerEntity->h_name);
+  DEBUG("lmsDMUCSrun: Compile server host name: [%s]\n", compileServerEntity->h_name);
 
   //////////////////////////////////////////////
   // Now fork to a child process...
@@ -282,9 +311,9 @@ int main(int argc, char* argv[]) {
   int forkedPID = fork();
   if (forkedPID == 0) {
     // child process
-    printf("Hello from the child!\n");
-    printf(
-      "hostname: [%s] dmucsHostResponse: [%s]\n", 
+    DEBUG("lmsDMUCSrun: Hello from the child!\n");
+    DEBUG(
+      "lmsDMUCSrun: hostname: [%s] dmucsHostResponse: [%s]\n", 
       clientHostIPv4Addr, dmucsHostResponse
     );
 
@@ -305,32 +334,44 @@ int main(int argc, char* argv[]) {
       cmdArgs[cmdArgNum++] = argv[i];
     }
 
-    printf("exec'ing the command: [");
-    for(int i = 0; i < cmdArgNum; i++) {
-      printf("%s ", cmdArgs[i]);
+    if (debug) {
+      printf("lmsDMUCSrun: exec'ing the command: [");
+      for(int i = 0; i < cmdArgNum; i++) {
+        printf("%s ", cmdArgs[i]);
+      }
+      printf("]\n");
+      printf("----------------------------------------------------\n");
     }
-    printf("]\n");
 
     if (execvp(cmdArgs[0], (char**)cmdArgs) < 0) {
-      fprintf(stderr, "execvp failed: %s\n", strerror(errno));
-      exit(-1);
+      dmucsSocketFD = -1; // the child should NOT close the dmucs socket!
+      ERROREXIT("lmsDMUCSrun: execvp failed: %s\n", strerror(errno));
     }
 
-    printf("Goodbye from the child!\n"); // we should never reach here!!
+    DEBUG("lmsDMUCSrun: Goodbye from the child!\n"); // we should never reach here!!
     exit(0);
   } else {
     // parent process
-    fprintf(stderr, "Hello from the parent!\n");
+    DEBUG("lmsDMUCSrun: Hello from the parent!\n");
     wait(&childStatus);
-    fprintf(stderr, "Finished waiting for the child process!\n");
+    DEBUG("----------------------------------------------------\n");
+    DEBUG("lmsDMUCSrun: Finished waiting for the child process!\n");
   }
   
-  close(dmucsSocketFD);
+  //////////////////////////////////////////////
+  // Now close the connection to the DMUCS
+  // (this allows the DMUCS server to reassign
+  //  this host to another compile task) 
+
+  if (-1 < dmucsSocketFD) close(dmucsSocketFD);
+  
+  //////////////////////////////////////////////
+  // Now return the child process' status
   
   int parentStatus = -1;
   if (WIFEXITED(childStatus)) parentStatus = WEXITSTATUS(childStatus);
   
-  printf("Exit status: %d\n", parentStatus);
+  DEBUG("lmsDMUCSrun: Exit status: %d\n", parentStatus);
   
   exit(parentStatus);
 }
