@@ -319,12 +319,12 @@ end
 lms.dmucsServer = ' -s '..lms.dmucsServer or ''
 lms.dmucsRunner = lms.dmucsRunner or 
   makePath{ luaMakeSystemDir, 'lmsDMUCSrun' }
-lms.dmucsRunner = lms.dmucsRunner..lms.dmucsServer
 if verbose then
   lms.dmucsRunner = lms.dmucsRunner..' -v'
 end
+lms.dmucsRunner = lms.dmucsRunner..lms.dmucsServer
 
-local dmucsRunnerCheckCMD = '( '..lms.dmucsRunner..' -c 2>&1 ) > /dev/null'
+local dmucsRunnerCheckCMD = '( '..lms.dmucsRunner..' --check 2>&1 ) > /dev/null'
 local dmucsRunnerCheck = os.execute(dmucsRunnerCheckCMD)
 local foundDMUCSserver =
   (dmucsRunnerCheck == 0) or (dmucsRunnerCheck == true)
@@ -408,31 +408,29 @@ function executeCmd(aTarget, aCmd, onExit)
     local cmdLogFile = logPrefix..'/'..aTarget:gsub('%/','_')
     lfs.mkdir(getParentPath(cmdLogFile))
     lmsMessageVery('logFile: ['..cmdLogFile..']')
-    local wrappedCmd = lms.dmucsRunner..' -l '..cmdLogFile..' -- '..aCmd
+    local wrappedCmd = lms.dmucsRunner..' -l '..cmdLogFile..' -c '..aCmd
     lmsMessageVery('using: ['..wrappedCmd..']')
-    local result, resultType, code = os.execute(wrappedCmd)
-    -- texlua does not follow the official return valuse...
-    -- so we map the texlua result into the lua return values
-    if type(result) == 'number' then
-      resultType = 'exit'
-      if result == 0 then
-        code = 0
-        result = true
-      else
-        code = result
-        result = false        
+    local spawnArguments = { }
+    for anArg in wrappedCmd:gmatch("[^%s]+") do
+      tInsert(spawnArguments, anArg)
+    end
+    lmsMessageVery('spawnComandArguments: '..prettyPrint(spawnArguments))
+    local handle, pid = luv.spawn(
+      spawnArguments[1],
+      { args = spawnArguments },
+      function(code, signal)
+        if verbose then
+          local logFile, err = io.open(cmdLogFile, 'rb')
+          if logFile then
+            io.write(logFile:read('*a'))
+          else
+            print('Could not open ['..cmdLogFile..'] '..err)
+          end
+        end
+        luv.async_send(asyncCheckTargets)
+        onExit(code, signal)
       end
-    end
-    if result then
-      lmsMessageVery('onExit result true')
-      onExit(0, 0)
-    elseif resultType == 'exit' then
-      lmsMessageVery('onExit result false (code: '..toStr(code)..')')
-      onExit(code, 0)
-    else
-      lmsMessageVery('onExit result false (signal: '..toStr(code)..')')
-      onExit(0, code)
-    end
+    )
   else
     lmsMessage('running: ['..aCmd..'] using os.execute')
     local result, resultType, code = os.execute(aCmd)

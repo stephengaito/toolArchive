@@ -67,7 +67,7 @@ typedef size_t UInteger;
 //////////////////////////////////////////////
 // Start by handling the options
 
-const char* shortOpts = "s:p:t:u:l:m:r:cvdh";
+const char* shortOpts = "s:p:t:u:l:m:r:-cvdh";
 
  /* option parser configuration */
 static struct option longOpts[] = {
@@ -78,7 +78,8 @@ static struct option longOpts[] = {
   {"logFile",    required_argument, 0, 'l'},
   {"maxRetries", required_argument, 0, 'm'},
   {"retrySleep", required_argument, 0, 'r'},
-  {"check",      no_argument,       0, 'c'},
+  {"command",    no_argument,       0, 'c'},
+  {"check",      no_argument,       0, 'C'},
   {"verbose",    no_argument,       0, 'v'},
   {"debug",      no_argument,       0, 'd'},
   {"help",       no_argument,       0, 'h'},
@@ -143,7 +144,11 @@ int main(int argc, char* argv[]) {
   const char*           logFileEnv       = getenv("LMS_LOG_FILE");
   if (logFileEnv)       logFile          = logFileEnv;
   
-  while ((opt = getopt_long(argc, argv, shortOpts, longOpts, &optId)) != -1) {
+  Boolean continueOptions = true;
+  while (continueOptions &&
+    ((opt = getopt_long(argc, argv, shortOpts, longOpts, &optId)) != -1)
+    ) {
+    DEBUG("found option: %c value: [%s]\n", opt, optarg);
     switch (opt) {
       case 's': dmucsHostName              = optarg;       break;
       case 'p': dmucsPort                  = atol(optarg); break;
@@ -152,10 +157,11 @@ int main(int argc, char* argv[]) {
       case 'l': logFile                    = optarg;       break;
       case 'm': dmucsHostRequestRetryMax   = atol(optarg); break;
       case 'r': dmucsHostRequestRetrySleep = atol(optarg); break;
-      case 'c': checkForDMUCSserver        = true;         break;
+      case 'C': checkForDMUCSserver        = true;         break;
       case 'v': verbose                    = true;         break;
       case 'd': debug                      = true;
                 verbose                    = true;         break;
+      case 'c': continueOptions            = false;        break;
       case 'h':
       case '?':
       default:
