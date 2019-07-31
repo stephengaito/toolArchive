@@ -17,7 +17,7 @@ local function compileDocument(aDef, onExit)
   --
   -- build the complete context document
   --
-  executeCmd('context --silent=all '..aDef.mainDoc, function(code, signal)
+  executeCmd(aDef.target, 'context --silent=all '..aDef.mainDoc, function(code, signal)
     --
     chDir(curDir)
     onExit(code, signal)

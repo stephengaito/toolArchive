@@ -14,9 +14,9 @@ local function compileLitProg(lpDef, onExit)
   local curDir = lfs.currentdir()
   chDir(lpDef.docDir)
   --
-  -- build the litProg output usning simple one context pass...
+  -- build the litProg output using simple one context pass...
   --
-  executeCmd('context --silent=all --once '..lpDef.mainDoc, function(code, signal)
+  executeCmd(lpDef.target, 'context --silent=all --once '..lpDef.mainDoc, function(code, signal)
     --
     -- remove the PDF file since we only want the litProg output
     --

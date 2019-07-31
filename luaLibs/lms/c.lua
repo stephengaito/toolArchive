@@ -66,7 +66,7 @@ local function cCompile(cDef, onExit)
     '-o',
     cDef.target
   }
-  return executeCmd(tConcat(cmd, ' '), onExit)
+  return executeCmd(cDef.target, tConcat(cmd, ' '), onExit)
 end
 
 local function cLink(cDef, onExit)
@@ -78,7 +78,7 @@ local function cLink(cDef, onExit)
     '-o',
     cDef.target
   }
-  return executeCmd(tConcat(cmd, ' '), onExit)
+  return executeCmd(cDef.target, tConcat(cmd, ' '), onExit)
 end
 
 local function computeNeeds(cDef)

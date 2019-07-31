@@ -92,6 +92,10 @@ verbose     = lms.verbose     or false
 veryVerbose = lms.veryVerbose or false
 recurse     = lms.recurse     or true
 dirPrefix   = lms.dirPrefix   or currentDir
+local aTmpName = os.tmpname()
+logPrefix   = lms.logPrefix   or
+  aTmpName:gsub('%/lua_', '/lms_'..os.date('%Y-%m-%d_%H-%M-%S')..'_')
+os.remove(aTmpName)
 useLUV      = lms.useLUV      or false
 
 local function compareKeyValues(a, b)
@@ -218,6 +222,14 @@ addOption('-h', '--help', 'Provide this list of options', function()
   print("lms.os = "..lms.os)
   os.exit(0)
 end)
+
+addOption('-l', '--log-prefix', 'A prefix for all logFile paths', 
+  function(key, value)
+    if value then
+      logPrefix = value
+    end
+  end
+)
 
 addOption('-d', '--directory-prefix', 'The current directory prefix',
   function(key, value)
@@ -348,7 +360,7 @@ end
 targets    = {}
 targetList = {}
 
-function runCmdIn(cmd, subDir, onExit)
+function runCmdIn(aTarget, cmd, subDir, onExit)
   subDirPath = subDir
   if cmd:find('^lms') then
     cmd = makePath { cmd, subDir }
@@ -359,7 +371,7 @@ function runCmdIn(cmd, subDir, onExit)
   print('working in ['..subDirPath..']')
   print('running    ['..cmd..']')
   lfs.chdir(subDir)
-  executeCmd(cmd, function(code, signal)
+  executeCmd(aTarget, cmd, function(code, signal)
     lfs.chdir(curDir)
     if code ~= 0 then
       lmsError('FAILED to run: ['..cmd..']')
@@ -369,7 +381,7 @@ function runCmdIn(cmd, subDir, onExit)
   end)
 end
 
-function runLocalCmdIn(cmd, subDir, onExit)
+function runLocalCmdIn(aTarget, cmd, subDir, onExit)
   subDirPath = subDir
   if cmd:find('^lms') then
     cmd = makePath { cmd, subDir }
@@ -380,7 +392,7 @@ function runLocalCmdIn(cmd, subDir, onExit)
   print('working in ['..subDirPath..']')
   print('running    ['..cmd..']')
   lfs.chdir(subDir)
-  executeLocalCmd(cmd, function(code, signal)
+  executeLocalCmd(aTarget, cmd, function(code, signal)
     lfs.chdir(curDir)
     if code ~= 0 then
       lmsError('FAILED to run: ['..cmd..']')
@@ -390,51 +402,89 @@ function runLocalCmdIn(cmd, subDir, onExit)
   end)
 end
 
-function executeCmd(aCmd, onExit)
-print('executeCmd')
+function executeCmd(aTarget, aCmd, onExit)
   if useLUV then
     lmsMessage('running: ['..aCmd..'] using luv.spawn BUT NOT YET')
-    local wrappedCmd = lms.dmucsRunner..' -- '..aCmd
-    lmsMessageCont('using: ['..wrappedCmd..']')
+    local cmdLogFile = logPrefix..'/'..aTarget:gsub('%/','_')
+    lfs.mkdir(getParentPath(cmdLogFile))
+    lmsMessageVery('logFile: ['..cmdLogFile..']')
+    local wrappedCmd = lms.dmucsRunner..' -l '..cmdLogFile..' -- '..aCmd
+    lmsMessageVery('using: ['..wrappedCmd..']')
     local result, resultType, code = os.execute(wrappedCmd)
+    -- texlua does not follow the official return valuse...
+    -- so we map the texlua result into the lua return values
+    if type(result) == 'number' then
+      resultType = 'exit'
+      if result == 0 then
+        code = 0
+        result = true
+      else
+        code = result
+        result = false        
+      end
+    end
     if result then
       lmsMessageVery('onExit result true')
       onExit(0, 0)
-    elseif resultType == 'signal' then
-      lmsMessageVery('onExit result false (signal: '..toStr(code)..')')
-      onExit(0, code)
-    else
+    elseif resultType == 'exit' then
       lmsMessageVery('onExit result false (code: '..toStr(code)..')')
       onExit(code, 0)
+    else
+      lmsMessageVery('onExit result false (signal: '..toStr(code)..')')
+      onExit(0, code)
     end
   else
     lmsMessage('running: ['..aCmd..'] using os.execute')
     local result, resultType, code = os.execute(aCmd)
+    -- texlua does not follow the official return valuse...
+    -- so we map the texlua result into the lua return values
+    if type(result) == 'number' then
+      resultType = 'exit'
+      if result == 0 then
+        code = 0
+        result = true
+      else
+        code = result
+        result = false        
+      end
+    end
     if result then
       lmsMessageVery('onExit result true')
       onExit(0, 0)
-    elseif resultType == 'signal' then
-      lmsMessageVery('onExit result false (signal: '..toStr(code)..')')
-      onExit(0, code)
-    else
+    elseif resultType == 'exit' then
       lmsMessageVery('onExit result false (code: '..toStr(code)..')')
       onExit(code, 0)
+    else
+      lmsMessageVery('onExit result false (signal: '..toStr(code)..')')
+      onExit(0, code)
     end
   end
 end
 
-function executeLocalCmd(aCmd, onExit)
+function executeLocalCmd(aTarget, aCmd, onExit)
   lmsMessage('running: ['..aCmd..'] using os.execute (local)')
   local result, resultType, code = os.execute(aCmd)
+    -- texlua does not follow the official return valuse...
+    -- so we map the texlua result into the lua return values
+    if type(result) == 'number' then
+      resultType = 'exit'
+      if result == 0 then
+        code = 0
+        result = true
+      else
+        code = result
+        result = false        
+      end
+    end
   if result then
     lmsMessageVery('onExit result true')
     onExit(0, 0)
-  elseif resultType == 'signal' then
-    lmsMessageVery('onExit result false (signal: '..toStr(code)..')')
-    onExit(0, code)
-  else
+  elseif resultType == 'exit' then
     lmsMessageVery('onExit result false (code: '..toStr(code)..')')
     onExit(code, 0)
+  else
+    lmsMessageVery('onExit result false (signal: '..toStr(code)..')')
+    onExit(0, code)
   end
 end
 
@@ -663,7 +713,7 @@ function runTarget(targetToRun)
       lmsMessage(
        'starting to build ['..aTarget.target..']\nusing ['..aTarget.command..']'
       )
-      executeCmd(aTarget.command, function(code, signal)
+      executeCmd(aTarget.target, aTarget.command, function(code, signal)
         if code ~= 0 then
           lmsError('could not run ['..aTarget.command..']')
         end
@@ -854,7 +904,7 @@ function recurseCurrentTarget(aDef, onExit)
     return
   end
 
-  runCmdIn(aDef['recurseCmd'], aDef['subDir'], onExit)
+  runCmdIn(aDef.target, aDef['recurseCmd'], aDef['subDir'], onExit)
 end
 
 function recurseTargets(aDef)
