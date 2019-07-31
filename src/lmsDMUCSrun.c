@@ -67,7 +67,7 @@ typedef size_t UInteger;
 //////////////////////////////////////////////
 // Start by handling the options
 
-const char* shortOpts = "s:p:t:u:l:m:r:-cvdh";
+const char* shortOpts = "s:p:t:u:l:m:r:cCvdh";
 
  /* option parser configuration */
 static struct option longOpts[] = {
