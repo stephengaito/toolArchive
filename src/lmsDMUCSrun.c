@@ -49,6 +49,9 @@
 #define DEBUG(frmt, ...)    \
 if (debug) printf(frmt, ##__VA_ARGS__)
 
+#define VERBOSE(frmt, ...)    \
+if (verbose) printf(frmt, ##__VA_ARGS__)
+
 #define ERROREXIT(frmt, ...)                    \
 {                                               \
   fprintf(stderr, frmt, ##__VA_ARGS__);         \
@@ -64,6 +67,8 @@ typedef size_t UInteger;
 //////////////////////////////////////////////
 // Start by handling the options
 
+const char* shortOpts = "s:p:t:u:l:m:r:vdh";
+
  /* option parser configuration */
 static struct option longOpts[] = {
   {"server",     required_argument, 0, 's'},
@@ -73,6 +78,7 @@ static struct option longOpts[] = {
   {"logFile",    required_argument, 0, 'l'},
   {"maxRetries", required_argument, 0, 'm'},
   {"retrySleep", required_argument, 0, 'r'},
+  {"verbose",    no_argument,       0, 'v'},
   {"debug",      no_argument,       0, 'd'},
   {"help",       no_argument,       0, 'h'},
   {0, 0, 0, 0}
@@ -97,7 +103,9 @@ static void optionHelp(const char* progName) {
   fprintf(stderr, "  -maxRetries <maxRetries>\n\n");
   fprintf(stderr, "  -r <retrySleep>          : the number of seconds to sleep between DMUCS\n");
   fprintf(stderr, "  -retrySleep <retrySleep>   host request retries\n\n");
-  fprintf(stderr, "  -d                       : provide a running commentary of what\n");
+  fprintf(stderr, "  -v                       : provide a running commentary of what\n");
+  fprintf(stderr, "  --verbose                    we are doing\n\n");
+  fprintf(stderr, "  -d                       : provide a low-level running commentary of what\n");
   fprintf(stderr, "  --debug                    we are doing\n\n");
   fprintf(stderr, "  -h                       : this help description\n");
   fprintf(stderr, "  --help\n\n");
@@ -116,6 +124,7 @@ int main(int argc, char* argv[]) {
   const char* logFile                    = NULL;
   const char* machineType                = "";
   const char* remoteUser                 = "";
+  Boolean     verbose                    = false;
   Boolean     debug                      = false;
   int         dmucsHostRequestRetrySleep = 2;
   int         dmucsHostRequestRetryMax   = 1000;
@@ -130,9 +139,7 @@ int main(int argc, char* argv[]) {
   const char*           logFileEnv       = getenv("LMS_LOG_FILE");
   if (logFileEnv)       logFile          = logFileEnv;
   
-  while ((opt = getopt_long(argc, argv,
-                            "s:p:t:l:dh",
-                            longOpts, &optId)) != -1) {
+  while ((opt = getopt_long(argc, argv, shortOpts, longOpts, &optId)) != -1) {
     switch (opt) {
       case 's': dmucsHostName              = optarg;       break;
       case 'p': dmucsPort                  = atol(optarg); break;
@@ -141,7 +148,9 @@ int main(int argc, char* argv[]) {
       case 'l': logFile                    = optarg;       break;
       case 'm': dmucsHostRequestRetryMax   = atol(optarg); break;
       case 'r': dmucsHostRequestRetrySleep = atol(optarg); break;
-      case 'd': debug                      = true;         break;
+      case 'v': verbose                    = true;         break;
+      case 'd': debug                      = true;
+                verbose                    = true;         break;
       case 'h':
       case '?':
       default:
@@ -154,7 +163,7 @@ int main(int argc, char* argv[]) {
   // IF the user has specified a logFile
   
   if (logFile) {
-    DEBUG("lmsDMUCSrun: redirecting all output to [%s]\n", logFile);
+    VERBOSE("lmsDMUCSrun: redirecting all output to [%s]\n", logFile);
     int logFileFD = open(logFile, O_WRONLY|O_CREAT|O_TRUNC, 0666);
     if (logFileFD < 0) {
       ERROREXIT(
@@ -164,17 +173,19 @@ int main(int argc, char* argv[]) {
     }
     dup2(logFileFD, 1); // redirect stdout
     dup2(logFileFD, 2); // redirect stderr
-    DEBUG("lmsDMUCSrun: redirected all output to [%s]\n", logFile);
+    VERBOSE("lmsDMUCSrun: redirected all output to [%s]\n", logFile);
   }
 
   
-  if (debug) {
+  if (verbose) {
     printf("lmsDMUCSrun: lms DMUCS command runner (v0.0)\n\n");
     printf("lmsDMUCSrun:  DMUCS server: [%s]\n", dmucsHostName);
     printf("lmsDMUCSrun:    DMUCS port: [%d]\n", dmucsPort);
     printf("lmsDMUCSrun:  machine type: [%s]\n", machineType);
     printf("lmsDMUCSrun:   remote user: [%s]\n", remoteUser);
     printf("lmsDMUCSrun: log file path: [%s]\n", logFile);
+    printf("lmsDMUCSrun:   max retries: [%d]\n", dmucsHostRequestRetryMax);
+    printf("lmsDMUCSrun:   retry sleep: [%d]\n", dmucsHostRequestRetrySleep);
     printf("\nlmsDMUCSrun: command: [");
     for(int i = optind; i < argc; i++) {
       if (optind < i) printf(" ");
@@ -292,14 +303,14 @@ int main(int argc, char* argv[]) {
     ERROREXIT("lmsDMUCSrun: DMUCS has no available hosts\n");
   }
   
-  DEBUG("lmsDMUCSrun: DMUCS has assigned us the host: [%s]\n", dmucsHostResponse);
+  VERBOSE("lmsDMUCSrun: DMUCS has assigned us the host: [%s]\n", dmucsHostResponse);
   
   struct in_addr compileServerAddr;
   inet_pton(AF_INET, dmucsHostResponse, &compileServerAddr);
   struct hostent *compileServerEntity =
     gethostbyaddr(&compileServerAddr, sizeof(compileServerAddr), AF_INET);
 
-  DEBUG("lmsDMUCSrun: Compile server host name: [%s]\n", compileServerEntity->h_name);
+  VERBOSE("lmsDMUCSrun: Compile server host name: [%s]\n", compileServerEntity->h_name);
 
   //////////////////////////////////////////////
   // Now fork to a child process...
@@ -321,20 +332,31 @@ int main(int argc, char* argv[]) {
     int cmdArgNum = 0;
     memset(cmdArgs, 0, sizeof(cmdArgs));
     
-    if (strncmp(clientHostIPv4Addr, dmucsHostResponse, bufferLen-1) == 0) {
+    if ((strncmp(clientHostIPv4Addr, dmucsHostResponse, bufferLen-1) == 0) &&
+        (strncmp(remoteUser, getenv("USER"), strlen(remoteUser)) == 0)){
       // we are calling a process on the same machine
+      // with the same "remoteUser" as the system "USER"
       // so we do not need to use ssh
     } else {
       // we are calling a process on a different machine
       // so we need to use ssh
       cmdArgs[cmdArgNum++] = "ssh";
-      cmdArgs[cmdArgNum++] = compileServerEntity->h_name;
+      char sshUserHost[bufferLen];
+      memset(sshUserHost, 0, bufferLen);
+      strncat(sshUserHost, remoteUser, strlen(remoteUser));
+      strncat(sshUserHost, "@", 1);
+      strncat(
+        sshUserHost,
+        compileServerEntity->h_name,
+        strlen(compileServerEntity->h_name)
+      );
+      cmdArgs[cmdArgNum++] = sshUserHost;
     }
     for(int i = optind; i < argc; i++) {
       cmdArgs[cmdArgNum++] = argv[i];
     }
 
-    if (debug) {
+    if (verbose) {
       printf("lmsDMUCSrun: exec'ing the command: [");
       for(int i = 0; i < cmdArgNum; i++) {
         printf("%s ", cmdArgs[i]);
@@ -354,7 +376,7 @@ int main(int argc, char* argv[]) {
     // parent process
     DEBUG("lmsDMUCSrun: Hello from the parent!\n");
     wait(&childStatus);
-    DEBUG("----------------------------------------------------\n");
+    VERBOSE("----------------------------------------------------\n");
     DEBUG("lmsDMUCSrun: Finished waiting for the child process!\n");
   }
   
@@ -371,7 +393,7 @@ int main(int argc, char* argv[]) {
   int parentStatus = -1;
   if (WIFEXITED(childStatus)) parentStatus = WEXITSTATUS(childStatus);
   
-  DEBUG("lmsDMUCSrun: Exit status: %d\n", parentStatus);
+  VERBOSE("lmsDMUCSrun: Exit status: %d\n", parentStatus);
   
   exit(parentStatus);
 }
