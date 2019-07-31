@@ -111,11 +111,40 @@ function c.program(cDef)
       tInsert(cleanTargets, nameCleanTarget(anOFile))
     end
   end
+  
   target(hMerge(cDef, { 
     dependencies = cDef.oFiles,
     command      = cLink,
     commandName  = 'C::cLink'
   }))
+  
+  cDef.installDirs = cDef.installDirs or { }
+  for i, anInstallDir in ipairs(cDef.installDirs) do
+    local installDeps = { }
+    local buildTarget = cDef.target
+    tInsert(installDeps, buildTarget);
+    local installTarget = makePath{
+      replaceEnvironmentVarsInPath(anInstallDir),
+      cDef.programName
+    }
+    local parentPath = getParentPath(installTarget)
+    if parentPath then 
+      ensurePathExists(parentPath)
+      tInsert(installDeps, parentPath)
+    end
+    tInsert(installTargets, installTarget)
+    target(hMerge(cDef, {
+      target       = installTarget,
+      dependencies = installDeps,
+      command      = tConcat({
+        'install -T',
+        buildTarget,
+        installTarget
+      }, ' '),
+      commandName  = 'C::installTarget (program)'
+    }))
+  end
+  
   tInsert(clobberTargets, nameClobberTarget(cDef.target))
 end
 
@@ -173,6 +202,7 @@ function c.targets(defaultDef, cDef)
     local programTarget = makePath{ cDef.buildDir, aProgram }
     c.program(hMerge(cDef, {
       target       = programTarget,
+      programName  = aProgram,
       dependencies = c.collectCDependencies(cDependencies),
       needs        = { },
     }))

@@ -36,7 +36,7 @@ end
 local function gatherBibReferences(ctxDef, onExit)
   if type(ctxDef['docDir']) == 'nil' then return end
 
-  runCmdIn('diSimp bib', ctxDef['docDir'], onExit)
+  runLocalCmdIn('diSimp bib', ctxDef['docDir'], onExit)
 end
 
 local function copyCodeFiles(ctxDef, onExit)
@@ -111,11 +111,11 @@ local function publishDocument(ctxDef, onExit)
     ' --dest-dir ' .. makePath { ctxDef['releaseDir'], 'doc', htmlDir } ..
     ' --page-filename ' .. pageDoc ..
     ' ' .. pdfDoc
-  runCmdIn(pubCmd, ctxDef['docDir'], function(code, signal)
+  runLocalCmdIn(pubCmd, ctxDef['docDir'], function(code, signal)
     if code == 0 then
       local cpCmd = 
         'cp ' .. pdfDoc .. ' ' .. makePath{ ctxDef.releaseDir, 'doc' }
-      runCmdIn(cpCmd, ctxDef.docDir, onExit)
+      runLocalCmdIn(cpCmd, ctxDef.docDir, onExit)
     else
       onExit(code, signal)
     end

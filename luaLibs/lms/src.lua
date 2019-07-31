@@ -16,7 +16,7 @@ local srcDefaults = {
 src = hMerge(srcDefaults, lms.src, src)
 
 local function cpSrc(srcDef, onExit)
-  executeCmd('cp '..srcDef.srcPath..' '..srcDef.target, onExit)
+  executeLocalCmd('cp '..srcDef.srcPath..' '..srcDef.target, onExit)
 end
 
 function src.targets(defaultDef, srcDef)

@@ -24,5 +24,8 @@ require 'lms.c'
 c.targets(srcTargets, {
   programs = {
     'lmsDMUCSrun'
+  },
+  installDirs = {
+    '<HOME>/.luaMakeSystem'
   }
 })

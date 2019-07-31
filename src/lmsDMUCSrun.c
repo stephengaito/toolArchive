@@ -67,7 +67,7 @@ typedef size_t UInteger;
 //////////////////////////////////////////////
 // Start by handling the options
 
-const char* shortOpts = "s:p:t:u:l:m:r:vdh";
+const char* shortOpts = "s:p:t:u:l:m:r:cvdh";
 
  /* option parser configuration */
 static struct option longOpts[] = {
@@ -78,6 +78,7 @@ static struct option longOpts[] = {
   {"logFile",    required_argument, 0, 'l'},
   {"maxRetries", required_argument, 0, 'm'},
   {"retrySleep", required_argument, 0, 'r'},
+  {"check",      no_argument,       0, 'c'},
   {"verbose",    no_argument,       0, 'v'},
   {"debug",      no_argument,       0, 'd'},
   {"help",       no_argument,       0, 'h'},
@@ -103,6 +104,8 @@ static void optionHelp(const char* progName) {
   fprintf(stderr, "  -maxRetries <maxRetries>\n\n");
   fprintf(stderr, "  -r <retrySleep>          : the number of seconds to sleep between DMUCS\n");
   fprintf(stderr, "  -retrySleep <retrySleep>   host request retries\n\n");
+  fprintf(stderr, "  -c                       : checks to see if we can connect to a\n");
+  fprintf(stderr, "  --check                    running DMUCS server\n\n");
   fprintf(stderr, "  -v                       : provide a running commentary of what\n");
   fprintf(stderr, "  --verbose                    we are doing\n\n");
   fprintf(stderr, "  -d                       : provide a low-level running commentary of what\n");
@@ -124,6 +127,7 @@ int main(int argc, char* argv[]) {
   const char* logFile                    = NULL;
   const char* machineType                = "";
   const char* remoteUser                 = "";
+  Boolean     checkForDMUCSserver        = false;
   Boolean     verbose                    = false;
   Boolean     debug                      = false;
   int         dmucsHostRequestRetrySleep = 2;
@@ -148,6 +152,7 @@ int main(int argc, char* argv[]) {
       case 'l': logFile                    = optarg;       break;
       case 'm': dmucsHostRequestRetryMax   = atol(optarg); break;
       case 'r': dmucsHostRequestRetrySleep = atol(optarg); break;
+      case 'c': checkForDMUCSserver        = true;         break;
       case 'v': verbose                    = true;         break;
       case 'd': debug                      = true;
                 verbose                    = true;         break;
@@ -162,7 +167,7 @@ int main(int argc, char* argv[]) {
   // Now we want to redirect all output (stdout/stderr)
   // IF the user has specified a logFile
   
-  if (logFile) {
+  if (logFile && !checkForDMUCSserver) {
     VERBOSE("lmsDMUCSrun: redirecting all output to [%s]\n", logFile);
     int logFileFD = open(logFile, O_WRONLY|O_CREAT|O_TRUNC, 0666);
     if (logFileFD < 0) {
@@ -176,7 +181,6 @@ int main(int argc, char* argv[]) {
     VERBOSE("lmsDMUCSrun: redirected all output to [%s]\n", logFile);
   }
 
-  
   if (verbose) {
     printf("lmsDMUCSrun: lms DMUCS command runner (v0.0)\n\n");
     printf("lmsDMUCSrun:  DMUCS server: [%s]\n", dmucsHostName);
@@ -194,10 +198,6 @@ int main(int argc, char* argv[]) {
     printf("]\n");
     printf("\n");
   }
-
-  if (argc <= optind) {
-    ERROREXIT("lmsDMUCSrun: no command found... doing nothing!\n");
-  }  
 
   //////////////////////////////////////////////
   // Now connect to the DMUCS server
@@ -232,7 +232,20 @@ int main(int argc, char* argv[]) {
       strerror(errno)
     );
   }
+
+  //////////////////////////////////////////////
+  // Now if we are simply checking for the DMUCS server
+  // we can exit now and report success
+  if (checkForDMUCSserver) {
+    VERBOSE("lmsDMUCSrun: found a running DMUCS server\n");
+    close(dmucsSocketFD);
+    exit(0);
+  }
   
+  if (argc <= optind) {
+    ERROREXIT("lmsDMUCSrun: no command found... doing nothing!\n");
+  }  
+
   //////////////////////////////////////////////
   // Now get our hostname
 

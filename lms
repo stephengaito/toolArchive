@@ -6,19 +6,9 @@ tConcat = table.concat
 tInsert = table.insert
 tRemove = table.remove
 tSort   = table.sort
+toStr   = tostring
 getEnv  = os.getenv
 lfs     = require 'lfs'
-
--- Now see if we can load the lua libuv bindings (luv)
-
--- The following conditional require is adapted from: shuva's answer to 
---  "How to check if a module exists in Lua?"
--- see: http://stackoverflow.com/a/22686090
-
---local hasluv, luvLocal = pcall(require, "luv")
---if not hasluv then luvLocal = { } end
---luv = luvLocal
-luv = {}
 
 -- Now update the require search paths to ensure lms standard paths will 
 -- be searched 
@@ -48,6 +38,8 @@ function makePath(pathTable)
   return tConcat(pathTable, directorySeparator)
 end
 
+luaMakeSystemDir = makePath{ getEnv('HOME'), '.luaMakeSystem'}
+
 function getBaseDirPath(aPath)
   basePath = aPath:gsub('[^/\\]*$', '')
   basePath = basePath:gsub('[/\\]$', '')
@@ -63,14 +55,14 @@ package.path = tConcat({
   makePath{'.', '?'},
   makePath{'.', 'lib', '?'},
   makePath{'.', 'lib', '?.lua'},
-  makePath{getEnv('HOME'), '.luaMakeSystem', '?'},
-  makePath{getEnv('HOME'), '.luaMakeSystem','?.lua'},
+  makePath{luaMakeSystemDir, '?'},
+  makePath{luaMakeSystemDir,'?.lua'},
   package.path
 },';')
 
 package.cpath = tConcat({
   makePath{'.', 'luaLibs', '?.so'},
-  makePath{getEnv('HOME'), '.luaMakeSystem', '?.so'},
+  makePath{luaMakeSystemDir, '?.so'},
   package.cpath
 }, ';')
 
@@ -84,6 +76,12 @@ local hasLmsConfig, lmsConfig = pcall(require, "lmsConfig")
 if not hasLmsConfig then lmsConfig = { } end
 lms = lmsConfig
 
+-- Now see if we can load the lua libuv bindings (luv)
+
+local hasluv, luvLocal = pcall(require, "luv")
+if not hasluv then luvLocal = { } end
+luv = luvLocal
+
 -- Now define some functions to help communicate with the user 
 
 currentDir = lfs.currentdir()
@@ -95,9 +93,51 @@ veryVerbose = lms.veryVerbose or false
 recurse     = lms.recurse     or true
 dirPrefix   = lms.dirPrefix   or currentDir
 useLUV      = lms.useLUV      or false
-if useLUV and not luv.spawn then
-  lmsMessage('Sorry... external commands can only be run in parallel IF the luv luarock is installed')
-  useLUV = false
+
+local function compareKeyValues(a, b)
+  return (a[1] < b[1])
+end
+
+function prettyPrint(anObj, indent)
+  local result = ""
+  indent = indent or ""
+  if type(anObj) == 'nil' then
+    result = 'nil'
+  elseif type(anObj) == 'boolean' then
+    if anObj then result = 'true' else result = 'false' end
+  elseif type(anObj) == 'number' then
+    result = toStr(anObj)
+  elseif type(anObj) == 'string' then
+    result = '"'..anObj..'"'
+  elseif type(anObj) == 'function' then
+    result = toStr(anObj)
+  elseif type(anObj) == 'userdata' then
+    result = toStr(anObj)
+  elseif type(anObj) == 'thread' then
+    result = toStr(anObj)
+  elseif type(anObj) == 'table' then
+    local origIndent = indent
+    indent = indent..'  '
+    result = '{\n'
+    for i, aValue in ipairs(anObj) do
+      result = result..indent..prettyPrint(aValue, indent)..',\n'
+    end
+    local theKeyValues = { }
+    for aKey, aValue in pairs(anObj) do
+      if type(aKey) ~= 'number' or aKey < 1 or #anObj < aKey then
+        tInsert(theKeyValues,
+          { prettyPrint(aKey), aKey, prettyPrint(aValue, indent) })
+      end
+    end
+    tSort(theKeyValues, compareKeyValues)
+    for i, aKeyValue in ipairs(theKeyValues) do
+      result = result..indent..'['..aKeyValue[1]..'] = '..aKeyValue[3]..',\n'
+    end
+    result = result..origIndent..'}'
+  else
+    result = 'UNKNOWN TYPE: ['..toStr(anObj)..']'
+  end
+  return result
 end
 
 function lmsError(aMessage)
@@ -108,8 +148,12 @@ end
 
 function lmsMessage(...)
   if verbose then
+    local messages = ...
+    if type(messages) ~= 'table' then
+      messages = { messages }
+    end
     print('---------------------------------------')
-    for i, aMessage in ipairs({...}) do
+    for i, aMessage in ipairs(messages) do
       print(aMessage)
     end
   end
@@ -117,7 +161,11 @@ end
 
 function lmsMessageCont(...)
   if verbose then
-    for i, aMessage in ipairs({...}) do
+    local messages = ...
+    if type(messages) ~= 'table' then
+      messages = { messages }
+    end
+    for i, aMessage in ipairs(messages) do
       print(aMessage)
     end
   end
@@ -125,10 +173,155 @@ end
 
 function lmsMessageVery(...)
   if veryVerbose then
-    for i, aMessage in ipairs({...}) do
+    local messages = ...
+    if type(messages) ~= 'table' then
+      messages = { messages }
+    end
+    for i, aMessage in ipairs(messages) do
       print(aMessage)
     end
   end
+end
+
+-- Now we create a helper tools to be able to deal with options 
+
+lmsOptionHelp     = { }
+lmsLongSwitches   = { }
+lmsOption         = { }
+shouldListTargets = false
+
+function addOption( shortSwitch, longSwitch, description, action)
+  lmsOptionHelp[longSwitch] = { shortSwitch, longSwitch, description, action }
+  tInsert(lmsLongSwitches, longSwitch)
+  lmsOption[shortSwitch] = action
+  lmsOption[longSwitch]  = action
+end
+
+addOption('-h', '--help', 'Provide this list of options', function()
+  print('lms -- Lua Make System\n')
+  print('usage: lms [options] [targets]\n')
+  print('where: targets is a space delimited list of lms targets to be run,')
+  print('and options is one of the following:\n')
+  tSort(lmsLongSwitches)
+  local longestSwitch = 0
+  for i, aSwitch in ipairs(lmsLongSwitches) do
+    if longestSwitch < #aSwitch then longestSwitch = #aSwitch end
+  end
+  longestSwitch = longestSwitch + 1
+  local spaces = '                                                       '
+  for i, aSwitch in ipairs(lmsLongSwitches) do
+    local anOption = lmsOptionHelp[aSwitch]
+    local pad      = spaces:sub(1, (longestSwitch - #anOption[2]))
+    print(anOption[1]..'  '..anOption[2]..pad..anOption[3])
+  end
+  print("\nif no target is specified then the 'default' target will be run\n")
+  print("lms.os = "..lms.os)
+  os.exit(0)
+end)
+
+addOption('-d', '--directory-prefix', 'The current directory prefix',
+  function(key, value)
+    dirPrefix = value
+  end
+)
+
+addOption('-c', '--no-clear-screen', 'Do not clear screen', function()
+  clearScreen = false
+end)
+
+addOption('-C', '--clear-screen', 'Clear screen', function()
+  clearScreen = true
+  os.execute('reset')
+end)
+
+addOption('-r', '--no-recurse', 'Do not recurse into sub-directories', function()
+  recurse = false
+end)
+
+addOption('-R', '--recurse', 'Recurse into sub-directories', function()
+  recurse = true
+end)
+
+addOption('-v', '--verbose', 'Provide extra output', function()
+  verbose = true
+end)
+
+addOption('-V', '--Verbose', 'Provide extra output and clear screen', function()
+  verbose = true
+  os.execute('reset')
+end)
+
+addOption('-vv', '--veryVerbose', 'Provide even more output', function()
+  verbose = true
+  veryVerbose = true
+end)
+
+addOption('-T', '--targets', 'List all known targets', function()
+  shouldListTargets = true
+end)
+
+addOption('-p', '--parallel', 'Run external commands in parallel if at all possible (requires "luarocks install luv")', function()
+  if luv.spawn then 
+    useLUV = true
+  else
+    lmsMessage{
+      'Sorry... external commands can only be run in parallel',
+      ' IF the luv luarock is installed',
+    }
+    useLUV = false
+  end
+end)
+
+addOption('-s', '--sequential', 'Run external commands sequentially (one at a time)', function()
+  useLUV = false
+end)
+
+targetsToRun = { }
+
+local function parseArguments()
+  for i, anArg in ipairs(arg) do
+    local key    = anArg:gsub('=.*$', '')
+    local value  = anArg:gsub('^[^=]*=', '')
+    if key == value then value = nil end
+    optionAction = lmsOption[key]
+    if optionAction and type(optionAction) == 'function' then
+      optionAction(key, value)
+    else
+      tInsert(targetsToRun, anArg)
+    end
+  end
+end
+
+parseArguments()
+
+-- Now check if we can actually use LUV
+
+if useLUV and not luv.spawn then
+  lmsMessage{
+    'Sorry... external commands can only be run in parallel',
+    '         IF the luv luarock is installed'
+  }
+  useLUV = false
+end
+
+lms.dmucsServer = ' -s '..lms.dmucsServer or ''
+lms.dmucsRunner = lms.dmucsRunner or 
+  makePath{ luaMakeSystemDir, 'lmsDMUCSrun' }
+lms.dmucsRunner = lms.dmucsRunner..lms.dmucsServer
+if verbose then
+  lms.dmucsRunner = lms.dmucsRunner..' -v'
+end
+
+local dmucsRunnerCheckCMD = '( '..lms.dmucsRunner..' -c 2>&1 ) > /dev/null'
+local dmucsRunnerCheck = os.execute(dmucsRunnerCheckCMD)
+local foundDMUCSserver =
+  (dmucsRunnerCheck == 0) or (dmucsRunnerCheck == true)
+if useLUV and not foundDMUCSserver then
+  lmsMessage{
+    'Sorry... external commands can only be run in parallel',
+    '         IF the DMUCS server is running'
+  }
+  useLUV = false
 end
 
 -- Now compute the OS (which can be used to require different versions of 
@@ -176,10 +369,34 @@ function runCmdIn(cmd, subDir, onExit)
   end)
 end
 
+function runLocalCmdIn(cmd, subDir, onExit)
+  subDirPath = subDir
+  if cmd:find('^lms') then
+    cmd = makePath { cmd, subDir }
+  end
+  subDirPath = makePath { dirPrefix, subDir }
+  local curDir = lfs.currentdir()
+  print('\n========================================================')
+  print('working in ['..subDirPath..']')
+  print('running    ['..cmd..']')
+  lfs.chdir(subDir)
+  executeLocalCmd(cmd, function(code, signal)
+    lfs.chdir(curDir)
+    if code ~= 0 then
+      lmsError('FAILED to run: ['..cmd..']')
+    end
+    lmsMessageVery('running onExit')
+    onExit(code, signal)
+  end)
+end
+
 function executeCmd(aCmd, onExit)
+print('executeCmd')
   if useLUV then
     lmsMessage('running: ['..aCmd..'] using luv.spawn BUT NOT YET')
-    local result, resultType, code = os.execute(aCmd)
+    local wrappedCmd = lms.dmucsRunner..' -- '..aCmd
+    lmsMessageCont('using: ['..wrappedCmd..']')
+    local result, resultType, code = os.execute(wrappedCmd)
     if result then
       lmsMessageVery('onExit result true')
       onExit(0, 0)
@@ -203,6 +420,21 @@ function executeCmd(aCmd, onExit)
       lmsMessageVery('onExit result false (code: '..toStr(code)..')')
       onExit(code, 0)
     end
+  end
+end
+
+function executeLocalCmd(aCmd, onExit)
+  lmsMessage('running: ['..aCmd..'] using os.execute (local)')
+  local result, resultType, code = os.execute(aCmd)
+  if result then
+    lmsMessageVery('onExit result true')
+    onExit(0, 0)
+  elseif resultType == 'signal' then
+    lmsMessageVery('onExit result false (signal: '..toStr(code)..')')
+    onExit(0, code)
+  else
+    lmsMessageVery('onExit result false (code: '..toStr(code)..')')
+    onExit(code, 0)
   end
 end
 
@@ -346,8 +578,6 @@ function needsToBuild(aTargetDef)
   return false
 end
 
-local toStr   = tostring
-
 function saveFileInfo()
   local fileInfo = hMerge(lms.oldFileInfo, lms.newFileInfo)
   fileInfoFile = io.open('lmsfileInfo', 'w')
@@ -359,52 +589,6 @@ function saveFileInfo()
   end
   fileInfoFile:write('return M\n')
   fileInfoFile:close()
-end
-
-local function compareKeyValues(a, b)
-  return (a[1] < b[1])
-end
-
-function prettyPrint(anObj, indent)
-  local result = ""
-  indent = indent or ""
-  if type(anObj) == 'nil' then
-    result = 'nil'
-  elseif type(anObj) == 'boolean' then
-    if anObj then result = 'true' else result = 'false' end
-  elseif type(anObj) == 'number' then
-    result = toStr(anObj)
-  elseif type(anObj) == 'string' then
-    result = '"'..anObj..'"'
-  elseif type(anObj) == 'function' then
-    result = toStr(anObj)
-  elseif type(anObj) == 'userdata' then
-    result = toStr(anObj)
-  elseif type(anObj) == 'thread' then
-    result = toStr(anObj)
-  elseif type(anObj) == 'table' then
-    local origIndent = indent
-    indent = indent..'  '
-    result = '{\n'
-    for i, aValue in ipairs(anObj) do
-      result = result..indent..prettyPrint(aValue, indent)..',\n'
-    end
-    local theKeyValues = { }
-    for aKey, aValue in pairs(anObj) do
-      if type(aKey) ~= 'number' or aKey < 1 or #anObj < aKey then
-        tInsert(theKeyValues,
-          { prettyPrint(aKey), aKey, prettyPrint(aValue, indent) })
-      end
-    end
-    tSort(theKeyValues, compareKeyValues)
-    for i, aKeyValue in ipairs(theKeyValues) do
-      result = result..indent..'['..aKeyValue[1]..'] = '..aKeyValue[3]..',\n'
-    end
-    result = result..origIndent..'}'
-  else
-    result = 'UNKNOWN TYPE: ['..toStr(anObj)..']'
-  end
-  return result
 end
 
 function showTarget(targetToRun)
@@ -541,139 +725,6 @@ function ensurePathExists(aPath)
     })
   end
   return pathTarget
-end
-
--- Now we create a helper tools to be able to deal with options 
-
-lmsOptionHelp     = { }
-lmsLongSwitches   = { }
-lmsOption         = { }
-shouldListTargets = false
-
-function addOption( shortSwitch, longSwitch, description, action)
-  lmsOptionHelp[longSwitch] = { shortSwitch, longSwitch, description, action }
-  tInsert(lmsLongSwitches, longSwitch)
-  lmsOption[shortSwitch] = action
-  lmsOption[longSwitch]  = action
-end
-
-addOption('-h', '--help', 'Provide this list of options', function()
-  print('lms -- Lua Make System\n')
-  print('usage: lms [options] [targets]\n')
-  print('where: targets is a space delimited list of lms targets to be run,')
-  print('and options is one of the following:\n')
-  tSort(lmsLongSwitches)
-  local longestSwitch = 0
-  for i, aSwitch in ipairs(lmsLongSwitches) do
-    if longestSwitch < #aSwitch then longestSwitch = #aSwitch end
-  end
-  longestSwitch = longestSwitch + 1
-  local spaces = '                                                       '
-  for i, aSwitch in ipairs(lmsLongSwitches) do
-    local anOption = lmsOptionHelp[aSwitch]
-    local pad      = spaces:sub(1, (longestSwitch - #anOption[2]))
-    print(anOption[1]..'  '..anOption[2]..pad..anOption[3])
-  end
-  print("\nif no target is specified then the 'default' target will be run\n")
-  print("lms.os = "..lms.os)
-  os.exit(0)
-end)
-
-addOption('-d', '--directory-prefix', 'The current directory prefix',
-  function(key, value)
-    dirPrefix = value
-  end
-)
-
-addOption('-c', '--no-clear-screen', 'Do not clear screen', function()
-  clearScreen = false
-end)
-
-addOption('-C', '--clear-screen', 'Clear screen', function()
-  clearScreen = true
-  os.execute('reset')
-end)
-
-addOption('-r', '--no-recurse', 'Do not recurse into sub-directories', function()
-  recurse = false
-end)
-
-addOption('-R', '--recurse', 'Recurse into sub-directories', function()
-  recurse = true
-end)
-
-addOption('-v', '--verbose', 'Provide extra output', function()
-  verbose = true
-end)
-
-addOption('-V', '--Verbose', 'Provide extra output and clear screen', function()
-  verbose = true
-  os.execute('reset')
-end)
-
-addOption('-vv', '--veryVerbose', 'Provide even more output', function()
-  verbose = true
-  veryVerbose = true
-end)
-
-addOption('-T', '--targets', 'List all known targets', function()
-  shouldListTargets = true
-end)
-
-addOption('-p', '--parallel', 'Run external commands in parallel if at all possible (requires "luarocks install luv")', function()
-  if luv.spawn then 
-    useLUV = true
-  else
-    lmsMessage('Sorry... external commands can only be run in parallel IF the luv luarock is installed')
-    useLUV = false
-  end
-end)
-
-addOption('-s', '--sequential', 'Run external commands sequentially (one at a time)', function()
-  useLUV = false
-end)
-function listTargets()
-  tSort(targetList)
-  for i, aTarget in ipairs(targetList) do
-    aTDef = targets[aTarget]
-    if aTDef then
-      print(aTDef.target..':')
-      if aTDef.command then
-        print('      command: ['..prettyPrint(aTDef.command)..']')
-        print('  commandName: ['..prettyPrint(aTDef.commandName)..']')
-      else
-        print('  no command')
-      end
-      if aTDef.dependencies then
-        tSort(aTDef.dependencies)
-        for i, aDependency in ipairs(aTDef.dependencies) do
-          print('  '..aDependency)
-        end
-      else
-        print('  no dependencies')
-      end
-    end
-  end
-  os.exit(0)
-end
-
-createNewTarget('mainTarget', 'targetsToRun')
-
-local function parseArguments()
-  for i, anArg in ipairs(arg) do
-    local key    = anArg:gsub('=.*$', '')
-    local value  = anArg:gsub('^[^=]*=', '')
-    if key == value then value = nil end
-    optionAction = lmsOption[key]
-    if optionAction and type(optionAction) == 'function' then
-      optionAction(key, value)
-    else
-      tInsert(targetsToRun, anArg)
-    end
-  end
-  if #targetsToRun < 1 then
-    tInsert(targetsToRun, 'default')
-  end
 end
 
 function tCopy(origTable)
@@ -851,6 +902,12 @@ end
 
 -- Create the standard targets
 
+createNewTarget('mainTarget', 'targetsToRun')
+
+if #targetsToRun < 1 then
+  tInsert(targetsToRun, 'default')
+end
+
 function nameCleanTarget(theTarget)
   return 'clean-'..theTarget
 end
@@ -907,7 +964,31 @@ createNewTarget('diff',    'diffTargets')
 createNewTarget('tests',   'testTargets')
 createNewTarget('default', 'buildTargets')
 
-parseArguments()
+function listTargets()
+  lmsMessage{} -- add a message bar if we are verbose
+  tSort(targetList)
+  for i, aTarget in ipairs(targetList) do
+    aTDef = targets[aTarget]
+    if aTDef then
+      print(aTDef.target..':')
+      if aTDef.command then
+        print('      command: ['..prettyPrint(aTDef.command)..']')
+        print('  commandName: ['..prettyPrint(aTDef.commandName)..']')
+      else
+        print('  no command')
+      end
+      if aTDef.dependencies then
+        tSort(aTDef.dependencies)
+        for i, aDependency in ipairs(aTDef.dependencies) do
+          print('  '..aDependency)
+        end
+      else
+        print('  no dependencies')
+      end
+    end
+  end
+  os.exit(0)
+end
 
 -- load the user's LMS file
 
@@ -936,8 +1017,9 @@ local function runTargets() runTarget('mainTarget') end
 asyncCheckTargets = function() end
 checkTargets      = function() runTargets() end
 if useLUV then
-  asyncCheckTargets = luv.new_async(runTargets)
-  checkTargets      = function() luv.async_send(asyncCheckTargets) end
+  lmsMessage('Using luv/libuv/DMUCS to parallelize this build')
+--  asyncCheckTargets = luv.new_async(runTargets)
+--  checkTargets      = function() luv.async_send(asyncCheckTargets) end
 end
 
 checkTargets()
