@@ -704,11 +704,6 @@ function runTarget(targetToRun)
   if aTarget.command then
     lmsMessageCont('  has command ('..toStr(aTarget.command)..')')
     lmsMessageCont('              ('..aTarget.commandName..')')
-  else
-    lmsMessageCont('  has NO command')
-  end
-  
-  if aTarget.command then
     if type(aTarget.command) == 'string' then
       lmsMessage(
        'starting to build ['..aTarget.target..']\nusing ['..aTarget.command..']'
@@ -738,6 +733,9 @@ function runTarget(targetToRun)
         '] MUST be either a string or a function.'
       )
     end
+  else -- no command to run...
+    lmsMessageCont('  has NO command')
+    aTarget.targetCompleted = true
   end
 end
 
@@ -1040,6 +1038,18 @@ function listTargets()
   os.exit(0)
 end
 
+function listCompletedTargets()
+  tSort(targetList)
+  for i, aTarget in ipairs(targetList) do
+    local aTDef = targets[aTarget]
+    local completed = 'NOT completed'
+    if aTDef.targetCompleted then
+      completed = '    completed'
+    end
+    print(aTDef.target..': '..completed)
+  end
+end
+
 -- load the user's LMS file
 
 require 'lmsfile'
@@ -1062,14 +1072,25 @@ lms.newFileInfo = { }
 
 if clearScreen then os.execute('reset') end
 
-local function runTargets() runTarget('mainTarget') end
+local function runTargets() 
+  runTarget('mainTarget')
+  if useLUV and targets['mainTarget'].targetCompleted then
+    luv.unref(asyncCheckTargets)
+  end
+end
 
 asyncCheckTargets = function() end
 checkTargets      = function() runTargets() end
+
 if useLUV then
   lmsMessage('Using luv/libuv/DMUCS to parallelize this build')
---  asyncCheckTargets = luv.new_async(runTargets)
---  checkTargets      = function() luv.async_send(asyncCheckTargets) end
+  
+  asyncCheckTargets = luv.new_async(runTargets)
+  
+  checkTargets      = function()
+    luv.async_send(asyncCheckTargets)
+    luv.run()
+  end
 end
 
 checkTargets()
