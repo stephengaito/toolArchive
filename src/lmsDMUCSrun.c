@@ -47,14 +47,18 @@
 #define noHostAvailable "0.0.0.0"
 
 #define DEBUG(frmt, ...)    \
-if (debug) printf(frmt, ##__VA_ARGS__)
+if (2 < verbose) { printf(frmt, ##__VA_ARGS__); fflush(stdout); }
+
+#define DETAILED(frmt, ...)    \
+if (1 < verbose) { printf(frmt, ##__VA_ARGS__); fflush(stdout); }
 
 #define VERBOSE(frmt, ...)    \
-if (verbose) printf(frmt, ##__VA_ARGS__)
+if (0 < verbose) { printf(frmt, ##__VA_ARGS__); fflush(stdout); }
 
 #define ERROREXIT(frmt, ...)                    \
 {                                               \
   fprintf(stderr, frmt, ##__VA_ARGS__);         \
+  fflush(stderr);                               \
   if (-1 < dmucsSocketFD) close(dmucsSocketFD); \
   exit(-1);                                     \
 }
@@ -67,7 +71,7 @@ typedef size_t UInteger;
 //////////////////////////////////////////////
 // Start by handling the options
 
-const char* shortOpts = "s:p:t:u:l:m:r:cCvdh";
+const char* shortOpts = "s:p:t:u:l:m:r:cCvdDV:h";
 
  /* option parser configuration */
 static struct option longOpts[] = {
@@ -81,7 +85,9 @@ static struct option longOpts[] = {
   {"command",    no_argument,       0, 'c'},
   {"check",      no_argument,       0, 'C'},
   {"verbose",    no_argument,       0, 'v'},
-  {"debug",      no_argument,       0, 'd'},
+  {"detailed",   no_argument,       0, 'd'},
+  {"debug",      no_argument,       0, 'D'},
+  {"verbosity",  required_argument, 0, 'V'},
   {"help",       no_argument,       0, 'h'},
   {0, 0, 0, 0}
 };
@@ -105,12 +111,18 @@ static void optionHelp(const char* progName) {
   fprintf(stderr, "  -maxRetries <maxRetries>\n\n");
   fprintf(stderr, "  -r <retrySleep>          : the number of seconds to sleep between DMUCS\n");
   fprintf(stderr, "  -retrySleep <retrySleep>   host request retries\n\n");
-  fprintf(stderr, "  -c                       : checks to see if we can connect to a\n");
+  fprintf(stderr, "  -c                       : stops option parsing and ensures all further command\n");
+  fprintf(stderr, "  --command                  line arguments are used as the command to run\n\n");
+  fprintf(stderr, "  -C                       : checks to see if we can connect to a\n");
   fprintf(stderr, "  --check                    running DMUCS server\n\n");
   fprintf(stderr, "  -v                       : provide a running commentary of what\n");
-  fprintf(stderr, "  --verbose                    we are doing\n\n");
+  fprintf(stderr, "  --verbose                  we are doing\n\n");
   fprintf(stderr, "  -d                       : provide a low-level running commentary of what\n");
-  fprintf(stderr, "  --debug                    we are doing\n\n");
+  fprintf(stderr, "  --detailed                 we are doing at a more detailed level\n\n");
+  fprintf(stderr, "  -D                       : provide a low-level running commentary of what\n");
+  fprintf(stderr, "  --debug                    we are doing at a very detailed level\n\n");
+  fprintf(stderr, "  -V <level>               : provide a running commentary of what\n");
+  fprintf(stderr, "  --verbosity <level>        we are doing at a given level of detail\n\n");
   fprintf(stderr, "  -h                       : this help description\n");
   fprintf(stderr, "  --help\n\n");
   fprintf(stderr, "compile command to be run:\n");
@@ -129,8 +141,7 @@ int main(int argc, char* argv[]) {
   const char* machineType                = "";
   const char* remoteUser                 = "";
   Boolean     checkForDMUCSserver        = false;
-  Boolean     verbose                    = false;
-  Boolean     debug                      = false;
+  int         verbose                    = 0;
   int         dmucsHostRequestRetrySleep = 2;
   int         dmucsHostRequestRetryMax   = 1000;
   int         dmucsSocketFD              = -1;
@@ -158,9 +169,10 @@ int main(int argc, char* argv[]) {
       case 'm': dmucsHostRequestRetryMax   = atol(optarg); break;
       case 'r': dmucsHostRequestRetrySleep = atol(optarg); break;
       case 'C': checkForDMUCSserver        = true;         break;
-      case 'v': verbose                    = true;         break;
-      case 'd': debug                      = true;
-                verbose                    = true;         break;
+      case 'v': verbose                    = 1;            break;
+      case 'd': verbose                    = 2;            break;
+      case 'D': verbose                    = 3;            break;
+      case 'V': verbose                    = atol(optarg); break;
       case 'c': continueOptions            = false;        break;
       case 'h':
       case '?':
@@ -168,13 +180,13 @@ int main(int argc, char* argv[]) {
         optionHelp(argv[0]);
     }
   }
-
+  
   //////////////////////////////////////////////
   // Now we want to redirect all output (stdout/stderr)
   // IF the user has specified a logFile
   
   if (logFile && !checkForDMUCSserver) {
-    VERBOSE("lmsDMUCSrun: redirecting all output to [%s]\n", logFile);
+    DEBUG("lmsDMUCSrun: redirecting all output to [%s]\n", logFile);
     int logFileFD = open(logFile, O_WRONLY|O_CREAT|O_TRUNC, 0666);
     if (logFileFD < 0) {
       ERROREXIT(
@@ -184,10 +196,10 @@ int main(int argc, char* argv[]) {
     }
     dup2(logFileFD, 1); // redirect stdout
     dup2(logFileFD, 2); // redirect stderr
-    VERBOSE("lmsDMUCSrun: redirected all output to [%s]\n", logFile);
+    DEBUG("lmsDMUCSrun: redirected all output to [%s]\n", logFile);
   }
 
-  if (verbose) {
+  if (1 < verbose) {
     printf("lmsDMUCSrun: lms DMUCS command runner (v0.0)\n\n");
     printf("lmsDMUCSrun:  DMUCS server: [%s]\n", dmucsHostName);
     printf("lmsDMUCSrun:    DMUCS port: [%d]\n", dmucsPort);
@@ -203,6 +215,7 @@ int main(int argc, char* argv[]) {
     }
     printf("]\n");
     printf("\n");
+    fflush(stdout);
   }
 
   //////////////////////////////////////////////
@@ -322,7 +335,7 @@ int main(int argc, char* argv[]) {
     ERROREXIT("lmsDMUCSrun: DMUCS has no available hosts\n");
   }
   
-  VERBOSE("lmsDMUCSrun: DMUCS has assigned us the host: [%s]\n", dmucsHostResponse);
+  DETAILED("lmsDMUCSrun: DMUCS has assigned us the host: [%s]\n", dmucsHostResponse);
   
   struct in_addr compileServerAddr;
   inet_pton(AF_INET, dmucsHostResponse, &compileServerAddr);
@@ -375,15 +388,16 @@ int main(int argc, char* argv[]) {
       cmdArgs[cmdArgNum++] = argv[i];
     }
 
-    if (verbose) {
+    if (1 < verbose) {
       printf("lmsDMUCSrun: exec'ing the command: [");
       for(int i = 0; i < cmdArgNum; i++) {
         printf("%s ", cmdArgs[i]);
       }
       printf("]\n");
-      printf("----------------------------------------------------\n");
+      fflush(stdout);
     }
-
+    VERBOSE("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+    
     if (execvp(cmdArgs[0], (char**)cmdArgs) < 0) {
       dmucsSocketFD = -1; // the child should NOT close the dmucs socket!
       ERROREXIT("lmsDMUCSrun: execvp failed: %s\n", strerror(errno));
@@ -395,7 +409,7 @@ int main(int argc, char* argv[]) {
     // parent process
     DEBUG("lmsDMUCSrun: Hello from the parent!\n");
     wait(&childStatus);
-    VERBOSE("----------------------------------------------------\n");
+    VERBOSE("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
     DEBUG("lmsDMUCSrun: Finished waiting for the child process!\n");
   }
   

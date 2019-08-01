@@ -88,8 +88,7 @@ currentDir = lfs.currentdir()
 currentDir = currentDir:gsub('(.*[/\\])', '')
 
 clearScreen = lms.clearScreen or true
-verbose     = lms.verbose     or false
-veryVerbose = lms.veryVerbose or false
+verbose     = lms.verbose     or 0
 recurse     = lms.recurse     or true
 dirPrefix   = lms.dirPrefix   or currentDir
 local aTmpName = os.tmpname()
@@ -151,7 +150,7 @@ function lmsError(aMessage)
 end
 
 function lmsMessage(...)
-  if verbose then
+  if 0 < verbose then
     local messages = ...
     if type(messages) ~= 'table' then
       messages = { messages }
@@ -163,8 +162,8 @@ function lmsMessage(...)
   end
 end
 
-function lmsMessageCont(...)
-  if verbose then
+function lmsMessageDetailed(level, ...)
+  if level < verbose then
     local messages = ...
     if type(messages) ~= 'table' then
       messages = { messages }
@@ -175,17 +174,8 @@ function lmsMessageCont(...)
   end
 end
 
-function lmsMessageVery(...)
-  if veryVerbose then
-    local messages = ...
-    if type(messages) ~= 'table' then
-      messages = { messages }
-    end
-    for i, aMessage in ipairs(messages) do
-      print(aMessage)
-    end
-  end
-end
+function lmsMessageCont(...) lmsMessageDetailed(0, ...) end
+function lmsMessageVery(...) lmsMessageDetailed(1, ...) end
 
 -- Now we create a helper tools to be able to deal with options 
 
@@ -254,19 +244,30 @@ addOption('-R', '--recurse', 'Recurse into sub-directories', function()
   recurse = true
 end)
 
-addOption('-v', '--verbose', 'Provide extra output', function()
-  verbose = true
-end)
+addOption('-v', '--verbose', 'Provide extra output',
+  function(key, value)
+    value = tonumber(value)
+    if type(value) ~= 'number' then value = 1 end
+    verbose = value
+  end
+)
 
-addOption('-V', '--Verbose', 'Provide extra output and clear screen', function()
-  verbose = true
-  os.execute('reset')
-end)
+addOption('-V', '--Verbose', 'Provide extra output and clear screen',
+  function(key, value)
+    value = tonumber(value)
+    if type(value) ~= 'number' then value = 1 end
+    verbose = value
+    os.execute('reset')
+  end
+)
 
-addOption('-vv', '--veryVerbose', 'Provide even more output', function()
-  verbose = true
-  veryVerbose = true
-end)
+addOption('-vv', '--veryVerbose', 'Provide even more output',
+  function(key, value)
+    value = tonumber(value)
+    if type(value) ~= 'number' then value = 1 end
+    verbose = 2
+  end
+)
 
 addOption('-T', '--targets', 'List all known targets', function()
   shouldListTargets = true
@@ -319,8 +320,8 @@ end
 lms.dmucsServer = ' -s '..lms.dmucsServer or ''
 lms.dmucsRunner = lms.dmucsRunner or 
   makePath{ luaMakeSystemDir, 'lmsDMUCSrun' }
-if verbose then
-  lms.dmucsRunner = lms.dmucsRunner..' -v'
+if 0 < verbose then
+  lms.dmucsRunner = lms.dmucsRunner..' -V '..verbose
 end
 lms.dmucsRunner = lms.dmucsRunner..lms.dmucsServer
 
@@ -404,7 +405,7 @@ end
 
 function executeCmd(aTarget, aCmd, onExit)
   if useLUV then
-    lmsMessage('running: ['..aCmd..'] using luv.spawn BUT NOT YET')
+    lmsMessage('running: ['..aCmd..'] using luv.spawn')
     local cmdLogFile = logPrefix..'/'..aTarget:gsub('%/','_')
     lfs.mkdir(getParentPath(cmdLogFile))
     lmsMessageVery('logFile: ['..cmdLogFile..']')
@@ -419,7 +420,9 @@ function executeCmd(aTarget, aCmd, onExit)
       spawnArguments[1],
       { args = spawnArguments },
       function(code, signal)
-        if verbose then
+        if (0 < verbose) then
+          lmsMessage('output from ['..aTarget..']')
+          lmsMessage()
           local logFile, err = io.open(cmdLogFile, 'rb')
           if logFile then
             io.write(logFile:read('*a'))
@@ -913,8 +916,8 @@ function recurseTargets(aDef)
   findSubDirs(aDef)
 
   local switches          = ''
-  if verbose then switches = switches .. ' -v ' end
-  if veryVerbose then switches = switches .. ' -vv ' end
+  if (0 < verbose) then switches = switches .. ' -v ' end
+  if (1 < verbose) then switches = switches .. ' -vv ' end
 
   recurseTargets = { }
   for i, aTarget in ipairs(targetsToRun) do
@@ -1070,8 +1073,12 @@ lms.newFileInfo = { }
 
 if clearScreen then os.execute('reset') end
 
-local function runTargets() 
+local function runTargets()
+
+  lmsMessage('STARTING runTargets cycle')
   runTarget('mainTarget')
+  lmsMessage('FINISHED runTargets cycle')
+  
   if useLUV and targets['mainTarget'].targetCompleted then
     luv.unref(asyncCheckTargets)
   end
