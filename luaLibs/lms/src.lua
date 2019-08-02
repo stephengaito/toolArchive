@@ -6,11 +6,9 @@ src     = src or { }
 lms.src = lms.src or { }
 
 local srcDefaults = {
-  buildDir     = 'buildDir',
-  srcDir       = 'src',
-  srcFiles     = { },
-  cHeaderFiles = { },
-  cCodeFiles   = { }
+  buildDir      = 'buildDir',
+  srcDir        = 'src',
+  handGenerated = { },
 }
 
 src = hMerge(srcDefaults, lms.src, src)
@@ -28,28 +26,31 @@ function src.targets(defaultDef, srcDef)
   srcDef = hMerge(src, defaultDef, srcDef)
   srcDef.creator = 'src-targets'
   
-  srcDef.srcFiles = aAppend(
-    srcDef.cHeaderFiles or { },
-    srcDef.cCodeFiles or { },
-    srcDef.srcFiles
-  )
-
-  for i, aSrcFile in ipairs(srcDef.srcFiles) do
-    local aBuildPath = makePath{ srcDef.buildDir, aSrcFile }
-    local aSrcPath   = makePath{ srcDef.srcDir,   aSrcFile }
-    target(hMerge(srcDef, {
-      target       = aBuildPath,
-      srcPath      = aSrcPath,
-      dependencies = { aSrcPath },
-      command      = cpSrc,
-      commandName  = 'Src::cpSrc'
-    }))
-    
-    local aParentPath = getParentPath(aBuildPath)
-    ensurePathExists(aParentPath)
-    addDependency(aBuildPath, aParentPath)
-  end
+  print('scrDef: '..prettyPrint(srcDef))
   
+  srcDef.handGenerated = srcDef.handGenerated or { }
+  local handGenerated = srcDef.handGenerated
+  print('srcDef.handGenerated: '..prettyPrint(handGenerated))
+  for aSrcType, someSrcFiles in pairs(handGenerated) do
+    srcDef[aSrcType] = srcDef[aSrcType] or { }
+    local srcDefSrcType = srcDef[aSrcType]
+    for i, aSrcFile in ipairs(someSrcFiles) do
+      aInsertOnce(srcDefSrcType, aSrcFile)
+      local aBuildPath = makePath{ srcDef.buildDir, aSrcFile }
+      local aSrcPath   = makePath{ srcDef.srcDir,   aSrcFile }
+      target(hMerge(srcDef, {
+        target       = aBuildPath,
+        srcPath      = aSrcPath,
+        dependencies = { aSrcPath },
+        command      = cpSrc,
+        commandName  = 'Src::cpSrc'
+      }))      
+      local aParentPath = getParentPath(aBuildPath)
+      ensurePathExists(aParentPath)
+      addDependency(aBuildPath, aParentPath)
+    end
+  end
+
   return srcDef
 end
 

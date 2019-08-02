@@ -34,13 +34,6 @@ function cTests.targets(defaultDef, cDef)
 
     local testSrcTarget = makePath{ cDef.buildDir, aTestExec..'.c' }
     tInsert(cDependencies, testSrcTarget)
-    aInsertOnce(codeTargets, testSrcTarget)
-    aInsertOnce(buildTargets, testSrcTarget)
-    target(hMerge(cDef, {
-      target      = testSrcTarget,
-      command     = cDef.compileLitProg,
-      commandName = 'cDef::compileLitProg'
-    }))
     aInsertOnce(cleanTargets, nameCleanTarget(testSrcTarget))
     
     local testExecTarget = makePath{ cDef.buildDir, aTestExec }

@@ -14,8 +14,10 @@
 require 'lms.src'
 
 srcTargets = src.targets{
-  cCodeFiles = {
-    'lmsDMUCSrun.c'
+  handGenerated = {
+    cCodeFiles = {
+      'lmsDMUCSrun.c'
+    }
   }
 }
 

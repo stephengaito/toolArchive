@@ -595,6 +595,34 @@ function computeSha256(aFilePath)
   return appendSha()
 end
 
+function dependencyOutOfDate(tTime, aTarget, aTargetDef, aDependency, depTargetDef)
+  if depTargetDef and depTargetDef.noOutput then
+    return false
+  end
+
+  if aTargetDef and aTargetDef.noOutput then
+    return false
+  end
+  
+  if (lfs.attributes(aDependency, 'mode') ~= 'directory') then
+    return false
+  end
+  
+  dTime = lfs.attributes(aDependency, 'modification')
+  if not dTime then lmsError('missing dependency: ['..aDependency..']') end
+  if dTime > tTime then
+    lmsMessageCont{
+      '  need to build ['..aTarget..']',
+      '  since ['..aDependency..']',
+      '  is newer ('..os.date('%Y/%m/%d %H:%M:%S', dTime)..')['..dTime..']',
+      '  than the target ('..os.date('%Y/%m/%d %H:%M:%S', tTime)..')['..tTime..']'
+      }
+    return true
+  end
+  
+  return false
+end
+
 function needsToBuild(aTargetDef)
   local aTarget = aTargetDef.target
   if type(aTargetDef.mustBuild) ~= 'nil' then
@@ -621,8 +649,14 @@ function needsToBuild(aTargetDef)
     -- recursively check the dependencies of this dependency
     -- (do a deep dive first)
     local depTargetDef = targets[aDependency]
-    if depTargetDef and needsToBuild(depTargetDef) then
-      return true
+    if depTargetDef then
+      if needsToBuild(depTargetDef) then
+        return true
+      end
+    else
+      if dependencyOutOfDate(tTime, aTarget, aTargetDef, aDependency, depTargetDef) then
+        return true
+      end
     end
   end
 
@@ -640,21 +674,8 @@ function needsToBuild(aTargetDef)
   
   -- now check the modification times of the dependencies
   for i, aDependency in ipairs(aTargetDef.dependencies) do
-    local depTargetDef = targets[aDependency]
-    if (lfs.attributes(aDependency, 'mode') ~= 'directory') and
-       depTargetDef and
-       (type(targets[aDependency].noOutput) == 'nil') then
-      dTime = lfs.attributes(aDependency, 'modification')
-      if not dTime then lmsError('missing dependency: ['..aDependency..']') end
-      if dTime > tTime then
-        lmsMessageCont{
-          '  need to build ['..aTargetDef.target..']',
-          '  since ['..aDependency..']',
-          '  is newer ('..os.date('%Y/%m/%d %H:%M:%S', dTime)..')['..dTime..']',
-          '  than the target ('..os.date('%Y/%m/%d %H:%M:%S', tTime)..')['..tTime..']'
-          }
-        return true
-      end
+    if dependencyOutOfDate(tTime, aTarget, aTargetDef, aDependency, depTargetDef) then
+      return true
     end
   end
   
@@ -731,11 +752,17 @@ function runTarget(targetToRun)
         if depTargetDef.targetFailed then
           aTarget.targetFailed    = true
           aTarget.targetCompleted = true
-          lmsMessageCont('  FAILED dependency: ['..aDependency..']')
+          lmsMessageCont('  FAILED dependency: ['..aDependency..'] of ['..targetToRun..']')
           return
         end
         if not targets[aDependency].targetCompleted then
           runTarget(aDependency)
+          if depTargetDef.targetFailed then
+            aTarget.targetFailed    = true
+            aTarget.targetCompleted = true
+            lmsMessageCont('  FAILED dependency: ['..aDependency..'] of ['..targetToRun..']')
+            return
+          end
         end
         -- IF we are running in sequential mode this is useful
         if not targets[aDependency].targetCompleted then
@@ -1164,7 +1191,16 @@ local function runTargets()
   
   if useLUV then
     if (0 < verbose) then listTargetStatus() end
-    if targets['mainTarget'].targetCompleted then
+    
+    local noRunningTargets = true
+    for i, aTarget in ipairs(targetList) do
+      local aTDef = targets[aTarget]
+      if aTDef.targetRunning and not aTDef.targetCompleted then
+        noRunningTargets = false
+      end
+    end
+  
+    if noRunningTargets and targets['mainTarget'].targetCompleted then
       luv.unref(asyncCheckTargets)
     end
   end
