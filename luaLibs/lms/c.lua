@@ -9,7 +9,7 @@ lms.c = lms.c or { }
 
 local cDefaults = {
   cc       = 'gcc',
-  cOpts    = { '-c -O2 -Wall -Werror' },
+  cOpts    = { '-c -O2 -Wall -Werror -fdiagnostics-color=always ' },
   cIncs    = { '-I.' },
   cExts    = { '.h', '.c'},
   needs    = { },
@@ -163,22 +163,6 @@ function c.makeSrcTarget(cDef, cDependencies, aSrcFile)
   if aSrcFile:match('%.h$') then
     tInsert(headerTargets, aSrcPath)
   end
-  if not getTargetFor(aSrcPath) then
-    target(hMerge(cDef, {
-      target      = aSrcPath,
-      command     = cDef.compileLitProg,
-      commandName = 'cDef::compileLitProg'
-    }))
-
-    local aParentPath = getParentPath(aSrcPath)
-    ensurePathExists(aParentPath)
-    local docPath = makePath{cDef.docDir, cDef.mainDoc}
-    if docPath ~= '' then
-      addDependency(docPath, aParentPath)
-    end
-    addDependency(aSrcPath, aParentPath)
-  end
-  
   aInsertOnce(cDependencies, aSrcPath)
 end
 
@@ -186,7 +170,8 @@ function c.targets(defaultDef, cDef)
 
   cDef = hMerge(defaultDef, cDef or { })
   cDef.creator = 'c-targets'
-    
+
+  print('cDef: '..prettyPrint(cDef))
   cDef.dependencies = cDef.dependencies or { }
   local cDependencies = { }
 
@@ -207,8 +192,7 @@ function c.targets(defaultDef, cDef)
       needs        = { },
     }))
     tInsert(buildTargets, programTarget)
-    
-  end
+   end
   
   return cDef
 end

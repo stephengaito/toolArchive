@@ -93,7 +93,10 @@ recurse     = lms.recurse     or true
 dirPrefix   = lms.dirPrefix   or currentDir
 local aTmpName = os.tmpname()
 logPrefix   = lms.logPrefix   or
-  aTmpName:gsub('%/lua_', '/lms_'..os.date('%Y-%m-%d_%H-%M-%S')..'_')
+  aTmpName:gsub(
+    '%/lua_',
+    '/lms_'..os.date('%Y-%m-%d_%H-%M-%S')..'_'..currentDir..'_'
+  )
 os.remove(aTmpName)
 useLUV      = lms.useLUV      or false
 
@@ -422,13 +425,21 @@ function executeCmd(aTarget, aCmd, onExit)
       function(code, signal)
         if (0 < verbose) then
           lmsMessage('output from ['..aTarget..']')
-          lmsMessage()
-          local logFile, err = io.open(cmdLogFile, 'rb')
-          if logFile then
-            io.write(logFile:read('*a'))
-          else
-            print('Could not open ['..cmdLogFile..'] '..err)
-          end
+          lmsMessageCont{
+            'can be found in:',
+            'less -r '..cmdLogFile
+          }
+--          local logFile, err = io.open(cmdLogFile, 'rb')
+--          if logFile then
+--            io.write(logFile:read('*a'))
+--          else
+--            print('Could not open ['..cmdLogFile..'] '..err)
+--          end
+        end
+        if code ~= 0 then
+          print('FAILED to run ['..aTarget..']')
+          targets[aTarget].targetFailed = true
+          targets[aTarget].logFile      = cmdLogFile
         end
         luv.async_send(asyncCheckTargets)
         onExit(code, signal)
@@ -454,6 +465,9 @@ function executeCmd(aTarget, aCmd, onExit)
       onExit(0, 0)
     elseif resultType == 'exit' then
       lmsMessageVery('onExit result false (code: '..toStr(code)..')')
+      if code ~= 0 then
+        lmsError('FAILED to run ['..aCmd..']')
+      end
       onExit(code, 0)
     else
       lmsMessageVery('onExit result false (signal: '..toStr(code)..')')
@@ -491,6 +505,7 @@ end
 
 function chDir(aNewDir)
   if not lfs.chdir(aNewDir) then 
+    lmsMessageCont('current directory: ['..lfs.currentdir()..']')
     lmsError('could not change directory to: ['..aNewDir..']')
   end
 end
@@ -557,6 +572,8 @@ function createNewTarget(targetName, targetVarName, targetCommand, targetCommand
   target{
     target       = targetName,
     dependencies = _G[targetVarName],
+    noOutput     = true,
+    mustBuild    = true,
     command      = targetCommand,
     commandName  = targetCommandName,
     creator      = 'createNewTarget'
@@ -579,52 +596,70 @@ function computeSha256(aFilePath)
 end
 
 function needsToBuild(aTargetDef)
-  if type(aTargetDef['mustBuild']) ~= 'nil' then
-    lmsMessage('  must build '..aTargetDef.target)
+  local aTarget = aTargetDef.target
+  if type(aTargetDef.mustBuild) ~= 'nil' then
+    lmsMessageCont('  must build '..aTarget)
     return true
   end
 
-  tTime = lfs.attributes(aTargetDef.target, 'modification')
-  if not tTime then 
-    lmsMessage(
-      'need to build ['..aTargetDef.target..']\nsince target does not exist'
-    )
-    return true
+  local tTime = lfs.attributes(aTarget, 'modification')
+  if type(aTargetDef.noOutput) == 'nil' then
+    -- we should expect some file output...
+    if not tTime then 
+      lmsMessageCont{
+        '  need to build ['..aTargetDef.target..']',
+        '  since target does not exist'
+      }
+      return true
+    end
   end
 
+  lmsMessageVery(
+    '  recursively checking need to build ['..aTarget..']'
+  )
   for i, aDependency in ipairs(aTargetDef.dependencies) do
-    if lfs.attributes(aDependency, 'mode') ~= 'directory' then
-    
-      -- start by checking sha256
-      lms.newFileInfo[aDependency] =
-        lms.newFileInfo[aDependency] or computeSha256(aDependency)
-      local newFileSha256 = 
-        lms.newFileInfo[aDependency]
-      local oldFileSha256 =
-        lms.oldFileInfo[aDependency] or ""
-      if newFileSha256 ~= oldFileSha256 then
-        lmsMessageCont(
-          '  (the '..aDependency..' sha256s do not match so we need to rebuild)'
-        )
-        return true
-      end
-    
-      -- now check modification times
+    -- recursively check the dependencies of this dependency
+    -- (do a deep dive first)
+    local depTargetDef = targets[aDependency]
+    if depTargetDef and needsToBuild(depTargetDef) then
+      return true
+    end
+  end
+
+  -- now check the sha256s
+  lms.newFileInfo[aTarget] =
+    lms.newFileInfo[aTarget] or computeSha256(aTarget)
+  local newFileSha256 = lms.newFileInfo[aTarget]
+  local oldFileSha256 = lms.oldFileInfo[aTarget] or ""
+  if newFileSha256 == oldFileSha256 then
+    lmsMessageVery(
+      '  (the '..aTarget..' sha256s match so there is no need to rebuild)'
+    )
+    return false
+  end
+  
+  -- now check the modification times of the dependencies
+  for i, aDependency in ipairs(aTargetDef.dependencies) do
+    local depTargetDef = targets[aDependency]
+    if (lfs.attributes(aDependency, 'mode') ~= 'directory') and
+       depTargetDef and
+       (type(targets[aDependency].noOutput) == 'nil') then
       dTime = lfs.attributes(aDependency, 'modification')
       if not dTime then lmsError('missing dependency: ['..aDependency..']') end
       if dTime > tTime then
-        lmsMessage(
-          'need to build ['..aTargetDef.target..']',
-          'since ['..aDependency..']',
-          'is newer ('..os.date('%Y/%m/%d %H:%M:%S', dTime)..')['..dTime..']',
-          'than the target ('..os.date('%Y/%m/%d %H:%M:%S', tTime)..')['..tTime..']'
-          )
+        lmsMessageCont{
+          '  need to build ['..aTargetDef.target..']',
+          '  since ['..aDependency..']',
+          '  is newer ('..os.date('%Y/%m/%d %H:%M:%S', dTime)..')['..dTime..']',
+          '  than the target ('..os.date('%Y/%m/%d %H:%M:%S', tTime)..')['..tTime..']'
+          }
         return true
       end
     end
   end
+  
   lmsMessageVery(
-    'all dependencies older than the '..aTargetDef.target..' target'
+    '  all dependencies older than the ['..aTargetDef.target..'] target'
   )
   return false
 end
@@ -661,19 +696,44 @@ function runTarget(targetToRun)
   
   local aTarget = targets[targetToRun]
   if not aTarget then
-    lmsMessageVery(targetToRun..' does not exist... nothing to do')
+    lmsMessageCont('  ['..targetToRun..'] does not exist... nothing to do')
     return
   end
-
-  if aTarget.targetCompleted then 
-    lmsMessageVery('already run '..targetToRun)
+ 
+  if aTarget.targetFailed then
+    lmsMessageCont('  FAILED target: '..targetToRun)
     return
   end
   
+  if aTarget.targetCompleted then 
+    lmsMessageCont('  already run '..targetToRun)
+    return
+  end
+  
+  if aTarget.targetRunning and not aTarget.targetCompleted then 
+    lmsMessageCont('  already running '..targetToRun)
+    return
+  end
+
+  if not aTarget.targetRunning then
+    if not needsToBuild(aTarget) then
+      lmsMessageCont('  no need to rebuild ['..targetToRun..']')
+      aTarget.targetCompleted = true
+      return
+    end
+  end
+
   local dependenciesCompleted = true
   if aTarget.dependencies then
     for i, aDependency in ipairs(aTarget.dependencies) do
-      if targets[aDependency] then
+      local depTargetDef = targets[aDependency]
+      if depTargetDef then
+        if depTargetDef.targetFailed then
+          aTarget.targetFailed    = true
+          aTarget.targetCompleted = true
+          lmsMessageCont('  FAILED dependency: ['..aDependency..']')
+          return
+        end
         if not targets[aDependency].targetCompleted then
           runTarget(aDependency)
         end
@@ -692,13 +752,6 @@ function runTarget(targetToRun)
     return
   end
 
-  if not aTarget.targetRunning then
-    if not needsToBuild(aTarget) then
-      lmsMessageVery('no need to rebuild '..targetToRun)
-      aTarget.targetCompleted = true
-      return
-    end
-  end
   aTarget.targetRunning = true
   
   lmsMessage('checking for '..targetToRun..' command:')
@@ -710,9 +763,6 @@ function runTarget(targetToRun)
        'starting to build ['..aTarget.target..']\nusing ['..aTarget.command..']'
       )
       executeCmd(aTarget.target, aTarget.command, function(code, signal)
-        if code ~= 0 then
-          lmsError('could not run ['..aTarget.command..']')
-        end
         lmsMessage(
          'finished building ['..aTarget.target..']\nusing ['..aTarget.command..']'
         )
@@ -721,9 +771,9 @@ function runTarget(targetToRun)
     elseif type(aTarget.command) == 'function' then
       lmsMessage('starting to build ['..aTarget.target..']')
       aTarget.command(aTarget, function(code, signal)
-        if code ~= 0 then
-          lmsError('could not run command for ['..aTarget.target..']')
-        end
+--       if code ~= 0 then
+--          lmsError('could not run command for ['..aTarget.target..']')
+--        end
         lmsMessage('finished building ['..aTarget.target..']')
         aTarget.targetCompleted = true
       end)
@@ -915,9 +965,8 @@ function recurseTargets(aDef)
   aDef = hMerge(recurseDefaults, aDef)
   findSubDirs(aDef)
 
-  local switches          = ''
-  if (0 < verbose) then switches = switches .. ' -v ' end
-  if (1 < verbose) then switches = switches .. ' -vv ' end
+  local switches = ' '
+  if (0 < verbose) then switches = switches .. '-v='..verbose..' ' end
 
   recurseTargets = { }
   for i, aTarget in ipairs(targetsToRun) do
@@ -933,7 +982,9 @@ function recurseTargets(aDef)
         anRTargetDef.command      = recurseCurrentTarget
         anRTargetDef.commandName  = 'LMS::recurseCurrentTarget'
         anRTargetDef.subDir       = aSubDir
-        recurseCmd                = 'lms -c ' .. switches .. aTarget .. ' -d=' .. dirPrefix
+        recurseCmd                =
+          'lms -c -l='..logPrefix..'/'..anRTargetName ..
+          switches .. aTarget .. ' -d=' .. dirPrefix
         anRTargetDef.recurseCmd   = recurseCmd
         anRTargetDef.mustBuild    = true
 
@@ -1039,15 +1090,47 @@ function listTargets()
   os.exit(0)
 end
 
-function listCompletedTargets()
+function listTargetStatus()
   tSort(targetList)
+
+  local hasRunningTargets = false
+  local hasFailedTargets  = false
+  
+  print('  completed targets:')
   for i, aTarget in ipairs(targetList) do
     local aTDef = targets[aTarget]
-    local completed = 'NOT completed'
     if aTDef.targetCompleted then
-      completed = '    completed'
+      print('    '..aTDef.target)
     end
-    print(aTDef.target..': '..completed)
+    if aTDef.targetRunning and not aTDef.targetCompleted then
+      hasRunningTargets = true
+    end
+    if aTDef.targetFailed then
+      hasFailedTargets = true
+    end
+  end
+  
+  if hasFailedTargets then
+    print('  FAILED targets:')
+    for i, aTarget in ipairs(targetList) do
+      local aTDef = targets[aTarget]
+      if aTDef.targetFailed then
+        print('    '..aTDef.target)
+        if aTDef.logFile then
+          print('      less -r '..aTDef.logFile)
+        end
+      end
+    end
+  end
+  
+  if hasRunningTargets then
+    print('  running targets:')
+    for i, aTarget in ipairs(targetList) do
+      local aTDef = targets[aTarget]
+      if aTDef.targetRunning and not aTDef.targetCompleted then
+        print('    '..aTDef.target)
+     end
+    end
   end
 end
 
@@ -1079,8 +1162,11 @@ local function runTargets()
   runTarget('mainTarget')
   lmsMessage('FINISHED runTargets cycle')
   
-  if useLUV and targets['mainTarget'].targetCompleted then
-    luv.unref(asyncCheckTargets)
+  if useLUV then
+    if (0 < verbose) then listTargetStatus() end
+    if targets['mainTarget'].targetCompleted then
+      luv.unref(asyncCheckTargets)
+    end
   end
 end
 

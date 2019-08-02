@@ -17,11 +17,12 @@ local function compileDocument(aDef, onExit)
   --
   -- build the complete context document
   --
-  executeCmd(aDef.target, 'context --silent=all '..aDef.mainDoc, function(code, signal)
+  executeCmd(aDef.target, 'context --nonstopmode --silent=all '..aDef.mainDoc, function(code, signal)
     --
-    chDir(curDir)
     onExit(code, signal)
   end)
+  
+  chDir(curDir)
 end
 
 function createNewDocTarget(targetName, targetVarName, targetCommand)

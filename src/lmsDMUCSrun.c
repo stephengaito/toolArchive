@@ -208,15 +208,18 @@ int main(int argc, char* argv[]) {
     printf("lmsDMUCSrun: log file path: [%s]\n", logFile);
     printf("lmsDMUCSrun:   max retries: [%d]\n", dmucsHostRequestRetryMax);
     printf("lmsDMUCSrun:   retry sleep: [%d]\n", dmucsHostRequestRetrySleep);
-    printf("\nlmsDMUCSrun: command: [");
-    for(int i = optind; i < argc; i++) {
-      if (optind < i) printf(" ");
-      printf("%s", argv[i]);
-    }
-    printf("]\n");
     printf("\n");
     fflush(stdout);
   }
+  
+  printf("\nlmsDMUCSrun: command:\n\n");
+  printf("[");
+  for(int i = optind; i < argc; i++) {
+    if (optind < i) printf(" ");
+    printf("%s", argv[i]);
+  }
+  printf("]\n\n\n");
+  fflush(stdout);
 
   //////////////////////////////////////////////
   // Now connect to the DMUCS server
