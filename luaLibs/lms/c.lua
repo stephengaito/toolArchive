@@ -171,7 +171,7 @@ function c.targets(defaultDef, cDef)
   cDef = hMerge(defaultDef, cDef or { })
   cDef.creator = 'c-targets'
 
-  print('cDef: '..prettyPrint(cDef))
+--  print('cDef: '..prettyPrint(cDef))
   cDef.dependencies = cDef.dependencies or { }
   local cDependencies = { }
 

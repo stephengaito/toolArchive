@@ -26,11 +26,11 @@ function src.targets(defaultDef, srcDef)
   srcDef = hMerge(src, defaultDef, srcDef)
   srcDef.creator = 'src-targets'
   
-  print('scrDef: '..prettyPrint(srcDef))
+--  print('scrDef: '..prettyPrint(srcDef))
   
   srcDef.handGenerated = srcDef.handGenerated or { }
   local handGenerated = srcDef.handGenerated
-  print('srcDef.handGenerated: '..prettyPrint(handGenerated))
+--  print('srcDef.handGenerated: '..prettyPrint(handGenerated))
   for aSrcType, someSrcFiles in pairs(handGenerated) do
     srcDef[aSrcType] = srcDef[aSrcType] or { }
     local srcDefSrcType = srcDef[aSrcType]

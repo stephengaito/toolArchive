@@ -38,10 +38,12 @@ Our compilation farm makes the following assumptions:
 8. The suite of compilers can be found in the "login path" on all machines.
 9. The source code is located in a single subhierarchy of the file system.
 10. The souce code subhierarchy is NFS mounted **read-write**.
-11. The DMUCS loadavg process is running on all compile machines.
-12. The DMUCS request server process is running on a well known machine in 
+11. The source code subhierarchy is mounted at the *same* location on all 
+    machines.
+12. The DMUCS loadavg process is running on all compile machines.
+13. The DMUCS request server process is running on a well known machine in 
     the local area network.
-13. lms is setup on all compile servers.
+14. lms is setup on all compile servers.
 
 On each compile server, the NFS exported source subhierarchy  are located 
 at:
@@ -49,7 +51,6 @@ at:
 ```
     /home/compileFarm
 ```
-
 
 ## Setting up NFS
 
@@ -164,4 +165,61 @@ Then mount the compileFarm by typing:
 
 ## Setting up lms
 
-To be done!
+On each compile server and for each user who wants to use `lms` to compile 
+a project, the user needs to have the `.luaMakeSystem` directory in their 
+home directory.
+
+The `.luaMakeSystem` directory must contain the `lms` subdirectory of the 
+`luaMakeSystem/luaLibs` directory. You can either make a complete copy, or 
+make the `.luaMakeSystem/lms` directory a symbolic link, as desired.
+
+The `.luaMakeSystem` directory must contain a copy of the `lmsDMUCSrun` 
+executable appropriate for each compile server. You can build a copy of 
+`lmsDMUCSrun` on your machine by using the:
+
+```
+   lms -v install
+```
+
+command in a git clone of the 
+[`luaMakeSystem`](https://github.com/stephengaito/luaMakeSystem) github 
+project. You will, of course, need the standard `gcc` or `clang` build 
+tools to be installed on your computers.
+
+The `.luaMakeSystem/lmsConfig.lua` file must contain the lines:
+
+```
+    lms.useLUV      = true
+    lms.dmucsServer = '<DMUCS request server>'
+    lms.logDir      = '/home/compileFarm/logs'
+
+    return lms
+```
+
+where `<DMUCS request server>` is the name of the host machine on which the 
+DMUCS request server is running.
+
+The `/home/compileFarm/logs` directory (as specified as the `lms.logDir` 
+above) needs to exist and be writable by any user of the compilation farm.
+
+You need to install the [luarocks](https://luarocks.org/) package 
+[`luv`](https://luarocks.org/modules/creationix/luv) in a location in which 
+`lms` can find it. (Usually this is correct if you use the luarocks 
+associated lua v5.3)
+
+## Running lms builds
+
+To ensure all compile servers know where to find the appropriate source and 
+object files, you *must* start an `lms` build in a subdirectory of the 
+`/home/compileFarm` directory.
+
+## Monitoring builds
+
+You can use the DMUCS `monitor` command to monitor the changing avaiablity 
+of the compile servers in your compilation farm.
+
+You can use the DMUCS `remhost` and `addhost` commands on a given compile 
+server to remove or (re)add that server to the list of available servers.
+
+For all three commands you must specify the host name of the DMUCS request 
+server using the `-s <requestServerHostName>` command line option.

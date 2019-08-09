@@ -79,7 +79,7 @@ function litProgs.targets(defaultDef, lpDef)
   lpDef = hMerge(defaultDef, lpDef or { })
   lpDef.creator = 'litProgs-targets'
 
-  print('lpDef: '..prettyPrint(lpDef))
+--  print('lpDef: '..prettyPrint(lpDef))
 
   findSubDirs(lpDef)
   findDocuments(lpDef)

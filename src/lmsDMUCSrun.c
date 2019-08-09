@@ -71,7 +71,7 @@ typedef size_t UInteger;
 //////////////////////////////////////////////
 // Start by handling the options
 
-const char* shortOpts = "s:p:t:u:l:m:r:cCvdDV:h";
+const char* shortOpts = "s:p:t:u:l:d:m:r:cCvDV:h";
 
  /* option parser configuration */
 static struct option longOpts[] = {
@@ -80,12 +80,12 @@ static struct option longOpts[] = {
   {"type",       required_argument, 0, 't'},
   {"user",       required_argument, 0, 'u'},
   {"logFile",    required_argument, 0, 'l'},
+  {"directory",  required_argument, 0, 'd'},
   {"maxRetries", required_argument, 0, 'm'},
   {"retrySleep", required_argument, 0, 'r'},
   {"command",    no_argument,       0, 'c'},
   {"check",      no_argument,       0, 'C'},
   {"verbose",    no_argument,       0, 'v'},
-  {"detailed",   no_argument,       0, 'd'},
   {"debug",      no_argument,       0, 'D'},
   {"verbosity",  required_argument, 0, 'V'},
   {"help",       no_argument,       0, 'h'},
@@ -107,6 +107,8 @@ static void optionHelp(const char* progName) {
   fprintf(stderr, "  -remoteUser <remoteUser>\n\n");
   fprintf(stderr, "  -l <path>                : a path to a log file into which all output\n");
   fprintf(stderr, "  --logFile <path>           (both stdout and stderr) will be collected\n\n");
+  fprintf(stderr, "  -d <aDirectory>          : cd into the specified directory\n");
+  fprintf(stderr, "  --directory <aDirectory>   before running the supplied command\n\n");
   fprintf(stderr, "  -m <maxRetries>          : the maximum number of DMUCS host request retries\n");
   fprintf(stderr, "  -maxRetries <maxRetries>\n\n");
   fprintf(stderr, "  -r <retrySleep>          : the number of seconds to sleep between DMUCS\n");
@@ -117,8 +119,6 @@ static void optionHelp(const char* progName) {
   fprintf(stderr, "  --check                    running DMUCS server\n\n");
   fprintf(stderr, "  -v                       : provide a running commentary of what\n");
   fprintf(stderr, "  --verbose                  we are doing\n\n");
-  fprintf(stderr, "  -d                       : provide a low-level running commentary of what\n");
-  fprintf(stderr, "  --detailed                 we are doing at a more detailed level\n\n");
   fprintf(stderr, "  -D                       : provide a low-level running commentary of what\n");
   fprintf(stderr, "  --debug                    we are doing at a very detailed level\n\n");
   fprintf(stderr, "  -V <level>               : provide a running commentary of what\n");
@@ -138,6 +138,7 @@ int main(int argc, char* argv[]) {
   const char* dmucsHostName              = "localhost";
   uint32_t    dmucsPort                  = 9714;
   const char* logFile                    = NULL;
+  const char* directory                  = NULL;
   const char* machineType                = "";
   const char* remoteUser                 = "";
   Boolean     checkForDMUCSserver        = false;
@@ -154,7 +155,9 @@ int main(int argc, char* argv[]) {
   if (remoteUserEnv)    remoteUser       = remoteUserEnv;
   const char*           logFileEnv       = getenv("LMS_LOG_FILE");
   if (logFileEnv)       logFile          = logFileEnv;
-  
+  const char*           directoryEnv     = getenv("LMS_DIRECTORY");
+  if (directoryEnv)     directory        = directoryEnv;
+
   Boolean continueOptions = true;
   while (continueOptions &&
     ((opt = getopt_long(argc, argv, shortOpts, longOpts, &optId)) != -1)
@@ -166,11 +169,11 @@ int main(int argc, char* argv[]) {
       case 't': machineType                = optarg;       break;
       case 'u': remoteUser                 = optarg;       break;
       case 'l': logFile                    = optarg;       break;
+      case 'd': directory                  = optarg;       break;
       case 'm': dmucsHostRequestRetryMax   = atol(optarg); break;
       case 'r': dmucsHostRequestRetrySleep = atol(optarg); break;
       case 'C': checkForDMUCSserver        = true;         break;
       case 'v': verbose                    = 1;            break;
-      case 'd': verbose                    = 2;            break;
       case 'D': verbose                    = 3;            break;
       case 'V': verbose                    = atol(optarg); break;
       case 'c': continueOptions            = false;        break;
@@ -201,24 +204,26 @@ int main(int argc, char* argv[]) {
 
   if (1 < verbose) {
     printf("lmsDMUCSrun: lms DMUCS command runner (v0.0)\n\n");
-    printf("lmsDMUCSrun:  DMUCS server: [%s]\n", dmucsHostName);
-    printf("lmsDMUCSrun:    DMUCS port: [%d]\n", dmucsPort);
-    printf("lmsDMUCSrun:  machine type: [%s]\n", machineType);
-    printf("lmsDMUCSrun:   remote user: [%s]\n", remoteUser);
-    printf("lmsDMUCSrun: log file path: [%s]\n", logFile);
-    printf("lmsDMUCSrun:   max retries: [%d]\n", dmucsHostRequestRetryMax);
-    printf("lmsDMUCSrun:   retry sleep: [%d]\n", dmucsHostRequestRetrySleep);
+    printf("lmsDMUCSrun:        DMUCS server: [%s]\n", dmucsHostName);
+    printf("lmsDMUCSrun:          DMUCS port: [%d]\n", dmucsPort);
+    printf("lmsDMUCSrun:        machine type: [%s]\n", machineType);
+    printf("lmsDMUCSrun:         remote user: [%s]\n", remoteUser);
+    printf("lmsDMUCSrun:       log file path: [%s]\n", logFile);
+    printf("lmsDMUCSrun: directory file path: [%s]\n", directory);
+    printf("lmsDMUCSrun:         max retries: [%d]\n", dmucsHostRequestRetryMax);
+    printf("lmsDMUCSrun:         retry sleep: [%d]\n", dmucsHostRequestRetrySleep);
     printf("\n");
     fflush(stdout);
   }
   
-  printf("\nlmsDMUCSrun: command:\n\n");
+  printf("\nlmsDMUCSrun:  run command:\n\n");
   printf("[");
   for(int i = optind; i < argc; i++) {
     if (optind < i) printf(" ");
     printf("%s", argv[i]);
   }
-  printf("]\n\n\n");
+  printf("]\n\n");
+  if (directory) printf("lmsDMUCSrun: in directory: [%s]\n\n", directory);
   fflush(stdout);
 
   //////////////////////////////////////////////
@@ -386,6 +391,11 @@ int main(int argc, char* argv[]) {
         strlen(compileServerEntity->h_name)
       );
       cmdArgs[cmdArgNum++] = sshUserHost;
+      if (directory) {
+        cmdArgs[cmdArgNum++] = "cd";
+        cmdArgs[cmdArgNum++] = directory;
+        cmdArgs[cmdArgNum++] = ";";
+      }
     }
     for(int i = optind; i < argc; i++) {
       cmdArgs[cmdArgNum++] = argv[i];

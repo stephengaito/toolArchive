@@ -91,11 +91,12 @@ clearScreen = lms.clearScreen or true
 verbose     = lms.verbose     or 0
 recurse     = lms.recurse     or true
 dirPrefix   = lms.dirPrefix   or currentDir
+logDir      = lms.logDir      or '/tmp'
 local aTmpName = os.tmpname()
 logPrefix   = lms.logPrefix   or
   aTmpName:gsub(
-    '%/lua_',
-    '/lms_'..os.date('%Y-%m-%d_%H-%M-%S')..'_'..currentDir..'_'
+    '%/tmp%/lua_',
+    logDir..'/lms_'..os.date('%Y-%m-%d_%H-%M-%S')..'_'..currentDir..'_'
   )
 os.remove(aTmpName)
 useLUV      = lms.useLUV      or false
@@ -412,7 +413,10 @@ function executeCmd(aTarget, aCmd, onExit)
     local cmdLogFile = logPrefix..'/'..aTarget:gsub('%/','_')
     lfs.mkdir(getParentPath(cmdLogFile))
     lmsMessageVery('logFile: ['..cmdLogFile..']')
-    local wrappedCmd = lms.dmucsRunner..' -l '..cmdLogFile..' -c '..aCmd
+    local wrappedCmd = lms.dmucsRunner..
+      ' -l '..cmdLogFile..
+      ' -d '..lfs.currentdir()..
+      ' -c '..aCmd
     lmsMessageVery('using: ['..wrappedCmd..']')
     local spawnArguments = { }
     for anArg in wrappedCmd:gmatch("[^%s]+") do
@@ -429,14 +433,10 @@ function executeCmd(aTarget, aCmd, onExit)
             'can be found in:',
             'less -r '..cmdLogFile
           }
---          local logFile, err = io.open(cmdLogFile, 'rb')
---          if logFile then
---            io.write(logFile:read('*a'))
---          else
---            print('Could not open ['..cmdLogFile..'] '..err)
---          end
         end
-        if code ~= 0 then
+        if code == 0 then
+          targets[aTarget].targetChanged = true
+        else
           print('FAILED to run ['..aTarget..']')
           targets[aTarget].targetFailed = true
           targets[aTarget].logFile      = cmdLogFile
@@ -462,6 +462,7 @@ function executeCmd(aTarget, aCmd, onExit)
     end
     if result then
       lmsMessageVery('onExit result true')
+      targets[aTarget].targetChanged = true
       onExit(0, 0)
     elseif resultType == 'exit' then
       lmsMessageVery('onExit result false (code: '..toStr(code)..')')
@@ -493,6 +494,7 @@ function executeLocalCmd(aTarget, aCmd, onExit)
     end
   if result then
     lmsMessageVery('onExit result true')
+    targets[aTarget].targetChanged = true
     onExit(0, 0)
   elseif resultType == 'exit' then
     lmsMessageVery('onExit result false (code: '..toStr(code)..')')
@@ -551,8 +553,9 @@ function target(tDef)
     print(prettyPrint(tDef))
     print("=======================================")
   else
-    tDef.targetRunning = false
+    tDef.targetRunning   = false
     tDef.targetCompleted = false
+    tDef.targetChanged   = false
     targets[tDef.target] = tDef
     tInsert(targetList, tDef.target)
   end
@@ -596,6 +599,8 @@ function computeSha256(aFilePath)
 end
 
 function dependencyOutOfDate(tTime, aTarget, aTargetDef, aDependency, depTargetDef)
+  lmsMessageVery("  checking dependency: ["..aDependency.."]")
+
   if depTargetDef and depTargetDef.noOutput then
     return false
   end
@@ -604,10 +609,10 @@ function dependencyOutOfDate(tTime, aTarget, aTargetDef, aDependency, depTargetD
     return false
   end
   
-  if (lfs.attributes(aDependency, 'mode') ~= 'directory') then
+  if (lfs.attributes(aDependency, 'mode') == 'directory') then
     return false
   end
-  
+
   dTime = lfs.attributes(aDependency, 'modification')
   if not dTime then lmsError('missing dependency: ['..aDependency..']') end
   if dTime > tTime then
@@ -625,8 +630,14 @@ end
 
 function needsToBuild(aTargetDef)
   local aTarget = aTargetDef.target
+
   if type(aTargetDef.mustBuild) ~= 'nil' then
     lmsMessageCont('  must build '..aTarget)
+    return true
+  end
+
+  if aTargetDef.targetChanged then
+    lmsMessageCont('  must build due to artefact changed: '..aTarget)
     return true
   end
 
@@ -798,9 +809,9 @@ function runTarget(targetToRun)
     elseif type(aTarget.command) == 'function' then
       lmsMessage('starting to build ['..aTarget.target..']')
       aTarget.command(aTarget, function(code, signal)
---       if code ~= 0 then
---          lmsError('could not run command for ['..aTarget.target..']')
---        end
+       if code == 0 then
+          aTarget.targetChanged = true
+        end
         lmsMessage('finished building ['..aTarget.target..']')
         aTarget.targetCompleted = true
       end)

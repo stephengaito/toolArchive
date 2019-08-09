@@ -24,7 +24,7 @@ function cTests.targets(defaultDef, cDef)
   cDef = hMerge(defaultDef, cDef or { })
   cDef.creator = 'cTests-targets'
   
-  print('cTests: '..prettyPrint(cDef))
+--  print('cTests: '..prettyPrint(cDef))
   
   cDef.dependencies = cDef.dependencies or { }
 
