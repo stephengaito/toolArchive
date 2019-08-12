@@ -16,7 +16,7 @@ local function compileLitProg(lpDef, onExit)
   --
   -- build the litProg output using simple one context pass...
   --
-  executeCmd(lpDef.target, 'context --nonstopmode --silent=all --once '..lpDef.mainDoc, function(code, signal)
+  executeCmd(lpDef.target, 'context --nonstopmode --mode=codeOnly --once '..lpDef.mainDoc, function(code, signal)
     --
     -- remove the PDF file since we only want the litProg output
     --

@@ -598,40 +598,10 @@ function computeSha256(aFilePath)
   return appendSha()
 end
 
-function dependencyOutOfDate(tTime, aTarget, aTargetDef, aDependency, depTargetDef)
-  lmsMessageVery("  checking dependency: ["..aDependency.."]")
-
-  if depTargetDef and depTargetDef.noOutput then
-    return false
-  end
-
-  if aTargetDef and aTargetDef.noOutput then
-    return false
-  end
-  
-  if (lfs.attributes(aDependency, 'mode') == 'directory') then
-    return false
-  end
-
-  dTime = lfs.attributes(aDependency, 'modification')
-  if not dTime then lmsError('missing dependency: ['..aDependency..']') end
-  if dTime > tTime then
-    lmsMessageCont{
-      '  need to build ['..aTarget..']',
-      '  since ['..aDependency..']',
-      '  is newer ('..os.date('%Y/%m/%d %H:%M:%S', dTime)..')['..dTime..']',
-      '  than the target ('..os.date('%Y/%m/%d %H:%M:%S', tTime)..')['..tTime..']'
-      }
-    return true
-  end
-  
-  return false
-end
-
-function needsToBuild(aTargetDef)
+function needsToBuildAt(aTargetDef, parentTime)
   local aTarget = aTargetDef.target
 
-  if type(aTargetDef.mustBuild) ~= 'nil' then
+  if aTargetDef.mustBuild then
     lmsMessageCont('  must build '..aTarget)
     return true
   end
@@ -641,9 +611,13 @@ function needsToBuild(aTargetDef)
     return true
   end
 
-  local tTime = lfs.attributes(aTarget, 'modification')
-  if type(aTargetDef.noOutput) == 'nil' then
-    -- we should expect some file output...
+  local tTime = parentTime
+  if aTargetDef.noOutput then
+    -- we do not expect some file output...
+    -- so we use the (default) parent's time
+  else
+    -- we expect some file output...
+    tTime = lfs.attributes(aTarget, 'modification')
     if not tTime then 
       lmsMessageCont{
         '  need to build ['..aTargetDef.target..']',
@@ -652,7 +626,7 @@ function needsToBuild(aTargetDef)
       return true
     end
   end
-
+  
   lmsMessageVery(
     '  recursively checking need to build ['..aTarget..']'
   )
@@ -661,37 +635,55 @@ function needsToBuild(aTargetDef)
     -- (do a deep dive first)
     local depTargetDef = targets[aDependency]
     if depTargetDef then
-      if needsToBuild(depTargetDef) then
-        return true
-      end
-    else
-      if dependencyOutOfDate(tTime, aTarget, aTargetDef, aDependency, depTargetDef) then
+      if needsToBuildAt(depTargetDef, tTime) then
         return true
       end
     end
-  end
-
-  -- now check the sha256s
-  lms.newFileInfo[aTarget] =
-    lms.newFileInfo[aTarget] or computeSha256(aTarget)
-  local newFileSha256 = lms.newFileInfo[aTarget]
-  local oldFileSha256 = lms.oldFileInfo[aTarget] or ""
-  if newFileSha256 == oldFileSha256 then
-    lmsMessageVery(
-      '  (the '..aTarget..' sha256s match so there is no need to rebuild)'
-    )
-    return false
+    -- there is no need to build this target
+    -- because of this dependant's dependents
   end
   
-  -- now check the modification times of the dependencies
+  -- now check this target's sha256s
+  if not aTarget.noOutput then
+    lms.newFileInfo[aTarget] =
+      lms.newFileInfo[aTarget] or computeSha256(aTarget)
+    local newFileSha256 = lms.newFileInfo[aTarget]
+    local oldFileSha256 = lms.oldFileInfo[aTarget] or ""
+    if newFileSha256 == oldFileSha256 then
+      lmsMessageVery(
+        '  (the '..aTarget..' sha256s match so there is no need to rebuild)'
+      )
+      return false
+    end
+  end
+  
+  -- the sha256's do not match so check the modification times of all dependents
+    
   for i, aDependency in ipairs(aTargetDef.dependencies) do
-    if dependencyOutOfDate(tTime, aTarget, aTargetDef, aDependency, depTargetDef) then
-      return true
+    -- recursively check the dependencies of this dependency
+    -- (do a deep dive first)
+    local depTargetDef = targets[aDependency]
+    if (depTargetDef and not depTargetDef.noOutput) or
+        not depTargetDef then
+      local dTime = lfs.attributes(aDependency, 'modification')
+      if not dTime then
+        lmsError('missing dependency: ['..aDependency..']')
+      end
+
+      if dTime > tTime then
+        lmsMessageCont{
+          '  need to build ['..aTarget..']',
+          '  since ['..aDependency..']',
+          '  is newer ('..os.date('%Y/%m/%d %H:%M:%S', dTime)..')['..dTime..']',
+          '  than the target ('..os.date('%Y/%m/%d %H:%M:%S', tTime)..')['..tTime..']'
+          }
+        return true
+      end
     end
   end
   
   lmsMessageVery(
-    '  all dependencies older than the ['..aTargetDef.target..'] target'
+    '  all dependencies older than the ['..aTarget..'] target'
   )
   return false
 end
@@ -748,7 +740,7 @@ function runTarget(targetToRun)
   end
 
   if not aTarget.targetRunning then
-    if not needsToBuild(aTarget) then
+    if not needsToBuildAt(aTarget, 0) then
       lmsMessageCont('  no need to rebuild ['..targetToRun..']')
       aTarget.targetCompleted = true
       return
