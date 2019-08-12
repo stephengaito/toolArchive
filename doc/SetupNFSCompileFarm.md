@@ -44,6 +44,7 @@ Our compilation farm makes the following assumptions:
 13. The DMUCS request server process is running on a well known machine in 
     the local area network.
 14. lms is setup on all compile servers.
+15. ConTeXt (including $HOME/texmf) is setup on all compile servers.
 
 On each compile server, the NFS exported source subhierarchy  are located 
 at:
