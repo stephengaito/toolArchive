@@ -35,7 +35,13 @@ function replaceEnvironmentVarsInPath( aPath )
 end
 
 function makePath(pathTable)
-  return tConcat(pathTable, directorySeparator)
+  local newPathTable = { }
+  for i, aPath in ipairs(pathTable) do
+    if not aPath:match('^%.?$') then
+      tInsert(newPathTable, aPath)
+    end
+  end
+  return tConcat(newPathTable, directorySeparator)
 end
 
 luaMakeSystemDir = makePath{ getEnv('HOME'), '.luaMakeSystem'}
@@ -84,22 +90,24 @@ luv = luvLocal
 
 -- Now define some functions to help communicate with the user 
 
-currentDir = lfs.currentdir()
-currentDir = currentDir:gsub('(.*[/\\])', '')
+-- compute this project's directory name
+projDir = lfs.currentdir()
+projDir = projDir:gsub('(.*[/\\])', '')
 
-clearScreen = lms.clearScreen or true
-verbose     = lms.verbose     or 0
-recurse     = lms.recurse     or true
-dirPrefix   = lms.dirPrefix   or currentDir
-logDir      = lms.logDir      or '/tmp'
+clearScreen    = lms.clearScreen or true
+verbose        = lms.verbose     or 0
+recurse        = lms.recurse     or true
+dirPrefix      = lms.dirPrefix   or '.'
+buildDir       = lms.buildDir    or makePath{ lfs.currentdir(), 'buildDir' }
+logDir         = lms.logDir      or '/tmp'
 local aTmpName = os.tmpname()
-logPrefix   = lms.logPrefix   or
+logPrefix      = lms.logPrefix   or
   aTmpName:gsub(
     '%/tmp%/lua_',
-    logDir..'/lms_'..os.date('%Y-%m-%d_%H-%M-%S')..'_'..currentDir..'_'
+    logDir..'/lms_'..os.date('%Y-%m-%d_%H-%M-%S')..'_'..projDir..'_'
   )
 os.remove(aTmpName)
-useLUV      = lms.useLUV      or false
+useLUV         = lms.useLUV      or false
 
 local function compareKeyValues(a, b)
   return (a[1] < b[1])
@@ -225,11 +233,11 @@ addOption('-l', '--log-prefix', 'A prefix for all logFile paths',
   end
 )
 
-addOption('-d', '--directory-prefix', 'The current directory prefix',
-  function(key, value)
-    dirPrefix = value
-  end
-)
+--addOption('-d', '--directory-prefix', 'The current directory prefix',
+--  function(key, value)
+--    dirPrefix = value
+--  end
+--)
 
 addOption('-c', '--no-clear-screen', 'Do not clear screen', function()
   clearScreen = false
@@ -366,14 +374,10 @@ targets    = {}
 targetList = {}
 
 function runCmdIn(aTarget, cmd, subDir, onExit)
-  subDirPath = subDir
-  if cmd:find('^lms') then
-    cmd = makePath { cmd, subDir }
-  end
-  subDirPath = makePath { dirPrefix, subDir }
+  displaySubDirPath = makePath { projDir, dirPrefix, subDir }
   local curDir = lfs.currentdir()
   print('\n========================================================')
-  print('working in ['..subDirPath..']')
+  print('working in ['..displaySubDirPath..']')
   print('running    ['..cmd..']')
   lfs.chdir(subDir)
   executeCmd(aTarget, cmd, function(code, signal)
@@ -387,14 +391,10 @@ function runCmdIn(aTarget, cmd, subDir, onExit)
 end
 
 function runLocalCmdIn(aTarget, cmd, subDir, onExit)
-  subDirPath = subDir
-  if cmd:find('^lms') then
-    cmd = makePath { cmd, subDir }
-  end
-  subDirPath = makePath { dirPrefix, subDir }
+  displaySubDirPath = makePath { projDir, dirPrefix, subDir }
   local curDir = lfs.currentdir()
   print('\n========================================================')
-  print('working in ['..subDirPath..']')
+  print('working in ['..displaySubDirPath..']')
   print('running    ['..cmd..']')
   lfs.chdir(subDir)
   executeLocalCmd(aTarget, cmd, function(code, signal)
@@ -544,7 +544,7 @@ function target(tDef)
   if 0 < #tDef then tDef.command      = tRemove(tDef, 1) end
   if 0 < #tDef then tDef.commandName  = tRemove(tDef, 1) end
   if not tDef.target or tDef.target:match('^%s*$') then 
-    lmsError(debug.traceback('target method did not supply a target')) 
+    lmsError(debug.traceback('target method did not supply a target ['..toStr(tDef.target)..']')) 
   end
   if targets[tDef.target] then -- first definition wins!
     print('Sorry the target: ['..tDef.target..'] already exists -- ignored!')
@@ -920,114 +920,71 @@ end
 
 -- find documents
 
-function findDocuments(aDef)
+function findDocumentsIn(aDef, subDirs)
   if type(aDef['docFiles']) ~= 'nil' then return end
 
   aDef['findRegexp'] = aDef['findRegexp'] or ".*\\.tex\\|.*Bib\\.lua"
-  aDef['subDirs']    = aDef['subDirs']    or aDef['docDir']
-
   local docFiles = { }
-  for i, aDir in ipairs(aDef['subDirs']) do
+  for i, aDir in ipairs(subDirs) do
     local findCmd  = 'find '..aDir..' -iregex "'..aDef['findRegexp']..'"'
     lmsMessageVery('Dynamically finding documents using ['..findCmd..']')
     local texFileList = io.popen(findCmd)
     for docTexFilePath in texFileList:lines('*l') do
-      docTexFilePath = './'..docTexFilePath
       table.insert(docFiles, docTexFilePath)
     end
   end
+  
+  aDef.dependencies = { }
+  for i, aDocFile in ipairs(docFiles) do
+    tInsert(aDef.dependencies, makePath{ dirPrefix, aDocFile })
+  end
+
   aDef.docFiles = docFiles
 end
 
 -- Deal with sub-directory recursion
 
+-- TO BE REMOVED
 function doNotRecurseTarget(aTarget)
   if type(targets[aTarget]) ~= 'nil' then
     targets[aTarget].recurse = false
   end
 end
 
-function findSubDirs(aDef)
-  if type(aDef['subDirs']) ~= 'nil' then
-    if type(aDef['subDirs']) ~= 'table' then
-      aDef['subDirs'] = { aDef['subDirs'] }
-    end
-    return
-  end
-
-  aDef['ignoreDirs'] = aDef['ignoreDirs'] or { 'releases', 'buildDir', 'bin' }
-
-  local subDirs = { }
-  local ignoreDirs = { }
-  for i, aDir in ipairs(aDef['ignoreDirs']) do
-    ignoreDirs[aDir] = true
-  end
-  for entry in lfs.dir('.') do
-    if not entry:match('^%..*$') and
-       (lfs.attributes(entry, 'mode') == 'directory') and
-       not ignoreDirs[entry] then
-      table.insert(subDirs, entry)
+function loadLmsfileIn(aSubDir)
+  local curDir = lfs.currentdir()
+  print('loadLmsfileIn: original dir = '..curDir)
+  print("loadLmsfileIn: loading lmsfile in ["..aSubDir.."]")
+  lfs.chdir(aSubDir)
+    
+  local fileType = lfs.attributes('lmsfile', 'mode')
+  if fileType == 'file' then
+    local lmsfileChunk, aMesg = loadfile('lmsfile')
+    if lmsfileChunk then
+      local oldDirPrefix = dirPrefix
+      dirPrefix = makePath{ dirPrefix, aSubDir }
+      print('loadLmsfileIn: dirPrefix: ['..dirPrefix..']')
+      lmsfileChunk()
+      dirPrefix = oldDirPrefix
+    else
+      print("WARNING: could not load lmsfile in ["..aSubDir.."]")
+      print("  "..aMesg)
     end
   end
-  aDef['subDirs'] = subDirs
-end
-
-function recurseCurrentTarget(aDef, onExit)
-  if type(aDef['subDir']) ~= 'string' then
-    print('  No subdir to recurse into...')
-    return
-  end
-
-  if type(aDef['recurseCmd']) ~= 'string' then
-    print('  No recurse command to run...')
-    return
-  end
-
-  runCmdIn(aDef.target, aDef['recurseCmd'], aDef['subDir'], onExit)
+  lfs.chdir(curDir)
 end
 
 function recurseTargets(aDef)
   if not recurse then return end
+  
+  print('recurseTargets: dirPrefix = '..dirPrefix)
+  print('recurseTargets: buildDir = '..buildDir)
+--  print('recurseTargets: '..prettyPrint(aDef))
 
-  local recurseDefaults = {
-    ignoreDirs = { 'release', 'buildDir', 'bin', 'doc' }
-  }
-  aDef = hMerge(recurseDefaults, aDef)
-  findSubDirs(aDef)
-
-  local switches = ' '
-  if (0 < verbose) then switches = switches .. '-v='..verbose..' ' end
-
-  recurseTargets = { }
-  for i, aTarget in ipairs(targetsToRun) do
-    if targets[aTarget].recurse then
-      for i, aSubDir in ipairs(aDef['subDirs']) do
-        anRTargetName = aTarget..'-recurse-'..aSubDir
-        anRTargetDef  = targets[anRTargetName] or { }
-
-        anRTargetDef.target = anRTargetName
-        anRTargetDef.dependencies =
-          anRTargetDef.dependencies or { }
-
-        anRTargetDef.command      = recurseCurrentTarget
-        anRTargetDef.commandName  = 'LMS::recurseCurrentTarget'
-        anRTargetDef.subDir       = aSubDir
-        recurseCmd                =
-          'lms -c -l='..logPrefix..'/'..anRTargetName ..
-          switches .. aTarget .. ' -d=' .. dirPrefix
-        anRTargetDef.recurseCmd   = recurseCmd
-        anRTargetDef.mustBuild    = true
-
-        targets[anRTargetName]    = anRTargetDef
-
-        tInsert(recurseTargets, anRTargetName)
-      end
-    end
+  aDef.lmsfileSubDirs = aDef.lmsfileSubDirs or { }
+  for i, aSubDir in ipairs(aDef.lmsfileSubDirs) do
+    loadLmsfileIn(aSubDir)
   end
-
-  for i, aTarget in ipairs(recurseTargets) do
-    tInsert(targetsToRun, aTarget)
-  end  
 end
 
 -- Create the standard targets
@@ -1166,7 +1123,7 @@ end
 
 -- load the user's LMS file
 
-require 'lmsfile'
+loadLmsfileIn('.')
 
 if shouldListTargets then listTargets() end
 

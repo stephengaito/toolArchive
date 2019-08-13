@@ -158,6 +158,7 @@ end
 function c.makeSrcTarget(cDef, cDependencies, aSrcFile)
   local aSrcPath = makePath {
     cDef.buildDir,
+    dirPrefix, 
     aSrcFile
   }
   if aSrcFile:match('%.h$') then
@@ -184,7 +185,7 @@ function c.targets(defaultDef, cDef)
     local srcTarget = aProgram..'.c'
     c.makeSrcTarget(cDef, cDependencies, srcTarget)
     
-    local programTarget = makePath{ cDef.buildDir, aProgram }
+    local programTarget = makePath{ cDef.buildDir, dirPrefix, aProgram }
     c.program(hMerge(cDef, {
       target       = programTarget,
       programName  = aProgram,

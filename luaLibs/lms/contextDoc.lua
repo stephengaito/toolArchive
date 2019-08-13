@@ -232,27 +232,16 @@ function contextDoc.targets(ctxDef)
   ctxDef = hMerge(contextDoc, ctxDef)
   ctxDef.creator = 'contextDoc-targets'
   
-  findSubDirs(ctxDef)
-  findDocuments(ctxDef)
+  findDocumentsIn(ctxDef, aAppend({ ctxDef.docDir }, ctxDef.lmsfileSubDirs ))
 
   ctxDef.compileDocument = compileDocument
   
-  ctxDef.dependencies = { }
-  tInsert(ctxDef.docFiles, 1, makePath{ '.', ctxDef.docDir, ctxDef.mainDoc})
-  for i, aDocFile in ipairs(ctxDef.docFiles) do
-    local docPath = aDocFile
-    if not docPath:find('^%.') then
-      docPath = makePath{ ctxDef.docDir, docPath }
-    end
-    tInsert(ctxDef.dependencies, docPath)
-  end
-
   ctxDef.buildDir = ctxDef.buildDir or 'buildDir'
   ensurePathExists(ctxDef.buildDir)
   tInsert(ctxDef.dependencies, ctxDef.buildDir)
 
   local pdfMainDoc = ctxDef.mainDoc:gsub('%.tex$', '.pdf')
-  local docTarget = makePath{ ctxDef.docDir, pdfMainDoc }
+  local docTarget = makePath{ dirPrefix, ctxDef.docDir, pdfMainDoc }
   ctxDef['globalTargetVar'] = ctxDef['globalTargetVar'] or 'Targets'
   tInsert(_G['doc'..ctxDef['globalTargetVar']], docTarget)
   target(hMerge(ctxDef, {
@@ -262,7 +251,7 @@ function contextDoc.targets(ctxDef)
   }))
 
   local bibMainDoc = ctxDef.mainDoc:gsub('%.tex$', 'Bib.lua')
-  local bibTarget = makePath{ ctxDef.docDir, bibMainDoc }
+  local bibTarget = makePath{ dirPrefix, ctxDef.docDir, bibMainDoc }
   tInsert(_G['bib'..ctxDef['globalTargetVar']], bibTarget)
   target(hMerge(ctxDef, {
     target      = bibTarget,
