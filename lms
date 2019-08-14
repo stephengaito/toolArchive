@@ -319,6 +319,8 @@ end
 
 parseArguments()
 
+if clearScreen then os.execute('reset') end
+
 -- Now check if we can actually use LUV
 
 if useLUV and not luv.spawn then
@@ -953,8 +955,8 @@ end
 
 function loadLmsfileIn(aSubDir)
   local curDir = lfs.currentdir()
-  print('loadLmsfileIn: original dir = '..curDir)
-  print("loadLmsfileIn: loading lmsfile in ["..aSubDir.."]")
+  lmsMessageVery('loadLmsfileIn: original dir = '..curDir)
+  lmsMessageVery("loadLmsfileIn: loading lmsfile in ["..aSubDir.."]")
   lfs.chdir(aSubDir)
     
   local fileType = lfs.attributes('lmsfile', 'mode')
@@ -963,7 +965,7 @@ function loadLmsfileIn(aSubDir)
     if lmsfileChunk then
       local oldDirPrefix = dirPrefix
       dirPrefix = makePath{ dirPrefix, aSubDir }
-      print('loadLmsfileIn: dirPrefix: ['..dirPrefix..']')
+      lmsMessageVery('loadLmsfileIn: dirPrefix: ['..dirPrefix..']')
       lmsfileChunk()
       dirPrefix = oldDirPrefix
     else
@@ -977,9 +979,9 @@ end
 function recurseTargets(aDef)
   if not recurse then return end
   
-  print('recurseTargets: dirPrefix = '..dirPrefix)
-  print('recurseTargets: buildDir = '..buildDir)
---  print('recurseTargets: '..prettyPrint(aDef))
+  lmsMessageVery('recurseTargets: dirPrefix = '..dirPrefix)
+  lmsMessageVery('recurseTargets: buildDir = '..buildDir)
+--  lmsMessageVery('recurseTargets: '..prettyPrint(aDef))
 
   aDef.lmsfileSubDirs = aDef.lmsfileSubDirs or { }
   for i, aSubDir in ipairs(aDef.lmsfileSubDirs) do
@@ -1140,8 +1142,6 @@ if not hasLmsFileInfo then
 end
 lms.oldFileInfo = lmsFileInfo
 lms.newFileInfo = { }
-
-if clearScreen then os.execute('reset') end
 
 local function runTargets()
 
