@@ -422,6 +422,8 @@ function executeCmd(aTarget, aCmd, onExit)
     lmsMessageVery('using: ['..wrappedCmd..']')
     local spawnArguments = { }
     for anArg in wrappedCmd:gmatch("[^%s]+") do
+      -- unprotect any protected quotes since we are not running in the shell 
+      anArg = anArg:gsub('\\"', '"')
       tInsert(spawnArguments, anArg)
     end
     lmsMessageVery('spawnComandArguments: '..prettyPrint(spawnArguments))
