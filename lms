@@ -393,6 +393,7 @@ function runCmdIn(aTarget, cmd, subDir, onExit)
 end
 
 function runLocalCmdIn(aTarget, cmd, subDir, onExit)
+  print("runLocalCmdIn: subDir: ["..subDir.."]")
   displaySubDirPath = makePath { projDir, dirPrefix, subDir }
   local curDir = lfs.currentdir()
   print('\n========================================================')

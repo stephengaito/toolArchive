@@ -12,15 +12,15 @@ litProgs = hMerge(lms.litProgs, litProgs)
 
 local function compileLitProg(lpDef, onExit)
   local curDir = lfs.currentdir()
-  chDir(lpDef.docDir)
+  chDir(lpDef.buildDir)
   --
   -- build the litProg output using simple one context pass...
   --
-  executeCmd(lpDef.target, 'context --nonstopmode --mode=codeOnly --once '..lpDef.mainDoc, function(code, signal)
+  executeCmd(lpDef.target, 'context --nonstopmode --mode=codeOnly --once '..lpDef.absMainDoc, function(code, signal)
     --
     -- remove the PDF file since we only want the litProg output
     --
-    os.remove(lpDef.mainDoc:gsub('%.tex$', '.pdf')) 
+    os.remove(lpDef.absMainDoc:gsub('%.tex$', '.pdf')) 
     --
     onExit(code, signal)
   end)
@@ -29,8 +29,7 @@ local function compileLitProg(lpDef, onExit)
 end
 
 local function installTarget(aDef, installDir, aFile)
-  local buildTarget = makePath{ aDef.buildDir, aFile } 
-  local diffTarget      = 'diff-'..aFile
+  local buildTarget     = makePath{ aDef.buildDir, aFile } 
   local installedTarget = aFile
   if installDir then
     installedTarget = makePath{ installDir, aFile }
@@ -110,15 +109,21 @@ function litProgs.targets(defaultDef, lpDef)
         ensurePathExists(parentPath)
         aInsertOnce(lpDef.dependencies, parentPath)
       end
-      target(hMerge(lpDef, {
-        target      = buildTarget,
-        dependencies = { litProgsMainDoc }
-      }))
+      if not getTargetFor(buildTarget) then
+        target(hMerge(lpDef, {
+          target       = buildTarget,
+          dependencies = { litProgsMainDoc }
+        }))
+      end
     end
   end
 
+  local absMainDocPath = 
+    makePath{ lfs.currentdir(), dirPrefix, lpDef.docDir, lpDef.mainDoc }  
+  
   target(hMerge(lpDef, {
     target      = litProgsMainDoc,
+    absMainDoc  = absMainDocPath,
     noOutput    = true,
     command     = compileLitProg,
     commandName = 'LitProgs::compileLitProg'

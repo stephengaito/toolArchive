@@ -13,14 +13,11 @@ contextDoc = hMerge(contextDefaults, lms.contextDoc, contextDoc)
 
 local function compileDocument(aDef, onExit)
   local curDir = lfs.currentdir()
-  chDir(aDef.docDir)
+  chDir(aDef.buildDir)
   --
   -- build the complete context document
   --
-  executeCmd(aDef.target, 'context --nonstopmode --silent=all '..aDef.mainDoc, function(code, signal)
-    --
-    onExit(code, signal)
-  end)
+  executeCmd(aDef.target, 'context --nonstopmode --silent=all '..aDef.absMainDoc, onExit)
   
   chDir(curDir)
 end
@@ -34,10 +31,15 @@ function createNewDocTarget(targetName, targetVarName, targetCommand)
   doNotRecurseTarget('pub-'..targetName)
 end
 
-local function gatherBibReferences(ctxDef, onExit)
-  if type(ctxDef['docDir']) == 'nil' then return end
-
-  runLocalCmdIn('diSimp bib', ctxDef['docDir'], onExit)
+local function gatherBibReferences(aDef, onExit)
+  local curDir = lfs.currentdir()
+  chDir(aDef.buildDir)
+  --
+  -- build the complete context document
+  --
+  executeLocalCmd(aDef.target, 'diSimp bib', onExit)
+  
+  chDir(curDir)
 end
 
 local function copyCodeFiles(ctxDef, onExit)
@@ -241,22 +243,28 @@ function contextDoc.targets(ctxDef)
   tInsert(ctxDef.dependencies, ctxDef.buildDir)
 
   local pdfMainDoc = ctxDef.mainDoc:gsub('%.tex$', '.pdf')
-  local docTarget = makePath{ dirPrefix, ctxDef.docDir, pdfMainDoc }
+  local docTarget =
+    makePath{                   ctxDef.buildDir, dirPrefix, pdfMainDoc }
+  local absMainDocPath = 
+    makePath{ lfs.currentdir(), dirPrefix, ctxDef.docDir, ctxDef.mainDoc }
   ctxDef['globalTargetVar'] = ctxDef['globalTargetVar'] or 'Targets'
   tInsert(_G['doc'..ctxDef['globalTargetVar']], docTarget)
   target(hMerge(ctxDef, {
     target      = docTarget,
+    absMainDoc  = absMainDocPath,
     command     = compileDocument,
     commandName = 'ContextDoc::compileDocument'
   }))
 
   local bibMainDoc = ctxDef.mainDoc:gsub('%.tex$', 'Bib.lua')
-  local bibTarget = makePath{ dirPrefix, ctxDef.docDir, bibMainDoc }
+  local bibTarget = makePath{ ctxDef.buildDir, dirPrefix, bibMainDoc }
+  print(bibTarget)
   tInsert(_G['bib'..ctxDef['globalTargetVar']], bibTarget)
   target(hMerge(ctxDef, {
-    target      = bibTarget,
-    command     = gatherBibReferences,
-    commandName = 'ContextDef::gatherBibReferences'
+    target       = bibTarget,
+    dependencies = { docTarget },
+    command      = gatherBibReferences,
+    commandName  = 'ContextDef::gatherBibReferences'
   }))
 
   setupDocumentPublish(ctxDef)
