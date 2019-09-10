@@ -221,7 +221,7 @@ addOption('-h', '--help', 'Provide this list of options', function()
     print(anOption[1]..'  '..anOption[2]..pad..anOption[3])
   end
   print("\nif no target is specified then the 'default' target will be run\n")
-  print("lms.os = "..lms.os)
+--  print("lms.os = "..lms.os)
   os.exit(0)
 end)
 

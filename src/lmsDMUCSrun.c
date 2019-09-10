@@ -202,6 +202,9 @@ int main(int argc, char* argv[]) {
     DEBUG("lmsDMUCSrun: redirected all output to [%s]\n", logFile);
   }
 
+  fflush(stdout);
+  fflush(stderr);
+
   if (1 < verbose) {
     printf("lmsDMUCSrun: lms DMUCS command runner (v0.0)\n\n");
     printf("lmsDMUCSrun:        DMUCS server: [%s]\n", dmucsHostName);
@@ -216,13 +219,13 @@ int main(int argc, char* argv[]) {
     fflush(stdout);
   }
   
-  printf("\nlmsDMUCSrun:  run command:\n\n");
-  printf("[");
+  printf("\nlmsDMUCSrun:  run command:\n");
+  printf("--------------------------------------\n");
   for(int i = optind; i < argc; i++) {
-    if (optind < i) printf(" ");
-    printf("%s", argv[i]);
+    printf("[%d]>>%s<<\n", i, argv[i]);
   }
-  printf("]\n\n");
+  printf("--------------------------------------\n");
+  printf("optind: %d argc: %d argc-optind: %d\n\n", optind, argc, argc-optind);
   if (directory) printf("lmsDMUCSrun: in directory: [%s]\n\n", directory);
   fflush(stdout);
 
@@ -368,6 +371,7 @@ int main(int argc, char* argv[]) {
       clientHostIPv4Addr, dmucsHostResponse
     );
 
+    int protectQuotes = false;
     const char *cmdArgs[argc+10];
     int cmdArgNum = 0;
     memset(cmdArgs, 0, sizeof(cmdArgs));
@@ -380,6 +384,7 @@ int main(int argc, char* argv[]) {
     } else {
       // we are calling a process on a different machine
       // so we need to use ssh
+      protectQuotes = true;
       cmdArgs[cmdArgNum++] = "ssh";
       char sshUserHost[bufferLen];
       memset(sshUserHost, 0, bufferLen);
@@ -398,15 +403,38 @@ int main(int argc, char* argv[]) {
       }
     }
     for(int i = optind; i < argc; i++) {
-      cmdArgs[cmdArgNum++] = argv[i];
+      if (protectQuotes && strchr(argv[i], '"')) {
+        const char* oldArgv = argv[i];
+        size_t newArgvLen = 2*strlen(argv[i]);
+        char* newArgv = (char*)calloc(newArgvLen, 1);
+        memset(newArgv, 0, newArgvLen);
+        const char* oldPtr = oldArgv;
+        char*       newPtr = newArgv;
+        while(*oldPtr) {
+          if ((*oldPtr == '"') || (*oldPtr == '\\')) {
+            *newPtr++ = '\\';
+          }
+          *newPtr++ = *oldPtr++;
+        }
+        cmdArgs[cmdArgNum++] = newArgv;
+        if (0 < verbose) {
+          printf("escaping string quotes\n");
+          printf("old argv[%d]: [%s]\n", i, oldArgv);
+          printf("new argv[%d]: [%s]\n", i, newArgv);
+        }
+      } else {
+        cmdArgs[cmdArgNum++] = argv[i];
+      }
     }
 
     if (1 < verbose) {
-      printf("lmsDMUCSrun: exec'ing the command: [");
+      printf("lmsDMUCSrun: exec'ing the command: \n");
+      printf("-----------------------------------------------\n");
       for(int i = 0; i < cmdArgNum; i++) {
-        printf("%s ", cmdArgs[i]);
+        printf("[%d]>>%s<<\n", i, cmdArgs[i]);
       }
-      printf("]\n");
+      printf("-----------------------------------------------\n");
+      printf("cmdArgNum: %d\n\n", cmdArgNum);
       fflush(stdout);
     }
     VERBOSE("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
