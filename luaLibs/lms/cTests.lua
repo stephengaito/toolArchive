@@ -32,15 +32,15 @@ function cTests.targets(defaultDef, cDef)
 
     local cDependencies = { }
 
-    local testSrcTarget = makePath{ cDef.buildDir, dirPrefix, aTestExec..'.c' }
+    local testSrcTarget = makePath{ cDef.buildDir, aTestExec..'.c' }
     tInsert(cDependencies, testSrcTarget)
     aInsertOnce(cleanTargets, nameCleanTarget(testSrcTarget))
     
-    local testExecTarget = makePath{ cDef.buildDir, dirPrefix, aTestExec }
+    local testExecTarget = makePath{ cDef.buildDir, aTestExec }
     local mainCFile = (cDef.mainDoc):gsub('%.tex', '.c')
     for j, aSrcFile in ipairs(cDef.cSrcFiles) do
       if not aSrcFile:match(mainCFile) then
-        tInsert(cDependencies, makePath{ cDef.buildDir, dirPrefix, aSrcFile })
+        tInsert(cDependencies, makePath{ cDef.buildDir, aSrcFile })
       end
     end
 
@@ -88,7 +88,7 @@ function cTests.targets(defaultDef, cDef)
       needs        = { 'lua5.2' },
     }))
     
-    local testTarget = makePath{ cDef.buildDir, dirPrefix, aTestExec..'-results.lua' }
+    local testTarget = makePath{ cDef.buildDir, aTestExec..'-results.lua' }
     tInsert(testTargets, testTarget)
     target(hMerge(cDef, {
       target       = testTarget,

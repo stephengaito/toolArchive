@@ -239,14 +239,15 @@ function contextDoc.targets(ctxDef)
   ctxDef.compileDocument = compileDocument
   
   ctxDef.buildDir = ctxDef.buildDir or 'buildDir'
+  ctxDef.buildDir = makePath { ctxDef.buildDir, dirPrefix }
   ensurePathExists(ctxDef.buildDir)
   tInsert(ctxDef.dependencies, ctxDef.buildDir)
 
   local pdfMainDoc = ctxDef.mainDoc:gsub('%.tex$', '.pdf')
   local docTarget =
-    makePath{                   ctxDef.buildDir, dirPrefix, pdfMainDoc }
+    makePath{ ctxDef.buildDir, pdfMainDoc }
   local absMainDocPath = 
-    makePath{ lfs.currentdir(), dirPrefix, ctxDef.docDir, ctxDef.mainDoc }
+    makePath{ lfs.currentdir(), ctxDef.docDir, ctxDef.mainDoc }
   ctxDef['globalTargetVar'] = ctxDef['globalTargetVar'] or 'Targets'
   tInsert(_G['doc'..ctxDef['globalTargetVar']], docTarget)
   target(hMerge(ctxDef, {
@@ -257,7 +258,7 @@ function contextDoc.targets(ctxDef)
   }))
 
   local bibMainDoc = ctxDef.mainDoc:gsub('%.tex$', 'Bib.lua')
-  local bibTarget = makePath{ ctxDef.buildDir, dirPrefix, bibMainDoc }
+  local bibTarget = makePath{ ctxDef.buildDir, bibMainDoc }
   print(bibTarget)
   tInsert(_G['bib'..ctxDef['globalTargetVar']], bibTarget)
   target(hMerge(ctxDef, {
