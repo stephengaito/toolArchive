@@ -43,6 +43,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#define PATH_MAX 4096
 #define bufferLen 1024
 #define noHostAvailable "0.0.0.0"
 
@@ -372,6 +373,7 @@ int main(int argc, char* argv[]) {
     );
 
     int protectQuotes = false;
+    int changeDirectory = true;
     const char *cmdArgs[argc+10];
     int cmdArgNum = 0;
     memset(cmdArgs, 0, sizeof(cmdArgs));
@@ -385,6 +387,7 @@ int main(int argc, char* argv[]) {
       // we are calling a process on a different machine
       // so we need to use ssh
       protectQuotes = true;
+      changeDirectory = false;
       cmdArgs[cmdArgNum++] = "ssh";
       char sshUserHost[bufferLen];
       memset(sshUserHost, 0, bufferLen);
@@ -437,8 +440,19 @@ int main(int argc, char* argv[]) {
       printf("cmdArgNum: %d\n\n", cmdArgNum);
       fflush(stdout);
     }
+    if (changeDirectory) {
+      if (1 < verbose) {
+        char curDirBuff[PATH_MAX];
+        memset(curDirBuff, 0, PATH_MAX);
+        const char* curDir = getcwd(curDirBuff, PATH_MAX);
+        printf("current directory: [%s]\n", curDir);
+        printf("changing directory to: [%s]\n", directory);
+      }
+      if (chdir(directory) != 0) {
+        printf("FAILED to change directory\n");
+      }
+    }
     VERBOSE("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
-    
     if (execvp(cmdArgs[0], (char**)cmdArgs) < 0) {
       dmucsSocketFD = -1; // the child should NOT close the dmucs socket!
       ERROREXIT("lmsDMUCSrun: execvp failed: %s\n", strerror(errno));

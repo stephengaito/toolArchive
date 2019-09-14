@@ -11,21 +11,22 @@ lms.litProgs = lms.litProgs or { }
 litProgs = hMerge(lms.litProgs, litProgs)
 
 local function compileLitProg(lpDef, onExit)
-  local curDir = lfs.currentdir()
-  chDir(lpDef.buildDir)
   --
   -- build the litProg output using simple one context pass...
   --
-  executeCmd(lpDef.target, 'context --nonstopmode --mode=codeOnly --once '..lpDef.absMainDoc, function(code, signal)
-    --
-    -- remove the PDF file since we only want the litProg output
-    --
-    os.remove(lpDef.absMainDoc:gsub('%.tex$', '.pdf')) 
-    --
-    onExit(code, signal)
-  end)
-
-  chDir(curDir)
+  executeCmdIn(
+    lpDef.target,
+    'context --nonstopmode --mode=codeOnly --once '..lpDef.absMainDoc,
+    lpDef.buildDir,
+    function(code, signal)
+      --
+      -- remove the PDF file since we only want the litProg output
+      --
+      os.remove(lpDef.absMainDoc:gsub('%.tex$', '.pdf')) 
+      --
+      onExit(code, signal)
+    end
+  )
 end
 
 local function installTarget(aDef, installDir, aFile)
@@ -50,7 +51,7 @@ local function installTarget(aDef, installDir, aFile)
     commandName  = 'LitProgs::installedTarget (shell command)'
   }))
   
-  tInsert(cleanTargets, nameCleanTarget(buildTarget))
+  appendToClean(buildTarget)
 end
 
 -- This assumes that installTarget has been run...
@@ -78,10 +79,13 @@ function litProgs.targets(defaultDef, lpDef)
   lpDef = hMerge(defaultDef, lpDef or { })
   lpDef.creator = 'litProgs-targets'
 
---  print('lpDef: '..prettyPrint(lpDef))
-
   lpDef.docFiles = nil
-  findDocumentsIn(lpDef, { lpDef.docDir })
+  findDocumentsIn(
+    lpDef,
+    'docFiles',
+    ".*\\.tex\\|.*Bib\\.lua",
+    { lpDef.docDir }
+  )
 
   lpDef.compileLitProg = compileLitProg
   lpDef.installTarget  = installTarget

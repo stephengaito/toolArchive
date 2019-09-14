@@ -56,31 +56,6 @@ local function collectCSrc(cDef)
   end
 end
 
-local function cCompile(cDef, onExit)
-  local cFile = cDef.target:gsub('%.o$', '.c')
-  local cmd = {
-    cDef.cc,
-    tConcat(cDef.cOpts, ' '),
-    tConcat(cDef.cIncs, ' '),
-    cFile,
-    '-o',
-    cDef.target
-  }
-  return executeCmd(cDef.target, tConcat(cmd, ' '), onExit)
-end
-
-local function cLink(cDef, onExit)
-  local cmd = {
-    cDef.cc,
-    tConcat(removeDuplicates(cDef.oFiles),   ' '),
-    tConcat(removeDuplicates(cDef.libs),     ' '),
-    tConcat(cDef.linkOpts, ' '),
-    '-o',
-    cDef.target
-  }
-  return executeCmd(cDef.target, tConcat(cmd, ' '), onExit)
-end
-
 local function computeNeeds(cDef)
   for i, aNeed in ipairs(cDef.needs) do
     local cFlags = getOutputFromCmd('pkg-config --cflags '..aNeed)
@@ -103,19 +78,34 @@ function c.program(cDef)
   tInsert(cDef.cIncs, 1, '-I'..cDef.buildDir)
   for i, anOFile in ipairs(cDef.oFiles) do
     if not getTargetFor(anOFile) then
+    
       target(hMerge(cDef, {
         target      = anOFile,
-        command     = cCompile,
-        commandName = 'C::cCompile'
+        command     = tConcat({
+          cDef.cc,
+          tConcat(cDef.cOpts, ' '),
+          tConcat(cDef.cIncs, ' '),
+          anOFile:gsub('%.o$', '.c'),
+          '-o',
+          anOFile
+        }, ' '),
+        commandName = 'C::Compile'
       }))
-      tInsert(cleanTargets, nameCleanTarget(anOFile))
+      appendToClean(anOFile)
     end
   end
-  
+    
   target(hMerge(cDef, { 
     dependencies = cDef.oFiles,
-    command      = cLink,
-    commandName  = 'C::cLink'
+    command      = tConcat({
+      cDef.cc,
+      tConcat(removeDuplicates(cDef.oFiles),   ' '),
+      tConcat(removeDuplicates(cDef.libs),     ' '),
+      tConcat(cDef.linkOpts, ' '),
+      '-o',
+      cDef.target
+    }, ' '),
+    commandName  = 'C::Link'
   }))
   
   cDef.installDirs = cDef.installDirs or { }
@@ -132,7 +122,7 @@ function c.program(cDef)
       ensurePathExists(parentPath)
       tInsert(installDeps, parentPath)
     end
-    tInsert(installTargets, installTarget)
+    appendToMainTarget(installTarget, 'install')
     target(hMerge(cDef, {
       target       = installTarget,
       dependencies = installDeps,
@@ -145,7 +135,7 @@ function c.program(cDef)
     }))
   end
   
-  tInsert(clobberTargets, nameClobberTarget(cDef.target))
+  appendToClobber(cDef.target)
 end
 
 function c.shared(cDef)
@@ -162,7 +152,7 @@ function c.makeSrcTarget(cDef, cDependencies, aSrcFile)
     aSrcFile
   }
   if aSrcFile:match('%.h$') then
-    tInsert(headerTargets, aSrcPath)
+    appendToMainTarget(aSrcPath, 'header')
   end
   aInsertOnce(cDependencies, aSrcPath)
 end
@@ -192,7 +182,7 @@ function c.targets(defaultDef, cDef)
       dependencies = c.collectCDependencies(cDependencies),
       needs        = { },
     }))
-    tInsert(buildTargets, programTarget)
+    appendToMainTarget(programTarget, 'build')
    end
   
   return cDef

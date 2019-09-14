@@ -32,7 +32,7 @@ function joylol.targets(defaultDef, jDef)
   for i, aCoAlg in ipairs(jDef.coAlgs) do
 
     local coAlgTarget = makePath{ jDef.buildDir, aCoAlg..'.so' }
-    tInsert(buildTargets, coAlgTarget)
+    appendToMainTarget(coAlgTarget, 'build')
     local cDependencies = { }
     jDef.srcFiles = aAppend(jDef.cHeaderFiles, jDef.cCodeFiles)
     for j, aSrcFile in ipairs(jDef.srcFiles) do
@@ -93,7 +93,7 @@ function joylol.targets(defaultDef, jDef)
       ensurePathExists(parentPath)
       tInsert(installDeps, parentPath) 
     end
-    tInsert(installTargets, installTarget)
+    appendToMainTarget(installTarget, 'install')
     target(hMerge(jDef, {
       target       = installTarget,
       dependencies = installDeps,
@@ -113,7 +113,7 @@ function joylol.targets(defaultDef, jDef)
         jDef.buildDir,
         anInclude
       }
-      tInsert(codeTargets, anIncludeDep)
+      appendToMainTarget(anIncludeDep, 'code')
       local installPath = makePath{
         getEnv('HOME'),
         '.joylol',
@@ -129,7 +129,7 @@ function joylol.targets(defaultDef, jDef)
         ensurePathExists(parentPath)
         tInsert(includeDeps, parentPath)
       end
-      tInsert(installTargets, installTarget)
+      appendToMainTarget(installTarget, 'install')
       target(hMerge(jDef, {
         target       = installTarget,
         dependencies = includeDeps,
@@ -163,7 +163,7 @@ function joylol.targets(defaultDef, jDef)
       ensurePathExists(parentPath)
       tInsert(joylolDeps, parentPath)
     end
-    tInsert(installTargets, installTarget)
+    appendToMainTarget(installTarget, 'install')
     target(hMerge(jDef, {
       target       = installTarget,
       dependencies = joylolDeps,

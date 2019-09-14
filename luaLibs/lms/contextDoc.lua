@@ -11,38 +11,9 @@ local contextDefaults = {
 
 contextDoc = hMerge(contextDefaults, lms.contextDoc, contextDoc)
 
-local function compileDocument(aDef, onExit)
-  local curDir = lfs.currentdir()
-  chDir(aDef.buildDir)
-  --
-  -- build the complete context document
-  --
-  executeCmd(aDef.target, 'context --nonstopmode --silent=all '..aDef.absMainDoc, onExit)
-  
-  chDir(curDir)
-end
-
-function createNewDocTarget(targetName, targetVarName, targetCommand)
-  createNewTarget('doc-'..targetName, 'doc'..targetVarName, targetCommand)
-  doNotRecurseTarget('doc-'..targetName)
-  createNewTarget('bib-'..targetName, 'bib'..targetVarName, targetCommand)
-  doNotRecurseTarget('bib-'..targetName)
-  createNewTarget('pub-'..targetName, 'pub'..targetVarName, targetCommand)
-  doNotRecurseTarget('pub-'..targetName)
-end
-
-local function gatherBibReferences(aDef, onExit)
-  local curDir = lfs.currentdir()
-  chDir(aDef.buildDir)
-  --
-  -- build the complete context document
-  --
-  executeLocalCmd(aDef.target, 'diSimp bib', onExit)
-  
-  chDir(curDir)
-end
-
 local function copyCodeFiles(ctxDef, onExit)
+  print("copyCodeFiles in ["..lfs.currentdir().."]")
+  print(prettyPrint(ctxDef))
   local inFile, inErr = io.open(ctxDef.buildFilePath, 'r')
   if inErr then lmsError('Could not open the file ['..ctxDef.buildFilePath..']') end
   local codeFile, codeErr = io.open(ctxDef.target, 'w')
@@ -80,12 +51,14 @@ local function copyCodeFiles(ctxDef, onExit)
 end
 
 local function copyAbstract(ctxDef, onExit)
-  local inFile, inErr  = io.open(ctxDef.abstract, 'r')
-  if inErr then lmsError('Could not open the file [Abstract.md]') end
+  print("copyAbstract in ["..lfs.currentdir().."]")
+  print(prettyPrint(ctxDef))
+  local inFile, inErr  = io.open(ctxDef.abstractPath, 'r')
+  if inErr then lmsError('Could not open the file ['..ctxDef.abstractPath..']') end
   inFile:read('L')
 
-  local outFile, outErr = io.open(ctxDef.abstractPath, 'w')
-  if outErr then lmsError('Could not open the file ['..ctxDef.abstractPath..']') end
+  local outFile, outErr = io.open(ctxDef.abstractTargetPath, 'w')
+  if outErr then lmsError('Could not open the file ['..ctxDef.abstractTargetPath..']') end
   outFile:write("---\n")
   outFile:write("layout: paperVersion\n")
   outFile:write("year: "..os.date('%Y').."\n")
@@ -102,30 +75,9 @@ local function copyAbstract(ctxDef, onExit)
   onExit(0,0)
 end
 
-local function publishDocument(ctxDef, onExit)
-  lmsMessage('Publishing document using pdf2htmlEX')
-  ctxDef['releaseOpts'] = ctxDef['releaseOpts']  or 
-      '--zoom 1.3 --embed cfij --bg-format svg --split-pages 1 '
-  local pageDoc = ctxDef.mainDoc:gsub('%.tex', '-%%d.page')
-  local htmlDir = ctxDef.mainDoc:gsub('%.tex', '')
-  local pdfDoc  = ctxDef.mainDoc:gsub('%.tex$', '.pdf')
-  local pubCmd  = 
-    'pdf2htmlEX ' .. ctxDef['releaseOpts'] ..
-    ' --dest-dir ' .. makePath { ctxDef['releaseDir'], 'doc', htmlDir } ..
-    ' --page-filename ' .. pageDoc ..
-    ' ' .. pdfDoc
-  runLocalCmdIn(pubCmd, ctxDef['docDir'], function(code, signal)
-    if code == 0 then
-      local cpCmd = 
-        'cp ' .. pdfDoc .. ' ' .. makePath{ ctxDef.releaseDir, 'doc' }
-      runLocalCmdIn(cpCmd, ctxDef.docDir, onExit)
-    else
-      onExit(code, signal)
-    end
-  end)
-end
-
 local function setupCodeFilePublish(ctxDef)
+  print("setupCodeFilePublish in ["..lfs.currentdir().."]")
+  print(prettyPrint(ctxDef))
   if lfs.attributes('buildDir', 'mode') == 'directory' then
     local findCmd  = 'find buildDir'
     lmsMessageVery('Dynamically finding code files using ['..findCmd..']')
@@ -160,124 +112,154 @@ local function setupCodeFilePublish(ctxDef)
   end
 end
 
-local function setupDocumentPublish(ctxDef)
+local function setupDocumentPublish(ctxDef, pdfMainDoc, pdfBuildTarget)
 
   -- determine the release directory
   --
-  ctxDef['releaseType'] = ctxDef['releaseType'] or 'workingDraft'
-  if type(ctxDef['releaseDir']) == 'nil' then
+  ctxDef.releaseType = ctxDef.releaseType or 'workingDraft'
+  if type(ctxDef.releaseDir) == 'nil' then
     print('WARNING: No document publishing release directory specified (using ".")')
-    ctxDef['releaseDir'] = '.'
+    ctxDef.releaseDir = '.'
   end
-  ctxDef['releasePath'] = ctxDef['releasePath'] or dirPrefix
-  ctxDef['releaseDir'] = makePath{
-    ctxDef['releaseDir'],
-    ctxDef['releaseType'],
+  ctxDef.releasePath = ctxDef.releasePath or makePath{ projectName, dirPrefix }
+  ctxDef.releaseDir = makePath{
+    ctxDef.releaseDir,
+    ctxDef.releaseType,
     os.date('%Y'),
     os.date('%m'),
-    ctxDef['releasePath']
+    ctxDef.releasePath
   }
-  ensurePathExists(ctxDef['releaseDir'])
+  ensurePathExists(ctxDef.releaseDir)
 
-  -- determine how to publish the document (using pdf2htmlEX)
+  -- determine how to publish the pdf document (using pdf2htmlEX)
   --
-  local pdfMainDoc = ctxDef.mainDoc:gsub('%.tex$', '.pdf')
-  local docTarget = makePath{ ctxDef.docDir, pdfMainDoc }
-  local pubMainDoc = ctxDef.mainDoc:gsub('%.tex$', '.html')
-  local pubTarget = makePath{ ctxDef.releaseDir, pubMainDoc }
-
-  ctxDef['globalTargetVar'] = ctxDef['globalTargetVar'] or 'Targets'
-  local pubVar = 'pub'..ctxDef['globalTargetVar']
-  if type(_G[pubVar]) == 'nil' then
-    createNewTarget('pub', 'pubTargets')
-  end
-
-  tInsert(_G['pub'..ctxDef['globalTargetVar']], pubTarget)
+  local pdfReleaseTarget = makePath{ ctxDef.releaseDir, 'doc', pdfMainDoc }
+  local pdfReleaseDir    = getParentPath(pdfReleaseTarget)
+  ensurePathExists(pdfReleaseDir)
+  
+  appendToMainTarget(pdfReleaseTarget, 'pub')
   target(hMerge(ctxDef, {
-    target       = pubTarget,
+    target       = pdfReleaseTarget,
     dependencies = { 
-      docTarget,
-      ctxDef.releaseDir,
-      'Abstract.md',
-      ctxDef.abstractDir
+      pdfBuildTarget,
+      pdfReleaseDir,
     },
-    command      = publishDocument,
-    commandName  = 'ContextDoc::publishDocument'
+    command      = 'cp '..pdfBuildTarget..' '..pdfReleaseDir,
+    commandName  = 'ContextDoc::publishPDF'
   }))
 
-  -- determine code path dependencies
+  -- determine how to publish the html document (using pdf2htmlEX)
   --
-  setupCodeFilePublish(ctxDef)
+  -- We start with the main html page for the overall document
+  --
+  local htmlDoc           = changeFileExtension(pdfMainDoc, '.html')
+  local htmlDirName       = changeFileExtension(pdfMainDoc, '')
+  local htmlReleaseTarget = makePath {
+    ctxDef.releaseDir,
+    'doc',
+    htmlDirName,
+    htmlDoc
+  }
+  local htmlReleaseDir    = getParentPath(htmlReleaseTarget)
+  ensurePathExists(htmlReleaseDir)
+  
+  -- Now we determine the individual html pages
+  --
+  ctxDef.releaseOpts = ctxDef.releaseOpts  or 
+      '--zoom 1.3 --embed cfij --bg-format svg --split-pages 1 '
+  local pagesDoc     = changeFileExtension(pdfMainDoc,'-%%d.page')
+  
+  appendToMainTarget(htmlReleaseTarget, 'pub')
+  target(hMerge(ctxDef, {
+    target       = htmlReleaseTarget,
+    dependencies = { 
+      pdfBuildTarget,
+      htmlReleaseDir
+    },
+    command      = 'pdf2htmlEX ' .. ctxDef.releaseOpts ..
+      ' --dest-dir ' .. htmlReleaseDir ..
+      ' --page-filename ' .. pagesDoc ..
+      ' ' .. pdfBuildTarget,
+    commandName  = 'ContextDoc::publishPDF2HTML'
+  }))
 
   -- determine how to publish the abstract
   --
-  ctxDef['abstract'] = ctxDef['abstract'] or 'Abstract.md'
+  ctxDef.abstract = ctxDef.abstract or 'Abstract.md'
+  local abstractPath = makePath {
+    dirPrefix,
+    ctxDef.abstract
+  }
+  ctxDef.abstractPath = abstractPath
+  
   local absTarget = makePath {
     ctxDef.releaseDir,
     changeFileExtension(ctxDef.mainDoc, '.md')
   }
-  ctxDef['abstractPath'] = absTarget
-  tInsert(_G['pub'..ctxDef['globalTargetVar']], absTarget)
+  ctxDef.abstractTargetPath = absTarget
+  appendToMainTarget(absTarget, 'pub')
   target(hMerge(ctxDef, {
     target       = absTarget,
     dependencies = { 
-      ctxDef.abstract,
+      ctxDef.abstractPath,
       ctxDef.releaseDir
     },
     command      = copyAbstract,
     commandName  = 'ContextDoc::copyAbstract'
   }))
-
 end
 
 function contextDoc.targets(ctxDef)
   ctxDef = hMerge(contextDoc, ctxDef)
   ctxDef.creator = 'contextDoc-targets'
   
-  findDocumentsIn(ctxDef, aAppend({ ctxDef.docDir }, ctxDef.lmsfileSubDirs ))
-
-  ctxDef.compileDocument = compileDocument
+  findDocumentsIn(
+    ctxDef,
+    'docFiles',
+    ".*\\.tex\\|.*Bib\\.lua",
+    aAppend({ ctxDef.docDir }, ctxDef.lmsfileSubDirs )
+  )
   
+  -- Ensure we have the correct build directory for this sub-project
+
   ctxDef.buildDir = ctxDef.buildDir or 'buildDir'
   ctxDef.buildDir = makePath { ctxDef.buildDir, dirPrefix }
   ensurePathExists(ctxDef.buildDir)
-  tInsert(ctxDef.dependencies, ctxDef.buildDir)
+  aInsertOnce(ctxDef.dependencies, ctxDef.buildDir)
 
-  local pdfMainDoc = ctxDef.mainDoc:gsub('%.tex$', '.pdf')
-  local docTarget =
-    makePath{ ctxDef.buildDir, pdfMainDoc }
+  -- Now set up the various document targets
+  
+  local pdfMainDoc = changeFileExtension(ctxDef.mainDoc, '.pdf')
+  local docTarget  =  makePath{ ctxDef.buildDir, pdfMainDoc }
   local absMainDocPath = 
     makePath{ lfs.currentdir(), ctxDef.docDir, ctxDef.mainDoc }
-  ctxDef['globalTargetVar'] = ctxDef['globalTargetVar'] or 'Targets'
-  tInsert(_G['doc'..ctxDef['globalTargetVar']], docTarget)
+  appendToMainTarget(docTarget, 'doc')
   target(hMerge(ctxDef, {
     target      = docTarget,
-    absMainDoc  = absMainDocPath,
-    command     = compileDocument,
+    command     = 'context --nonstopmode --silent=all '..absMainDocPath,
+    commandDir   = makePath { projectDir, ctxDef.buildDir },
     commandName = 'ContextDoc::compileDocument'
   }))
 
-  local bibMainDoc = ctxDef.mainDoc:gsub('%.tex$', 'Bib.lua')
+  local bibMainDoc = changeFileExtension(ctxDef.mainDoc, 'Bib.lua')
   local bibTarget = makePath{ ctxDef.buildDir, bibMainDoc }
-  print(bibTarget)
-  tInsert(_G['bib'..ctxDef['globalTargetVar']], bibTarget)
+  appendToMainTarget(bibTarget, 'bib')
   target(hMerge(ctxDef, {
     target       = bibTarget,
     dependencies = { docTarget },
-    command      = gatherBibReferences,
+    command      = 'diSimp bib',
+    commandDir   = makePath { projectDir, ctxDef.buildDir },
     commandName  = 'ContextDef::gatherBibReferences'
   }))
 
-  setupDocumentPublish(ctxDef)
+  setupDocumentPublish(ctxDef, pdfMainDoc, docTarget)
+  ctxDef.setupCodeFilePublish = setupCodeFilePublish
 
-  tInsert(clobberTargets, nameClobberTarget(docTarget))
-  tInsert(clobberTargets,
-    nameClobberTarget(docTarget:gsub('%.pdf', 'Bib.lua')))
+  appendToClobber(docTarget)
+  appendToClobber(changeFileExtension(docTarget, 'Bib.lua'))
 
-  tInsert(cleanTargets, 
-    nameCleanTarget(docTarget:gsub('%.pdf', '.log')))
-  tInsert(cleanTargets, 
-    nameCleanTarget(docTarget:gsub('%.pdf$', '.tuc')))
+  appendToClean(changeFileExtension(docTarget, '.log'))
+  appendToClean(changeFileExtension(docTarget, '.tuc'))
 
   return ctxDef
 end

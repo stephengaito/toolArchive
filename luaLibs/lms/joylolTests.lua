@@ -40,14 +40,14 @@ function joylolTests.targets(defaultDef, jtDef)
       }))
     
     local testTarget = makePath{ jtDef.buildDir, aTestExec..'-results.lua' }
-    tInsert(testTargets, testTarget)
+    appendToMainTarget(testTarget, 'test')
     target(hMerge(jtDef, {
       target       = testTarget,
       dependencies = { testExecSrc },
       command      = "joylol --quiet "..testExecTarget,
       commandName  = 'JoyLoLTests::testTarget (joylol)'
     }))
-    tInsert(clobberTargets, nameClobberTarget(testExecSrc))
+    appendToClobber(testExecSrc)
   end
   
 end

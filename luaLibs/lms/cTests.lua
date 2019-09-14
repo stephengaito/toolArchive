@@ -34,7 +34,7 @@ function cTests.targets(defaultDef, cDef)
 
     local testSrcTarget = makePath{ cDef.buildDir, aTestExec..'.c' }
     tInsert(cDependencies, testSrcTarget)
-    aInsertOnce(cleanTargets, nameCleanTarget(testSrcTarget))
+    appendToClean(testSrcTarget)
     
     local testExecTarget = makePath{ cDef.buildDir, aTestExec }
     local mainCFile = (cDef.mainDoc):gsub('%.tex', '.c')
@@ -89,7 +89,7 @@ function cTests.targets(defaultDef, cDef)
     }))
     
     local testTarget = makePath{ cDef.buildDir, aTestExec..'-results.lua' }
-    tInsert(testTargets, testTarget)
+    appendToMainTarget(testTarget, 'test')
     target(hMerge(cDef, {
       target       = testTarget,
       dependencies = { testExecTarget },
