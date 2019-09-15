@@ -34,6 +34,7 @@ function cTests.targets(defaultDef, cDef)
 
     local testSrcTarget = makePath{ cDef.buildDir, aTestExec..'.c' }
     tInsert(cDependencies, testSrcTarget)
+    cDef.setupPublishCodeFile(cDef, aTestExec..'.c', testSrcTarget)
     appendToClean(testSrcTarget)
     
     local testExecTarget = makePath{ cDef.buildDir, aTestExec }

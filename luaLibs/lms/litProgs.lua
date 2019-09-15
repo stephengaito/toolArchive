@@ -17,12 +17,12 @@ local function compileLitProg(lpDef, onExit)
   executeCmdIn(
     lpDef.target,
     'context --nonstopmode --mode=codeOnly --once '..lpDef.absMainDoc,
-    lpDef.buildDir,
+    makePath{ projectDir, lpDef.buildDir },
     function(code, signal)
       --
       -- remove the PDF file since we only want the litProg output
       --
-      os.remove(lpDef.absMainDoc:gsub('%.tex$', '.pdf')) 
+      --os.remove(lpDef.absMainDoc:gsub('%.tex$', '.pdf')) 
       --
       onExit(code, signal)
     end
@@ -31,22 +31,16 @@ end
 
 local function installTarget(aDef, installDir, aFile)
   local buildTarget     = makePath{ aDef.buildDir, aFile } 
-  local installedTarget = aFile
-  if installDir then
-    installedTarget = makePath{ installDir, aFile }
-  end
-
-  local installDep = { buildTarget }
-  parentPath = getParentPath(installedTarget)
-  if parentPath then
-    ensurePathExists(parentPath)
-    aInsertOnce(installDep, parentPath)
-  end
-  
-  aInsertOnce(installTargets, installedTarget)
+  local installedTarget = makePath{ dirPrefix, installDir, aFile }
+  local parentPath = getParentPath(installedTarget)
+  ensurePathExists(parentPath)
+  appendToMainTarget(installedTarget, 'install')
   target(hMerge(aDef, {
     target       = installedTarget,
-    dependencies = installDep,
+    dependencies = {
+      buildTarget,
+      parentPath
+    },
     command      = 'cp '..buildTarget..' '..installedTarget,
     commandName  = 'LitProgs::installedTarget (shell command)'
   }))
@@ -60,11 +54,8 @@ end
 -- As such we do NOT want to install the new version just yet!
 local function diffTarget(aDef, installDir, aFile)
   local buildTarget = makePath{ aDef.buildDir, aFile } 
-  local diffTarget      = 'diff-'..aFile
-  local installedTarget = aFile
-  if installDir then
-    installedTarget = makePath{ installDir, aFile }
-  end
+  local diffTarget      = 'diff-'..dirPrefix..'-'..aFile
+  local installedTarget = makePath{ dirPrefix, installDir, aFile }
   aInsertOnce(diffTargets, diffTarget)
   target(hMerge(aDef, {
     target       = diffTarget,
@@ -133,8 +124,8 @@ function litProgs.targets(defaultDef, lpDef)
     commandName = 'LitProgs::compileLitProg'
   }))
 
-  installTarget(lpDef, nil, makePath{ dirPrefix, 'lmsfile'})
-  diffTarget(lpDef, nil, makePath{ dirPrefix, 'lmsfile'})
+  installTarget(lpDef, '', 'lmsfile')
+  diffTarget(lpDef, '', 'lmsfile')
     
   return lpDef
 end

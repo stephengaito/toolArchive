@@ -807,22 +807,22 @@ function runTarget(targetToRun)
     for i, aDependency in ipairs(aTarget.dependencies) do
       local depTargetDef = targets[aDependency]
       if depTargetDef then
-        if depTargetDef.targetFailed then
-          aTarget.targetFailed    = true
-          aTarget.targetCompleted = true
-          aTarget.failureMessage  = "Dependency FAILED"
-          lmsMessageCont('  FAILED dependency: ['..aDependency..'] of ['..targetToRun..']')
-          return
-        end
+--        if depTargetDef.targetFailed then
+--          aTarget.targetFailed    = true
+--          aTarget.targetCompleted = true
+--          aTarget.failureMessage  = "Dependency FAILED"
+--          lmsMessageCont('  FAILED dependency: ['..aDependency..'] of ['..targetToRun..']')
+--          return
+--        end
         if not targets[aDependency].targetCompleted then
           runTarget(aDependency)
-          if depTargetDef.targetFailed then
-            aTarget.targetFailed    = true
-            aTarget.targetCompleted = true
-            aTarget.failureMessage  = "Dependency FAILED"
-            lmsMessageCont('  FAILED dependency: ['..aDependency..'] of ['..targetToRun..']')
-            return
-          end
+--          if depTargetDef.targetFailed then
+--            aTarget.targetFailed    = true
+--            aTarget.targetCompleted = true
+--            aTarget.failureMessage  = "Dependency FAILED"
+--            lmsMessageCont('  FAILED dependency: ['..aDependency..'] of ['..targetToRun..']')
+--            return
+--          end
         end
         -- IF we are running in sequential mode this is useful
         if not targets[aDependency].targetCompleted then

@@ -11,18 +11,40 @@ local contextDefaults = {
 
 contextDoc = hMerge(contextDefaults, lms.contextDoc, contextDoc)
 
-local function copyCodeFiles(ctxDef, onExit)
-  print("copyCodeFiles in ["..lfs.currentdir().."]")
-  print(prettyPrint(ctxDef))
-  local inFile, inErr = io.open(ctxDef.buildFilePath, 'r')
-  if inErr then lmsError('Could not open the file ['..ctxDef.buildFilePath..']') end
+local function publishCodeFile(ctxDef, onExit)
+  -- To publish a code file we need:
+  --   1. the (relative) path to the code file (ctxDef.builtCodeFilePath)
+  --   2. the absolute path to the published raw code file (ctxDef.target)
+    
+  -- Open the original code file
+  --
+  local inFile, inErr = io.open(ctxDef.builtCodeFilePath, 'r')
+  if inErr then
+    os.execute("ls -la "..getParentPath(ctxDef.builtCodeFilePath))
+    lmsError('Could not open the file ['..ctxDef.builtCodeFilePath..']')
+  end
+  
+  -- Open the published raw code file
+  --
   local codeFile, codeErr = io.open(ctxDef.target, 'w')
-  if codeErr then lmsError('Could not open the file ['..ctxDef.target..']') end
+  if codeErr then
+    lmsError('Could not open the file ['..ctxDef.target..']')
+  end
+  
+  -- Open the published Markdown/Highlighted version
+  -- of the code file
+  --
   local mdFilePath = ctxDef.target..'.md'
   local mdFile, mdErr = io.open(mdFilePath, 'w')
-  if mdErr then lmsError('Could not open the file ['..mdFilePath..']') end
+  if mdErr then
+    lmsError('Could not open the file ['..mdFilePath..']')
+  end
+  
+  -- Determine the language type so the Markdown version
+  -- of the code file can be properly highlighted
+  --
   languageType = 'lua'
-  local filePath = ctxDef.buildFilePath
+  local filePath = ctxDef.builtCodeFilePath
   if     filePath:match('%.c')    then languageType = 'c'
   elseif filePath:match('%.h')    then languageType = 'c'
   elseif filePath:match('%.joy')  then languageType = 'racket'
@@ -31,26 +53,55 @@ local function copyCodeFiles(ctxDef, onExit)
   else                                 languageType = 'lua'
   end
   
+  -- Write out the Jekyll Markdown header
   mdFile:write("---\n")
   mdFile:write("layout: codeFile\n")
   mdFile:write("---\n")
   mdFile:write("\n{% highlight "..languageType.." linenos %}\n")
 
+  -- Copy the file line by line
   for aLine in inFile:lines('l') do
     codeFile:write(aLine..'\n')
     mdFile:write(aLine..'\n')
   end
 
+  -- End the Jekyll Markdown highlighting
   mdFile:write("\n{% endhighlight %}\n\n")
 
+  -- Close the files
   mdFile:close()
   codeFile:close()
   inFile:close()
 
+  -- Done!
   onExit(0,0)
 end
 
-local function copyAbstract(ctxDef, onExit)
+local function setupPublishCodeFile(ctxDef, aSrcFile, builtSrcFilePath)
+  local codeFileTarget = makePath{ 
+    ctxDef.releaseDir,
+    'code',
+    aSrcFile
+  }
+  local codeFileDir = getParentPath(codeFileTarget)
+
+  if not getTargetFor(codeFileTarget) then
+    ensurePathExists(codeFileDir)
+    appendToMainTarget(codeFileTarget, 'pub')
+    target(hMerge(ctxDef, {
+      target            = codeFileTarget,
+      builtCodeFilePath = builtSrcFilePath,
+      dependencies  = {
+        builtSrcFilePath,
+        codeFileDir
+      },
+      command       = publishCodeFile,
+      commandName   = 'ContextDoc::publishCodeFile'
+    }))
+  end
+end
+
+local function publishAbstract(ctxDef, onExit)
   print("copyAbstract in ["..lfs.currentdir().."]")
   print(prettyPrint(ctxDef))
   local inFile, inErr  = io.open(ctxDef.abstractPath, 'r')
@@ -75,44 +126,7 @@ local function copyAbstract(ctxDef, onExit)
   onExit(0,0)
 end
 
-local function setupCodeFilePublish(ctxDef)
-  print("setupCodeFilePublish in ["..lfs.currentdir().."]")
-  print(prettyPrint(ctxDef))
-  if lfs.attributes('buildDir', 'mode') == 'directory' then
-    local findCmd  = 'find buildDir'
-    lmsMessageVery('Dynamically finding code files using ['..findCmd..']')
-    local texFileList = io.popen(findCmd)
-    for buildFilePath in texFileList:lines('*l') do
-      local fileTypePOpen = io.popen('file '..buildFilePath, 'r')
-      local fileType = fileTypePOpen:read('*all')
-      if fileType:match('text') or fileType:match('directory') then
-        local codeFileTarget = buildFilePath:gsub('buildDir', 'code')
-        codeFileTarget = makePath{ 
-          ctxDef.releaseDir,
-          codeFileTarget
-        }
-        if lfs.attributes(buildFilePath, 'mode') == 'directory' then
-          ensurePathExists(codeFileTarget)
-        else
-          tInsert(_G['pub'..ctxDef['globalTargetVar']], codeFileTarget)
-          target(hMerge(ctxDef, {
-            target        = codeFileTarget,
-            buildFilePath = buildFilePath,
-            dependencies  = {
-              buildFilePath,
-              getBaseDirPath(codeFileTarget)
-            },
-            command       = copyCodeFiles,
-            commandName   = 'ContextDoc::copyCodeFiles'
-          }))
-        end
-      end
-      fileTypePOpen:close()
-    end
-  end
-end
-
-local function setupDocumentPublish(ctxDef, pdfMainDoc, pdfBuildTarget)
+local function setupPublishDocument(ctxDef, pdfMainDoc, pdfBuildTarget)
 
   -- determine the release directory
   --
@@ -204,8 +218,8 @@ local function setupDocumentPublish(ctxDef, pdfMainDoc, pdfBuildTarget)
       ctxDef.abstractPath,
       ctxDef.releaseDir
     },
-    command      = copyAbstract,
-    commandName  = 'ContextDoc::copyAbstract'
+    command      = publishAbstract,
+    commandName  = 'ContextDoc::publishAbstract'
   }))
 end
 
@@ -252,8 +266,8 @@ function contextDoc.targets(ctxDef)
     commandName  = 'ContextDef::gatherBibReferences'
   }))
 
-  setupDocumentPublish(ctxDef, pdfMainDoc, docTarget)
-  ctxDef.setupCodeFilePublish = setupCodeFilePublish
+  setupPublishDocument(ctxDef, pdfMainDoc, docTarget)
+  ctxDef.setupPublishCodeFile = setupPublishCodeFile
 
   appendToClobber(docTarget)
   appendToClobber(changeFileExtension(docTarget, 'Bib.lua'))

@@ -148,13 +148,13 @@ end
 function c.makeSrcTarget(cDef, cDependencies, aSrcFile)
   local aSrcPath = makePath {
     cDef.buildDir,
-    dirPrefix, 
     aSrcFile
   }
   if aSrcFile:match('%.h$') then
     appendToMainTarget(aSrcPath, 'header')
   end
   aInsertOnce(cDependencies, aSrcPath)
+  cDef.setupPublishCodeFile(cDef, aSrcFile, aSrcPath)
 end
 
 function c.targets(defaultDef, cDef)
