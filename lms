@@ -450,6 +450,21 @@ end
 targets    = {}
 targetList = {}
 
+sha2 = require 'lms.sha2'
+
+function computeSha256(aFilePath)
+  local fileIO    = io.open(aFilePath, 'rb')
+  if not fileIO then
+    return nil
+  end
+  local appendSha = sha2.sha256()
+  repeat
+    local someBytes = fileIO:read(2^12)
+    appendSha(someBytes)
+  until not someBytes
+  return appendSha()
+end
+
 function executeCmdIn(aTarget, aCmd, subDir, onExit)
   if useLUV then
     lmsMessage('running: ['..aCmd..']')
@@ -481,6 +496,9 @@ function executeCmdIn(aTarget, aCmd, subDir, onExit)
             'less -r '..cmdLogFile
           }
         end
+
+        lms.newFileInfo[aTarget] = computeSha256(aTarget)
+
         if code == 0 then
           targets[aTarget].targetChanged = true
         else
@@ -511,6 +529,8 @@ function executeLocalCmdIn(aTarget, aCmd, subDir, onExit)
     -- so we map the texlua result into the lua return values
     
   lfs.chdir(curDir)
+
+  lms.newFileInfo[aTarget] = computeSha256(aTarget)
   
   if type(result) == 'number' then
     resultType = 'exit'
@@ -642,21 +662,6 @@ function appendToMainTarget(aNewTarget, mainTargetName, mainTargetVarName)
   aInsertOnce(_G[mainTargetVarName], aNewTarget)
 end
 
-sha2 = require 'lms.sha2'
-
-function computeSha256(aFilePath)
-  local fileIO    = io.open(aFilePath, 'rb')
-  if not fileIO then
-    return nil
-  end
-  local appendSha = sha2.sha256()
-  repeat
-    local someBytes = fileIO:read(2^12)
-    appendSha(someBytes)
-  until not someBytes
-  return appendSha()
-end
-
 function needsToBuildAt(aTargetDef, parentTime)
   local aTarget = aTargetDef.target
 
@@ -708,15 +713,17 @@ function needsToBuildAt(aTargetDef, parentTime)
       lms.newFileInfo[aTarget] or computeSha256(aTarget)
     local newFileSha256 = lms.newFileInfo[aTarget]
     local oldFileSha256 = lms.oldFileInfo[aTarget] or ""
-    if newFileSha256 == oldFileSha256 then
-      lmsMessageVery(
-        '  (the '..aTarget..' sha256s match so there is no need to rebuild)'
-      )
-      return false
+    if newFileSha256 ~= oldFileSha256 then
+      lmsMessageVery{
+        '  the '..aTarget..' sha256s do not match so we need to rebuild',
+        '    new: '..newFileSha256,
+        '    old: '..oldFileSha256
+      }
+      return true
     end
   end
   
-  -- the sha256's do not match so check the modification times of all dependents
+  -- the sha256's match so check the modification times of all dependents
     
   for i, aDependency in ipairs(aTargetDef.dependencies) do
     -- recursively check the dependencies of this dependency
@@ -1145,7 +1152,7 @@ if shouldListTargets then listTargets() end
 
 local hasLmsFileInfo, lmsFileInfo = pcall(require, "lmsfileInfo")
 if not hasLmsFileInfo then
-  print(lmsFileInfo)
+  if 0 < verbose then print(lmsFileInfo) end
   lmsFileInfo = { }
 end
 lms.oldFileInfo = lmsFileInfo
