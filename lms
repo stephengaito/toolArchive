@@ -503,6 +503,7 @@ function executeCmdIn(aTarget, aCmd, subDir, onExit)
           targets[aTarget].targetChanged = true
         else
           print('FAILED to run ['..aTarget..']')
+          print('  less -r '..cmdLogFile)
           targets[aTarget].targetFailed   = true
           targets[aTarget].logFile        = cmdLogFile
           targets[aTarget].failureMessage = "FAILED to run"
