@@ -53,6 +53,7 @@ which python
 ls -la $(which python)
 python --version
 echo "-------------------------------------------------"
+brew install -v fontforge@20170731
 #brew install -v pdf2htmlex-new
 echo "-------------------------------------------------"
 echo $PATH
@@ -65,5 +66,6 @@ ls -la $(which python)
 python --version
 which pdf2htmlEX
 ls -la $(which pdf2htmlEX)
-pdf2htmlEX --version
+otool -L $(which fontforge)
+#pdf2htmlEX --version
 echo "-------------------------------------------------"
