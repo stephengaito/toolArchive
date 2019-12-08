@@ -68,6 +68,7 @@ python --version
 export fontForgeVersion=$(brew info --json=v1 fontforge@20170731 | jq '.[].installed[].version' | tr -d '"')
 echo "fontForge version: $fontForgeVersion"
 brew switch fontforge@20170731 $fontForgeVersion
+ls /usr/local/Cellar/fontforge@20170731/20170731
 which fontforge
 fontforge --version
 which pdf2htmlEX
