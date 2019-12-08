@@ -7,7 +7,7 @@
 # For details on obtaining/using the correct ruby version for homebrew.
 
 
-export PATH="/usr/local/opt/llvm/bin:$PATH""
+export PATH="/usr/local/opt/llvm/bin:$PATH"
 
 echo "-------------------------------------------------"
 echo $PATH
