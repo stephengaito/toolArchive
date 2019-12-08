@@ -51,6 +51,9 @@ echo "-------------------------------------------------"
 echo $PATH
 echo $LDFLAGS
 echo $CPPFLAGS
+export CC=/usr/local/Homebrew/Library/Homebrew/shims/mac/super/clang
+export CXX=/usr/local/Homebrew/Library/Homebrew/shims/mac/super/clang++
+export CPP=/usr/local/Homebrew/Library/Homebrew/shims/mac/super/clang++
 which clang
 ls -la $(which clang)
 clang --version
