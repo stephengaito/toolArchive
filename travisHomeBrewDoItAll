@@ -73,6 +73,6 @@ which fontforge
 fontforge --version
 which pdf2htmlEX
 ls -la $(which pdf2htmlEX)
-otool -L $(which fontforge)
+otool -L /usr/local/Cellar/fontforge@20170731/20170731/lib/libfontforge.2.dylib
 #pdf2htmlEX --version
 echo "-------------------------------------------------"
