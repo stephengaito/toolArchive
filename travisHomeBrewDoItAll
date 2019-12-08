@@ -37,6 +37,7 @@ echo $CPPFLAGS
 which clang
 ls -la $(which clang)
 clang --version
+$(which clang) --version
 export llvmVersion=$(brew info --json=v1 llvm | jq '.[].installed[].version' | tr -d '"')
 echo "brew llvm version: $llvmVersion"
 export python2Version=$(brew info --json=v1 python@2 | jq '.[].installed[].version' | tr -d '"')
@@ -53,18 +54,21 @@ echo $CPPFLAGS
 which clang
 ls -la $(which clang)
 clang --version
+$(which clang) --version
 which python
 ls -la $(which python)
 python --version
 echo "-------------------------------------------------"
-brew install -v fontforge@20170731
-#brew install -v pdf2htmlex-new
+#brew install -v fontforge@20170731
+brew install -v pdf2htmlex-new
 echo "-------------------------------------------------"
 echo $PATH
 echo $LDFLAGS
 echo $CPPFLAGS
 which clang
 ls -la $(which clang)
+clang --version
+$(which clang) --version
 which python
 ls -la $(which python)
 python --version
