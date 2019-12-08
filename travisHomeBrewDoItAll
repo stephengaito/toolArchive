@@ -11,20 +11,18 @@ echo $PATH
 echo $LDFLAGS
 echo $CPPFLAGS
 which clang
+ls -la $(which clang)
+clang --version
 echo "-------------------------------------------------"
 brew tap pdf2htmlEX/homebrew-brewTap
-echo "-------------------------------------------------"
-echo $PATH
-echo $LDFLAGS
-echo $CPPFLAGS
-which clang
-echo "-------------------------------------------------"
 brew update
 echo "-------------------------------------------------"
 echo $PATH
 echo $LDFLAGS
 echo $CPPFLAGS
 which clang
+ls -la $(which clang)
+clang --version
 echo "-------------------------------------------------"
 brew install llvm
 brew install -v python@2
@@ -34,10 +32,12 @@ echo $PATH
 echo $LDFLAGS
 echo $CPPFLAGS
 which clang
+ls -la $(which clang)
+clang --version
 export llvmVersion=$(brew info --json=v1 llvm | jq '.[].installed[].version' | tr -d '"')
-echo $llvmVersion
+echo "brew llvm version: $llvmVersion"
 export python2Version=$(brew info --json=v1 python@2 | jq '.[].installed[].version' | tr -d '"')
-echo $python2Version
+echo "brew python@2 version: $python2Version"
 echo "-------------------------------------------------"
 brew info llvm
 brew switch llvm $llvmVersion
@@ -49,6 +49,7 @@ echo $LDFLAGS
 echo $CPPFLAGS
 which clang
 ls -la $(which clang)
+clang --version
 which python
 ls -la $(which python)
 python --version
@@ -64,6 +65,11 @@ ls -la $(which clang)
 which python
 ls -la $(which python)
 python --version
+export fontForgeVersion=$(brew info --json=v1 fontforge@20170731 | jq '.[].installed[].version' | tr -d '"')
+echo "fontForge version: $fontForgeVersion"
+brew switch fontforge@20170731 $fontForgeVersion
+which fontforge
+fontforge --version
 which pdf2htmlEX
 ls -la $(which pdf2htmlEX)
 otool -L $(which fontforge)
