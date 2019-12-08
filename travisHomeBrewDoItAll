@@ -85,4 +85,14 @@ which pdf2htmlEX
 ls -la $(which pdf2htmlEX)
 otool -L /usr/local/Cellar/fontforge@20170731/20170731/lib/libfontforge.2.dylib
 #pdf2htmlEX --version
+pkg-config --cflags pango
+pkg-config --libs pango
+pkg-config --cflags cairo
+pkg-config --libs cairo
+pkg-config --cflags fontforge
+pkg-config --libs fontforge
+pkg-config --cflags libfontforge
+pkg-config --libs libfontforge
+pkg-config --cflags python
+pkg-config --libs python
 echo "-------------------------------------------------"
