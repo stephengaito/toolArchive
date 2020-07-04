@@ -4,9 +4,14 @@ Using rootless Podman to run containerized services ...
 
 &nbsp; &nbsp; ... no root or sudo needed!
 
-This repository contains an extended discussion of how to setup and run 
-containerized services using Podman without using root (or even sudo 
-(except to prepare your machine)). 
+This repository contains an extended discussion of
+
+- [how to setup and run containerized services using Podman without using 
+  root (or even sudo (except to prepare your 
+  machine))](example-rootless-boot-time-services). 
+
+- [using a podman container as a light weight KVM to develop 
+  code](example-development-in-a-container). 
 
 ***Warning:*** I am a Podman newbie... I have only been using it for three 
 days... so while what I have to show you might work... there might be 
@@ -39,7 +44,7 @@ stoped me using docke-out-of-docker....
 
 Podman, is easy to use and is similar enough to Docker that, once your 
 machine is setup to run Podman in rootless mode, the transition from 
-Docker to Podman is almost unoticed... you really can [`alias 
+Docker to Podman is almost unnoticed... you really can [`alias 
 docker=podman`](https://podman.io/whatis.html).
 
 More importantly, Podman 'manages pods'. For a small shop, you do not need 
@@ -48,22 +53,32 @@ swarm, Kubernets or cri-o... you just need Podman pods.
 
 ---
 
-These examples are not complete, but they should work.
+These examples are not complete, but they should work. I try, as far as I 
+can possibly remember, to provide you with the links that I found helpful 
+while I was learning how to do this. 
 
-I use XUbuntu, so they may contain Debian/Ubuntu-isms. However it should 
-be easy enough to translate what I have to say here, into almost any 
-GNU/Linux or even BSD based distribution (YMMV)... 
+I use XUbuntu, so *my* discussion may contain Debian/Ubuntu-isms. However 
+it should be easy enough to translate what I have to say here, into almost 
+any GNU/Linux or even BSD based distribution (YMMV)... 
 
-I have broken up my discusion into a number of steps, each with their own 
-Readmes and code. 
+Throughout my discussion, I use a couple of "standard" users who have *no 
+root or sudo priviledges*, as well as an "admin" user who does. You will 
+need both types of user and *you will want to keep them as separate 
+users*! DO NOT make them the same user! I call my "standard users" 
+`podder` (to run a rootless podman service at boot-time) and `dev` (to 
+develop code inside a containe), my "admin user" I call `admin`. 
 
-Start with steup1 ... and go as far as you want, or need.
+I have broken up my discusion into a number of examples each with a number 
+of steps, each with their own Readmes and code. 
+
+Choose your example, and start with step1 ... and go as far as you want, 
+or need. 
 
 Enjoy!
 
-All of the code is released using the [MIT license], so you are welcome to 
-use this code as you like, and even fork and improve my (initial) 
-discussion. (There is, of course, NO WARANTY that what I have to say will 
-work in your case. What you do to your machine is your choice... be 
-careful! Think before you sudo! ) 
+All of the code is released using the [MIT license](LICENSE), so you are 
+welcome to use this code as you like, and even fork and improve my 
+(initial) discussion. (There is, of course, NO WARANTY that what I have to 
+say will work in your case. What you do to your machine is your choice... 
+be careful! Think before you sudo! ) 
 
