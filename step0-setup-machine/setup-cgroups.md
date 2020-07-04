@@ -13,8 +13,8 @@ number of errors, and basically does not work.
 ---
 
 ```diff
-- 🔴 Attention to detail here is ***critical***. 🔴
-- 🔴 You are messing with your machine at ***boot-time***. 🔴
+- 🔴 Attention to detail here is ***critical***.             🔴
+- 🔴 You are messing with your machine at ***boot-time***.   🔴
 - 🔴 Any errors here *will* leave you with a broken machine! 🔴
 ```
 
@@ -50,8 +50,8 @@ using grub](https://wiki.archlinux.org/index.php/Kernel_parameters#GRUB))
 ---
 
 ```diff
-- 🔴 Attention to detail here is ***critical***. 🔴
-- 🔴 You are messing with your machine at ***boot-time***. 🔴
+- 🔴 Attention to detail here is ***critical***.             🔴
+- 🔴 You are messing with your machine at ***boot-time***.   🔴
 - 🔴 Any errors here *will* leave you with a broken machine! 🔴
 ```
 
