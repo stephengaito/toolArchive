@@ -1,0 +1,15 @@
+see: https://serverfault.com/a/906224
+
+[Unit]
+Description=rootless podman pod services -- services-up
+After=dbus.socket
+Wants=dbus.socket
+
+[Service]
+Type=forking
+ExecStart=/home/podder/bin/pod-services-up
+ExecStop=/home/podder/bin/pod-services-down
+RemainAfterExit=yes
+
+[Install]
+WantedBy=default.target

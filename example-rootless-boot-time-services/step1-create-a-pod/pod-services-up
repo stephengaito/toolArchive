@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# This podman service script creates and starts a `pod` of podman 
+# services.
+
+set -e
+
+echo ""
+echo "Creating   pod: [podder-web]"
+podman pod create \
+  --name podder-web \
+  --publish 0.0.0.0:443:443 \
+  --publish 0.0.0.0:2222:22 \
+
+# The `--publish 0.0.0.0:443:443` option maps the host port 443 (https) to 
+# the 443 (https) port inside each container (containers in a pod share 
+# all network ports). This https port will be used by nginx in the 
+# `podder-web-nginx-proxy` container. 
+
+# Similarly the `--publish 0.0.0.0:2222:22` option maps the host port 2222 
+# to the 22 (ssh) port inside each container. This ssh port will be used 
+# by gitea to allow restricted ssh access to the git repositories. 
+#
+# See: [install with docker: SSH container 
+# passthrough](https://docs.gitea.io/en-us/install-with-docker/#ssh-container-passthrough) 
+# for details. 
+
+echo ""
+echo "Creating container: [podder-web-gitea]"
+podman container create \
+  --name podder-web-gitea \
+  --restart always \
+  -v /home/podder/web/gitea:/data \
+  -v /etc/timezone:/etc/timezone:ro \
+  -v /etc/localtime:/etc/localtime:ro \
+  -e APP_NAME='My Gitea: Git with a cup of tea' \
+  -e DOMAIN='git.my-domain.com' \
+  -e ROOT_URL='https://git.my-domain.com' \
+  -e SSH_DOMAIN='git.my-domain.com' \
+  -e DISABLE_REGISTRATION='true' \
+  --pod podder-web \
+  gitea
+
+# See [Gitea docs](https://docs.gitea.io/en-us/) for details.
+
+echo ""
+echo "Creating container: [podder-web-nginx-proxy]"
+podman container create \
+  --name podder-web-nginx-proxy \
+  --restart always \
+  -v /home/podder/web/nginxConf:/etc/nginx:ro \
+  -v /home/podder/web/nginx:/usr/share/nginx/html:ro \
+  --pod podder-web \
+  nginx
+
+echo ""
+echo "Running    pod: [podder-web]"
+podman pod start podder-web
+
+

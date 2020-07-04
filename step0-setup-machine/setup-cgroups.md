@@ -43,6 +43,18 @@ Once you have ***correctly*** added this, you need to regenerate the
   sudo grub-mkconfig -o /boot/grub/grub.cfg
 ```
 
+Once you are *sure* you have the correct setup, you will need to reboot 
+your machine for these changes to take effect. 
+
+You can see that they have been applied by running `podman info` if they 
+worked you will see the line: 
+
+```
+  cgroupVersion: v2
+```
+
+near the top of the output.
+
 See: [ArchLinux: Kernel 
 Parameters](https://wiki.archlinux.org/index.php/Kernel_parameters) ([set 
 using grub](https://wiki.archlinux.org/index.php/Kernel_parameters#GRUB)) 

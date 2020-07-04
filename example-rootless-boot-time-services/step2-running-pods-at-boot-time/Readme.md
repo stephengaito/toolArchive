@@ -56,6 +56,53 @@ and then copy your `pod.service` file into this systemd user directory:
 You need to enable this service *at boot time* for the `podder` user:
 
 ```
-
+systemctl --user enable pod.service
 ```
 
+My example `pod.service` file is:
+
+```
+see: https://serverfault.com/a/906224
+
+[Unit]
+Description=rootless podman pod services -- services-up
+After=dbus.socket
+Wants=dbus.socket
+
+[Service]
+Type=forking
+ExecStart=/home/podder/bin/pod-services-up
+ExecStop=/home/podder/bin/pod-services-down
+RemainAfterExit=yes
+
+[Install]
+WantedBy=default.target
+```
+
+It is important to note that this systemd/user service:
+
+```
+After=dbus.socket
+Wants=dbus.socket
+```
+
+This means that *this* service will not start until the `podder` user's 
+DBus is up and running. 
+
+Equally important is the line:
+
+``` RemainAfterExit=yes ``` This tells systemd that while the 
+`pod-services-up` command will exit, the processes it starts will remain 
+running and everything is OK. 
+
+---
+
+For more details see:
+
+- [Starting systemd services sharing a session D-Bus on headless 
+system](https://serverfault.com/questions/892465/starting-systemd-services-sharing-a-session-d-bus-on-headless-system) 
+
+- [ArchLinx: systemd/User](https://wiki.archlinux.org/index.php/Systemd/User)
+
+- [systemd.service — Service unit 
+configuration](https://www.freedesktop.org/software/systemd/man/systemd.service.html) 

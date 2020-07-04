@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# This podman service script shuts down a 'pod' of podman services.
+
+set -e
+
+echo ""
+echo "Removing   pod: [podder-web]"
+podman pod stop podder-web
+podman pod rm podder-web
+
+
