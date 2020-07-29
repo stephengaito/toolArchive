@@ -24,7 +24,7 @@ Provide
 
     - the SQLite3 data base also provides an index of all static HTML 
     pages, which is also recreated by a walker process (that is we 
-    incorperate the go-searcher functionality). 
+    incorporate the go-searcher functionality). 
 
     - the SQLite3 data base is ephemeral and is recreated by a walker 
     process. 
