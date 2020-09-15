@@ -22,6 +22,7 @@ import (
    "os/exec"
    "path"
    "regexp"
+   "sort"
    "strings"
 )
 
@@ -40,12 +41,15 @@ var md = goldmark.New(
       html.WithUnsafe(),
     ),
   )
+
+
   
 func walkDir(mdDir string, htmlDir string) {
   fmt.Printf("Working in: [%s] (%s)\n", mdDir, htmlDir)
   os.MkdirAll(htmlDir, 0755)
 
-  mdFiles := make([]string, 0)
+  mdFiles   := make([]string, 0)
+  yamlFiles := make([]string, 0)
   
   files, err := ioutil.ReadDir(mdDir)
   if err != nil { fmt.Printf("docTool ReadDir error: %v", err) }
@@ -57,6 +61,8 @@ func walkDir(mdDir string, htmlDir string) {
     
     if strings.HasSuffix(aFile, ".md") {
       mdFiles = append(mdFiles, aFile)
+    } else if strings.HasSuffix(aFile, ".yaml") {
+      yamlFiles = append(yamlFiles, aFile)
     } else if file.IsDir() {
       walkDir(filePath, htmlFile)
     } else {
@@ -69,17 +75,21 @@ func walkDir(mdDir string, htmlDir string) {
     }
   }
 
+  indexFiles := append(mdFiles, yamlFiles... )
+  sort.Strings(indexFiles)
   indexList := make([]string, 0)
-  for _, aFile := range mdFiles {
+  for _, aFile := range indexFiles {
     if strings.EqualFold(aFile, "index.md") { continue }
+    baseFile := strings.TrimSuffix(aFile, ".md")
+//    baseFile  = strings.TrimSuffix(baseFile, ".yaml")
     fmt.Printf("indexing: [%s]\n", aFile)
     indexList = append(indexList,
-      fmt.Sprintf("- [%s](%s)\n", strings.TrimSuffix(aFile, ".md"), aFile),
+      fmt.Sprintf("- [%s](%s)\n", baseFile, aFile),
     )
   }
   indexStr := strings.Join(indexList, "\n")
   fmt.Printf("indexed: [%s]\n", indexStr)
-  
+
   for _, aFile := range mdFiles {
     filePath := path.Join(mdDir, aFile)
     htmlFile := path.Join(htmlDir, aFile)
@@ -107,6 +117,26 @@ func walkDir(mdDir string, htmlDir string) {
       continue
     }
   }
+
+//  for _, aFile := range yamlFiles {
+//    filePath := path.Join(mdDir, aFile)
+//    htmlPath := path.Join(htmlDir, aFile)
+//    htmlPath  = strings.Replace(htmlPath, ".yaml", ".html", 1)
+//    fmt.Printf("  Converting [%s]\n    to [%s]\n", filePath, htmlPath)
+//    yamlFileBytes, err := ioutil.ReadFile(filePath)
+//    if err != nil {
+//      fmt.Printf("docTool could not read [%s]\n", filePath)
+//      continue
+//    }
+//    yamlFileBytes = append([]byte("<html><head></head><body><pre>\n"), yamlFileBytes... )
+//    yamlFileBytes = append(yamlFileBytes, []byte("\n</pre></body></html>\n")... )
+//    err = ioutil.WriteFile(htmlPath, yamlFileBytes, 0644)
+//    if err != nil {
+//      fmt.Printf("docTool could not write [%s] error: %v", htmlPath, err) 
+//      continue
+//    }
+//  }
+  
   fmt.Println("---")
 }
 
