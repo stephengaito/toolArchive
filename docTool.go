@@ -43,6 +43,15 @@ var md = goldmark.New(
   )
 
 
+func copyFile(oldPath, newPath string) {
+  fmt.Printf("  Copying [%s]\n    to [%s]\n", oldPath, newPath)
+  cmd := exec.Command("cp", oldPath, newPath)
+  cmd.Stdout = os.Stdout
+  cmd.Stderr = os.Stderr
+  err := cmd.Run()
+  if err != nil { fmt.Printf("docTool cp error: %v", err) }
+}
+
   
 func walkDir(mdDir string, htmlDir string) {
   fmt.Printf("Working in: [%s] (%s)\n", mdDir, htmlDir)
@@ -63,15 +72,11 @@ func walkDir(mdDir string, htmlDir string) {
       mdFiles = append(mdFiles, aFile)
     } else if strings.HasSuffix(aFile, ".yaml") {
       yamlFiles = append(yamlFiles, aFile)
+      copyFile(filePath, htmlFile)
     } else if file.IsDir() {
       walkDir(filePath, htmlFile)
     } else {
-      fmt.Printf("  Copying [%s]\n    to [%s]\n", filePath, htmlFile)
-      cmd := exec.Command("cp", filePath, htmlFile)
-      cmd.Stdout = os.Stdout
-      cmd.Stderr = os.Stderr
-      err := cmd.Run()
-      if err != nil { fmt.Printf("docTool cp error: %v", err) }
+      copyFile(filePath, htmlFile)
     }
   }
 
