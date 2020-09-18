@@ -26,7 +26,6 @@ import (
    "strings"
 )
 
-
 var md2htmlRegexp   = regexp.MustCompile("\\.md\\)")
 var ipAddressRegexp = regexp.MustCompile("LOCAL_IP_ADDRESS")
 var dirIndexRegexp  = regexp.MustCompile("DIRECTORY_INDEX")
@@ -42,7 +41,6 @@ var md = goldmark.New(
     ),
   )
 
-
 func copyFile(oldPath, newPath string) {
   fmt.Printf("  Copying [%s]\n    to [%s]\n", oldPath, newPath)
   cmd := exec.Command("cp", oldPath, newPath)
@@ -51,7 +49,6 @@ func copyFile(oldPath, newPath string) {
   err := cmd.Run()
   if err != nil { fmt.Printf("docTool cp error: %v", err) }
 }
-
   
 func walkDir(mdDir string, htmlDir string) {
   fmt.Printf("Working in: [%s] (%s)\n", mdDir, htmlDir)
