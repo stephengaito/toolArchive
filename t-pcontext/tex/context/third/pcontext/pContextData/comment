@@ -1,0 +1,20 @@
+
+-- the comments are handled outside of the job.load system
+-- however we include it inside our variant to make things simpler
+
+comment = { }
+
+local function initializer(subDocName, target)
+    pContextData.comment = pContextTUCData[jobName].comment
+end
+
+local function finalizer(subDocName, target)
+  local fileName = subDocName.."-parallel"
+  if subDocName == jobName then
+    fileName = jobName
+  end
+  pContextData.comment.file = fileName
+  comment = pContextData.comment
+end
+
+job.register('comment', 'comment', initializer, finalizer)

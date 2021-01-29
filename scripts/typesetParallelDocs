@@ -1,0 +1,172 @@
+#!/usr/bin/env lua5.4
+
+-- This Lua (5.4) script typesets components of a given ConTeXt document 
+-- in parallel.
+
+-- We do this by:
+--  1. extract the parallel (chapter) structure of the given ConTeXt
+--     document if the corresponding *.plua file does not exist
+--  2. compile a consistent set of parallel TUC files (and set randomseed)
+--  3. run all of the parallel documents in parallel
+--  ... repeat ...
+
+
+-- Start by checking the command line arguments...
+
+if arg[1] == nil then
+  print("usage: typesetParallelDocs <<mainTeXfile>> [<<nProcs>>]")
+  os.exit(-1)
+end
+jobName = arg[1]
+
+nProcs = math.tointeger(tonumber(arg[2]))
+if not nProcs then
+  nProcs = 2
+end
+
+-- Now we require all of the "external" modules we use...
+
+local unistd  = require 'posix.unistd'
+local sysWait = require 'posix.sys.wait'
+local stdio   = require 'posix.stdio'
+local lfs     = require 'lfs'
+
+-- Now we make local copies of the functions we actually use...
+
+local uFork, uGetPid = unistd.fork, unistd.getpid
+local uDup2, uExecP  = unistd.dup2, unistd.execp
+local uSTDOUT_FILENO = unistd.STDOUT_FILENO
+local uSTDERR_FILENO = unistd.STDERR_FILENO
+
+local sWait          = sysWait.wait
+
+local sFileNo        = stdio.fileno
+
+local lAttributes    = lfs.attributes
+
+local tJoin, tPush   = table.concat, table.insert
+
+-- Now we setup some tables of options...
+
+local conTeXtParallelOpts =  { "--batchmode", "--runs=1"}
+
+local conTeXtExtractOpts =  {
+  "--batchmode", "--usemodule=pcontext", "--mode=extract", "--runs=1"
+}
+
+local compileParallelTUCOpts = {
+  jobName
+}
+
+-- Now we define a useful function to start a context job in parallel...
+
+function startConTeXtJob(subDocName, subDocOpts)
+  local pid, errmsg = uFork ()
+  if pid == nil then
+    error (errmsg)
+  elseif pid == 0 then
+    childPID = uGetPid()
+    print ("starting", subDocName, childPID)
+    stdFile = io.open(subDocName..".plog", "w")
+    uDup2(sFileNo(stdFile), uSTDOUT_FILENO)
+    uDup2(sFileNo(stdFile), uSTDERR_FILENO)
+    tPush(subDocOpts, subDocName..".tex")
+    print("command: context")
+    print("options:", "\n\t["..tJoin(subDocOpts, "]\n\t[").."]")
+    uExecP("context", subDocOpts)
+  end
+  return pid
+end
+
+-- Now we define a useful function to start the compileParallelTUC...
+
+function startCompileParallelTUC()
+  local pid, errmsg = uFork ()
+  if pid == nil then
+    error (errmsg)
+  elseif pid == 0 then
+    childPID = uGetPid()
+    print ("starting", "compileParallelTUC", childPID)
+    stdFile = io.open(jobName.."-compileParallelTUC.plog", "w")
+    uDup2(sFileNo(stdFile), uSTDOUT_FILENO)
+    uDup2(sFileNo(stdFile), uSTDERR_FILENO)
+    print("command: compileParallelTUC")
+    print("options:", "\n\t["..tJoin(compileParallelTUCOpts, "]\n\t[").."]")
+    uExecP("compileParallelTUC", compileParallelTUCOpts)
+  end
+  return pid
+end
+
+-- Now we do the work...
+
+if not lfs.attributes(jobName..'.plua') then 
+  print("extracting sub document structure...")
+
+  local extractPID = startConTeXtJob(jobName, conTeXtExtractOpts)
+  print("finished", jobName, sWait(extractPID))
+
+  print("")
+end
+
+print("compiling the initial parallel TUC files")
+local compilePID = startCompileParallelTUC()
+print("finished", "compileParallelTUC", sWait(compilePID))
+
+print("")
+
+local pluaFileName = jobName..".plua"
+if not lAttributes(pluaFileName) then
+  print("ERROR: the sub document extraction did not create the plua file")
+  os.exit(1)
+end
+
+local pcontext = dofile(pluaFileName)
+
+print("typesetting sub documents in parallel...")
+local runningJobs = { }
+
+local startTime = os.time()
+
+-- Start/keep running exactly nProcs jobs
+--
+for i, subDocName in ipairs(pcontext.subDocOrder) do
+  subDocName = subDocName..'-parallel'
+  local childPid = startConTeXtJob(subDocName, conTeXtParallelOpts)
+  runningJobs[childPid] = subDocName
+  
+  while true do
+    local numJobs = 0
+    for k,v in pairs(runningJobs) do numJobs = numJobs + 1 end
+    if numJobs < nProcs then break end
+    
+    local pid, mesg, status = sWait(-1)
+    if pid then
+      print("finished", runningJobs[pid], pid, mesg, status)
+      runningJobs[pid] = nil
+    else
+      error(mesg)
+    end
+  end
+end
+
+-- Now wait for all remaining jobs to finish
+--
+while true do
+  local numJobs = 0
+  for k,v in pairs(runningJobs) do numJobs = numJobs + 1 end
+  if numJobs < 1 then break end
+  
+  local pid, mesg, status = sWait(-1)
+  if pid then
+    print("finished", runningJobs[pid], pid, mesg, status)
+    runningJobs[pid] = nil
+  else
+    error(mesg)
+  end
+end
+
+local endTime = os.time()
+
+print("")
+print("typesetting the sub documents took", os.difftime(endTime, startTime), "seconds")
+print("")

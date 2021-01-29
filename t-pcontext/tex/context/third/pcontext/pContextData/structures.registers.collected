@@ -1,0 +1,30 @@
+
+-- mkiv/strc-reg.lua
+
+local collected           = allocate()
+
+pContextData['structures.registers.collected'] = collected
+
+local function initializer(subDocName, target)
+  local collectedTUC = pContextTUCData[subDocName][target] or { }
+  for key, value in pairs(collectedTUC) do
+    if collected[key] == nil then
+      collected[key] = {
+        entries = { }
+      }
+    end
+    collected[key].metadata = value.metadata
+    local entriesTUC        = value.entries
+    local entries           = collected[key].entries
+    for i = 1,#entriesTUC do
+      entries[#entries+1] = entriesTUC[i]
+    end
+  end
+end
+
+job.register(
+  'structures.registers.collected',
+  'structures.registers.collected',
+  initializer
+)
+

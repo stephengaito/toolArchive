@@ -1,0 +1,46 @@
+
+-- mkiv/anch-pos.lua
+
+-- Requires the structures.pages.collected to be already handled.
+
+-- Need to append each `collected` into the overall `collection`
+
+local nums = { }
+
+pContextData['job.positions.collected'] = allocate()
+
+local nofregular  = 0
+local nofspecial  = 0
+local splitter    = lpeg.splitat(":",true)
+
+-- local columndata  = setmetatableindex("table") -- per page
+local freedata    = setmetatableindex("table") -- per page
+
+local function initializer(subDocName, target)
+  collectedTUC  = pContextTUCData[subDocName][target]
+  collected     = pContextData[target]
+  docPageOffset = pContextStructData.subDocs[subDocName].firstPage
+
+  tucKeys = sortedkeys(collectedTUC)
+  for i = 1,#tucKeys do
+    local tag = tucKeys[i]
+    local data = collectedTUC[tag]
+    if data.p then
+      data.p = data.p + docPageOffset
+    end
+    local prefix, rest = lpegmatch(splitter,tag)
+    
+    if nums[prefix] == nil then
+      nums[prefix] = 1
+    end
+    local newTag = format("%s:%d", prefix, nums[prefix])
+    nums[prefix] = nums[prefix] + 1
+    collected[newTag] = data
+  end
+end
+
+job.register(
+  'job.positions.collected',
+  'job.positions.collected',
+  initializer
+)

@@ -1,0 +1,44 @@
+
+-- core-uti.lua
+
+local getrandom      = utilities.randomizer.get
+local setrandomseedi = utilities.randomizer.setseedi
+local getrandomseed  = utilities.randomizer.getseed
+local ctx_setxvalue  = context.setxvalue
+
+local collected = allocate()
+
+pContextData['job.variables.collected'] = collected
+
+-- The most important task of the collected variables 
+-- is to ensure the "global" (across subDocument) "randomseed"
+-- variable is consisitent in all TUCs so that it is 
+-- resumed in each sub document.
+
+local function initializer(subDocName, target)
+    local rvalue = pContextStructData.randomseed
+    if not rvalue then
+        rvalue = getrandom("initialize")
+        setrandomseedi(rvalue)
+        pContextStructData.randomseed = rvalue
+    else
+        setrandomseedi(rvalue)
+    end
+    collected.randomseed = rvalue
+    --
+    if not collected.macros then
+        collected.macros  = { }
+    end
+    -- will become collected.macros
+    for cs, value in next, collected.macros do
+        if type(value) == "string" then -- safeguard
+            ctx_setxvalue(cs,value)
+        end
+    end
+end
+
+job.register(
+  'job.variables.collected',
+  'job.variables.collected',
+  initializer
+)

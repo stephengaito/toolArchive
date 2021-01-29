@@ -1,0 +1,23 @@
+
+-- mkiv/core-two.lua
+
+local collected    = allocate()
+local numCollected = 0
+
+pContextData['job.passes.collected'] = collected
+
+local function initializer(subDocName, target)
+  local collectedTUC =  pContextTUCData[subDocName][target]
+  local sorted       = sortedkeys(collectedTUC)
+  for i = 1,#sorted do
+    local key            = sorted[i]
+    local value          = collectedTUC[key]
+    local splitter       = lpeg.splitat(":")
+    local keyOne, keyTwo = lpegmatch(splitter, key)
+    numCollected         = numCollected + 1
+    local newKey         = format("%s:%s:%d", keyOne, keyTwo, numCollected)
+    collected[newKey]    = value
+  end
+end
+
+job.register('job.passes.collected', 'job.passes.collected', initializer)

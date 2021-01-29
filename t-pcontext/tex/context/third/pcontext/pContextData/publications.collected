@@ -1,0 +1,100 @@
+
+-- mkiv/publ-ini.lua
+
+----------------------------------------------------------------------------
+-- PROBLEM:
+-- ALAS there is no data in the luametatex document 
+-- SO while this code "works" it essentially does nothing at the moment ;-(
+----------------------------------------------------------------------------
+
+-- multipass, we need to sort because hashing is random per run and not per
+-- version (not the best changed feature of lua)
+
+local collected = allocate()
+publications    = publications          or { }
+local datasets  = publications.datasets or { }
+
+pContextData['publications.collected'] = collected
+
+local function serialize(t)
+  local f_key_table  = formatters[" [%q] = {"]
+  local f_key_string = formatters["  %s = %q,"]
+  local r = { "return {" }
+  local m = 1
+  for tag, entry in sortedhash(t) do
+    m = m + 1
+    r[m] = f_key_table(tag)
+    local s = sortedkeys(entry)
+    for i=1,#s do
+      local k = s[i]
+      m = m + 1
+      r[m] = f_key_string(k,entry[k])
+    end
+    m = m + 1
+    r[m] = " },"
+  end
+  r[m] = "}"
+  return concat(r,"\n")
+end
+
+local function finalizer()
+  local prefix = tex.jobname -- or environment.jobname
+  local setnames = sortedkeys(datasets)
+  for i=1,#setnames do
+    local name     = setnames[i]
+    local dataset  = datasets[name]
+    local userdata = dataset.userdata
+    local checksum = nil
+    local username = file.addsuffix(file.robustname(formatters["%s-btx-%s"](prefix,name)),"lua")
+    if userdata and next(userdata) then
+      if job.passes.first then
+        local newdata = serialize(userdata)
+        checksum = md5.HEX(newdata)
+        io.savedata(username,newdata)
+      end
+    else
+      os.remove(username)
+      username = nil
+    end
+    local loaded  = dataset.loaded
+    local sources = dataset.sources
+    local used    = { }
+    for i=1,#sources do
+      local source = sources[i]
+      -- if loaded[source.filename] ~= "previous" then -- needs checking
+      if loaded[source.filename] ~= "previous" or loaded[source.filename] == "current" then
+        used[#used+1] = source
+      end
+    end
+    tobesaved[name] = {
+      usersource = {
+        filename = username,
+        checksum = checksum,
+      },
+      datasources = used,
+    }
+  end
+end
+
+local function initializer()
+  for name, state in sortedhash(collected) do
+    local dataset     = datasets[name]
+    local datasources = state.datasources
+    local usersource  = state.usersource
+    if datasources then
+      for i=1,#datasources do
+        local filename = datasources[i].filename
+        publications.load {
+          dataset  = dataset,
+          filename = filename,
+          kind     = "previous"
+        }
+      end
+    end
+    if usersource then
+      dataset.userdata = table.load(usersource.filename) or { }
+    end
+  end
+end
+
+job.register('publications.collected', 'publications.collected', initializer, finalizer)

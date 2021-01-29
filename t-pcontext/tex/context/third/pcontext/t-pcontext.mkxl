@@ -1,0 +1,184 @@
+% A ConTeXt MkXL module
+
+%C Copyright 2020 PerceptiSys Ltd (Stephen Gaito)
+%C
+%C Permission is hereby granted, free of charge, to any person
+%C obtaining a copy of this software and associated documentation
+%C files (the "Software"), to deal in the Software without
+%C restriction, including without limitation the rights to use,
+%C copy, modify, merge, publish, distribute, sublicense, and/or sell
+%C copies of the Software, and to permit persons to whom the
+%C Software is furnished to do so, subject to the following
+%C conditions:
+%C
+%C    The above copyright notice and this permission notice shall
+%C    be included in all copies or substantial portions of the
+%C    Software.
+%C
+%C THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+%C EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+%C OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+%C NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+%C HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+%C WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+%C FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+%C OTHER DEALINGS IN THE SOFTWARE.
+
+%D \module
+%D   [     file=t-pcontext,
+%D      version=2020.12.07,
+%D        title=\CONTEXT\ User module,
+%D     subtitle=Parallelizing \ConTeXt\,
+%D       author=Stephen Gaito,
+%D         date=\currentdate,
+%D    copyright=PerceptiSys Ltd (Stephen Gaito),
+%D        email=stephen@perceptisys.co.uk,
+%D      license=MIT License]
+
+% begin info
+%
+% title   : Parallelizing ConTeXt
+% comment : Provides the tools required to parallelize context
+% status  : under development, mkxl only
+%
+% end info
+
+% We will use modes, https://wiki.contextgarden.net/Modes, to control what 
+% actions the user wants for any particular context run. We will use the 
+% `\definemode[XXX][keep]` command to allow the user/system to specify modes 
+% on the command line.
+%
+% Modes:
+% - `extract` mode, extracts the sub-documents as a Lua table in the 
+%   `\jobname.sub` file. 
+% - `subdoc` mode, typesets a particular sub-document.
+
+% We *expect* environments to be mentioned/used *before* the document/text 
+% starts. The *order* of the environment uses is *important*.
+
+% At the moment we only allow for *one* level of components (that is we do 
+% not allow nested component uses inside a component). 
+
+% TODO:
+% - change to subdocs with each subdoc being a list of environments and 
+    bodyparts found up to the sub-document name. 
+% - on typsetting subdoc: auto-expand from the list of environments and 
+%   bodyparts. Have subdoc name be the name of a mode which could be 
+%   provided on the command line?
+%  
+
+\ctxloadluafile{t-pcontext}
+
+\unprotect
+
+\def\pcontextEnvironment{%
+  \directlua{%
+    thirddata.pcontext.pushEnvironment(token.scan_word() )
+  }
+}
+
+\def\pcontextComponent{%
+  \directlua{%
+    thirddata.pcontext.buildSubDocument(token.scan_word() )
+  }
+}
+
+\tolerant\def\pcontextStartSectionBlock#1#*[#2]{%
+  \directlua{%
+    thirddata.pcontext.startSectionBlock('#1', '\luaescapestring{#2}')
+  }
+}
+
+\def\pcontextStopSectionBlock#1{%
+  \directlua{%
+    thirddata.pcontext.stopSectionBlock('#1')
+  }
+}
+
+% we really should work on the \definesectionblock to catch all possible
+% variants... for the moment we cheat and just do the following typical 
+% matter variants.
+
+\def\pcontextStartFrontMatter{\pcontextStartSectionBlock{frontmatter}}
+\def\pcontextStopFrontMatter{\pcontextStopSectionBlock{frontmatter}}
+
+\def\pcontextStartBodyMatter{\pcontextStartSectionBlock{bodymatter}}
+\def\pcontextStopBodyMatter{\pcontextStopSectionBlock{bodymatter}}
+
+\def\pcontextStartBackMatter{\pcontextStartSectionBlock{backmatter}}
+\def\pcontextStopBackMatter{\pcontextStopSectionBlock{backmatter}}
+
+\def\pcontextStartAppendices{\pcontextStartSectionBlock{appendices}}
+\def\pcontextStopAppendices{\pcontextStopSectionBlock{appendices}}
+
+\tolerant\def\pcontextStartDocumentIndeed[#1]#*[#2]{%
+  \directlua{%
+    thirddata.pcontext.startDocument('#1', '\luaescapestring{#2}')
+  }
+}
+
+\def\pcontextStopDocumentIndeed#1{%
+  \directlua{%
+    thirddata.pcontext.stopDocument('#1')
+  }
+}
+
+\def\pcontextStartProject{\pcontextStartDocumentIndeed[project]}
+\def\pcontextStopProject{\pcontextStopDocumentIndeed{projet}}
+
+\def\pcontextStartProduct{\pcontextStartDocumentIndeed[product]}
+\def\pcontextStopProduct{\pcontextStopDocumentIndeed{product}}
+
+\def\pcontextStartDocument{\pcontextStartDocumentIndeed[document]}
+\def\pcontextStopDocument{\pcontextStopDocumentIndeed{document}}
+
+%\def\pcontextStartText{%
+  \clf_setjobcomment%
+    file   {\jobname}%
+    format {\contextformat}%
+    stamp  {\contextversion}%
+    escape {\!!bs\space...\space\!!es}%
+  \pcontextStartDocumentIndeed[text]%
+%}
+\def\pcontextStopText{\pcontextStopDocumentIndeed{text}}
+
+% There is a feature interaction between tokens.scan_word and 
+% \enabletrackers so we turn off \enabletrackers.
+%
+\def\pcontextEnableTrackers[#1]{\relax}
+
+
+\startmode[extract]
+
+  \let\environment\pcontextEnvironment
+  \let\component\pcontextComponent
+
+  \let\startfrontmatter\pcontextStartFrontMatter
+  \let\stopfrontmatter\pcontextStopFrontMatter
+
+  \let\startbodymatter\pcontextStartBodyMatter
+  \let\stopbodymatter\pcontextStopBodyMatter
+
+  \let\startbackmatter\pcontextStartBackMatter
+  \let\stopbackmatter\pcontextStopBackMatter
+  
+  \let\startappendices\pcontextStartAppendicies
+  \let\stopappendices\pcontextStopAppendicies
+
+  \let\startproject\pcontextStartProject
+  \let\stopproject\pcontextStopProject
+
+  \let\startproduct\pcontextStartProduct
+  \let\stopproduct\pcontextStopProduct
+
+  \let\startdocument\pcontextStartDocument
+  \let\stopdocument\pcontextStopDocument
+
+  \let\starttext\pcontextStartText
+  \let\stoptext\pcontextStopText
+
+  \let\enabletrackers\pcontextEnableTrackers
+
+\stopmode
+
+\protect \endinput

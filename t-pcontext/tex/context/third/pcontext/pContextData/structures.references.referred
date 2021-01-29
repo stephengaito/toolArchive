@@ -1,0 +1,35 @@
+
+-- mkiv/strc-ref.lua
+
+local function finalizer(subDocName, target)
+  if pContextData[target] == nil then
+    local tobereferred = structures_references_internal
+    local sparsetobereferred = allocate()
+    pContextData[target] = sparsetobereferred
+    local lastr, lasti
+    local n = 0
+    for i=1,#tobereferred do
+      local r = tobereferred[i].references.realpage
+      if not lastr then
+        lastr = r
+        lasti = i
+      elseif r ~= lastr then
+        n = n + 1
+        sparsetobereferred[n] = { lastr, lasti }
+        lastr = r
+        lasti = i
+      end
+    end
+    if lastr then
+      n = n + 1
+      sparsetobereferred[n] = { lastr, lasti }
+    end
+  end
+end
+
+job.register(
+  'structures.references.referred',
+  'structures.references.referred',
+  nil,
+  finalizer
+)
