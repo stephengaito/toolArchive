@@ -21,11 +21,12 @@ following packages:
 3. LuaPosix
 4. LuaPPrint
 
-You will also need an ANSI-C compiler as well as a `make` command line 
-tool. 
+To download and install these packages, you will need wget, 
+sudo/administrative privilages, an ANSI-C compiler as well as a `make` 
+command line tool. 
 
 You can install a copy of the required Lua extensions by typing:
 
 ```
-  ./instalLua
+  ./installingLua/instalLua
 ```
