@@ -1,0 +1,12 @@
+--- a/config    2020-04-23 01:16:42.000000000 +0000
++++ b/config    2020-11-25 09:45:04.698051971 +0000
+@@ -3,7 +3,8 @@
+ # Default installation prefix
+ PREFIX=/usr/local
+ 
+-LUA_VERSION = 5.1
++#LUA_VERSION = 5.1
++LUA_VERSION = 5.4
+ 
+ # System's libraries directory (where binary libraries are installed)
+ LUA_LIBDIR= $(PREFIX)/lib/lua/$(LUA_VERSION)

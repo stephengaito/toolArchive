@@ -1,0 +1,101 @@
+#!/bin/bash
+
+# This bash script downloads and compiles the source for the Lua 5.4 
+# packages required for the Parallel ConTeXt module. 
+
+############################################################################
+# We begin by listing the URL and package versions for the packages we 
+# need. 
+
+# Lua: https://www.lua.org/download.html
+luaVersion=5.4.2
+luaTar=lua-${luaVersion}.tar.gz
+luaURL=http://www.lua.org/ftp/$luaTar
+
+# LuaFileSystem (lfs): https://github.com/keplerproject/luafilesystem
+lfsVersion=1_8_0
+lfsTar=lfs-${lfsVersion}.tar.gz
+lfsURL=https://github.com/keplerproject/luafilesystem/archive/v${lfsVersion}.tar.gz
+
+# LuaPosix (lp): https://github.com/luaposix/luaposix/releases
+lpVersion=35.0
+lpTar=lp-${lpVersion}.tar.gz
+lpURL=https://api.github.com/repos/luaposix/luaposix/tarball/v${lpVersion}
+
+# LuaPPrint (lpp): https://github.com/jagt/pprint.lua/releases
+# (Currently only used for debugging lua scripts -- NEEDS TO BE REMOVED)
+lppVersion=0.1
+lppTar=lpp-${lppVersion}.tar.gz
+lppURL=https://api.github.com/repos/jagt/pprint.lua/tarball/${lppVersion}
+
+############################################################################
+# Now we provide a couple of functions...
+
+patchesDir=$( cd $( dirname $0 ) && pwd )/patches
+
+sudo mkdir -p /usr/local/installed
+sudo cp $patchesDir/* /usr/local/installed
+
+function downloadTarFile {
+  cd /usr/local/installed
+  sudo rm -rf $1
+  sudo wget $2 -O $1
+}
+
+function extractTarFile {
+  echo "----------------------------------------------------------"
+  cd /usr/local
+  sudo mkdir -p /usr/local/src/$1
+  sudo chown -R ${USER}.${USER} /usr/local/src/$1
+  tar xvf installed/$2            \
+    --directory=/usr/local/src/$1 \
+    --strip-components=1
+  cd /usr/local/src/$1
+  patch -p1 < /usr/local/installed/lua.$1.patch
+  echo "----------------------------------------------------------"
+}
+
+############################################################################
+# Now we actually build the packages we require
+
+echo ""
+echo "----------------------------------------------------------"
+echo "Building LUA v$luaVersion"
+echo "----------------------------------------------------------"
+downloadTarFile $luaTar $luaURL
+extractTarFile  lua     $luaTar
+make
+sudo make install
+cd /usr/local/bin
+sudo ln -fs lua lua5.4
+
+echo ""
+echo "----------------------------------------------------------"
+echo "Building LuaFileSystem v$lfsVersion"
+echo "----------------------------------------------------------"
+downloadTarFile $lfsTar $lfsURL
+extractTarFile  lfs     $lfsTar
+make
+sudo make install
+
+echo ""
+echo "----------------------------------------------------------"
+echo "Building LuaPosix v$lpVersion"
+echo "----------------------------------------------------------"
+downloadTarFile $lpTar $lpURL
+extractTarFile  lp     $lpTar
+build-aux/luke
+sudo build-aux/luke install
+
+echo ""
+echo "----------------------------------------------------------"
+echo "Building Lua PPrint v$lppVersion"
+echo "----------------------------------------------------------"
+downloadTarFile $lppTar $lppURL
+extractTarFile  lpp     $lppTar
+sudo cp pprint.lua /usr/local/share/lua/5.4/
+
+echo ""
+echo "----------------------------------------------------------"
+echo "Finished installing Lua packages for Parallel ConTeXt"
+echo "----------------------------------------------------------"
