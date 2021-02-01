@@ -148,3 +148,18 @@ luatex.registerstopactions(function()
     end
   end
 end)
+
+
+----------------------------------------------------------------------
+
+local function startpcontext()
+
+end
+
+pcontext.startpcontext = startpcontext
+
+local function stoppcontext()
+
+end
+
+pcontext.stoppcontext = stoppcontext
