@@ -17,6 +17,43 @@ local subDocs        = pcontext.subDocs
 pcontext.subDocOrder = pcontext.subDocOrder or { }
 local subDocOrder    = pcontext.subDocOrder
 
+local function initializer()
+  print("HELLO FROM PConTeXt initializer!")
+end
+
+local function finalizer()
+  print("GOOD BYE FROM PConTeXt initializer!")
+end
+
+job.register(
+  'thirddata.pcontext.subDocs',
+  'thirddata.pcontext.subDocs',
+  initializer, finalizer
+)
+
+-- Consider using `job.loadother` and using tables.accesstable to retrieve 
+-- the required data from the returned utilitydata. The problem with this 
+-- approach is that the *.tuc file will be loaded an other time.
+
+-- local utilitydata = job.loadother(tex.jobname..'.tuc')
+-- local subDocs = 
+--   tables.accesstable('utilitydata.pcontext.subDocs', utilitydata)
+
+-- Actually we do not need the job.load....
+
+-- Flow of data:
+
+-- 1. On each context run we collect a sequence of required commands for a 
+-- given subDocument. This is saved by the registered `job.save` (and 
+-- ignored by any subsequent `job.load`). 
+
+-- 2. The resulting sequence is then taken from the indvidual *.tuc files 
+-- and harmonized by the compile script and saved into the (master) plua 
+-- file. 
+
+-- 3. When pcontext loads the (master) plua file and walks through the 
+-- sequence. 
+
 local environments = { }
 
 local function pushEnvironment(envName)
