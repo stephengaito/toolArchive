@@ -73,25 +73,27 @@
 
 \def\pcontextEnvironment{%
   \directlua{%
-    thirddata.pcontext.pushEnvironment(token.scan_word() )
+    thirddata.pcontext.recordEnvironment(token.scan_word() )
   }
 }
 
 \def\pcontextComponent{%
   \directlua{%
-    thirddata.pcontext.buildSubDocument(token.scan_word() )
+    thirddata.pcontext.recordSubDocument(token.scan_word() )
   }
 }
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \tolerant\def\pcontextStartSectionBlock#1#*[#2]{%
   \directlua{%
-    thirddata.pcontext.startSectionBlock('#1', '\luaescapestring{#2}')
+    thirddata.pcontext.recordSectionBlock('start#1', '\luaescapestring{#2}')
   }
 }
 
 \def\pcontextStopSectionBlock#1{%
   \directlua{%
-    thirddata.pcontext.stopSectionBlock('#1')
+    thirddata.pcontext.recordSectionBlock('stop#1')
   }
 }
 
@@ -111,15 +113,17 @@
 \def\pcontextStartAppendices{\pcontextStartSectionBlock{appendices}}
 \def\pcontextStopAppendices{\pcontextStopSectionBlock{appendices}}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \tolerant\def\pcontextStartDocumentIndeed[#1]#*[#2]{%
   \directlua{%
-    thirddata.pcontext.startDocument('#1', '\luaescapestring{#2}')
+    thirddata.pcontext.recordDocument('start#1', '\luaescapestring{#2}')
   }
 }
 
 \def\pcontextStopDocumentIndeed#1{%
   \directlua{%
-    thirddata.pcontext.stopDocument('#1')
+    thirddata.pcontext.recordDocument('stop#1')
   }
 }
 
@@ -138,7 +142,7 @@
     format {\contextformat}%
     stamp  {\contextversion}%
     escape {\!!bs\space...\space\!!es}%
-  \pcontextStartDocumentIndeed[text]%
+%  \pcontextStartDocumentIndeed[text]%
 %}
 \def\pcontextStopText{\pcontextStopDocumentIndeed{text}}
 
@@ -147,6 +151,7 @@
 %
 \def\pcontextEnableTrackers[#1]{\relax}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \startmode[extract]
 

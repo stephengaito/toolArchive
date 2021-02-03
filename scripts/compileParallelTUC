@@ -27,13 +27,13 @@ pContextData       = { }
 
 -- load the ConTeXt related "base" Lua code
 --
-dofile(pcontextDir..'/pcontextLoader.lua')
+dofile(pcontextDir..'/context/contextLoader.lua')
 tSerialize = table.serialize -- from ConTeXt mkiv l-table.lua
 sFormat    = string.format
 
 -- Now load the pContext related Lua code
 --
-dofile(tpcontextDir..'/pContextData/loader.lua')
+dofile(pcontextDir..'/pContext/pContextLoader.lua')
 
 print("working on "..jobName)
 
@@ -62,6 +62,7 @@ for i, subDocName in ipairs(pContextStructData.subDocOrder) do
     sFormat("%s-parallel-%d.tuc", subDocName, pContextStructData.lastRun)
   if lfs.attributes(oldFileName) then  os.rename(oldFileName, newFileName) end
   job.save(subDocName)
+  job.writeTex(subDocName)
 end
 
 pContextStructData.lastRun = pContextStructData.lastRun + 1
@@ -83,6 +84,8 @@ local function savePContextStructDataAsPluaFile()
     f:write(tSerialize(pContextStructData.subDocOrder, "pcontext.subDocOrder", true), "\n\n")
   
     f:write(tSerialize(pContextStructData.subDocs, "pcontext.subDocs", true), "\n\n")
+    
+    f:write(tSerialize(pContextStructData.cmdList, "pcontext.cmdList", true), "\n\n")
   
     f:write("return pcontext")
     f:close()

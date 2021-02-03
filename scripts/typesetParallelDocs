@@ -48,7 +48,9 @@ local tJoin, tPush   = table.concat, table.insert
 
 -- Now we setup some tables of options...
 
-local conTeXtParallelOpts =  { "--batchmode", "--runs=1"}
+local conTeXtParallelOpts =  {
+  "--batchmode", "--usemodule=pcontext", "--runs=1"
+}
 
 local conTeXtExtractOpts =  {
   "--batchmode", "--usemodule=pcontext", "--mode=extract", "--runs=1"
