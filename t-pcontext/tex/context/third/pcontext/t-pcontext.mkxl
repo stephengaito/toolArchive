@@ -186,4 +186,18 @@
 
 \stopmode
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\def\pContextFirstPage#1{%
+  \directlua{%
+    thirddata.pcontext.firstPage('#1')
+  }
+}
+
+\def\pContextLastPage#1{%
+  \directlua{%
+    thirddata.pcontext.lastPage('#1')
+  }
+}
+
 \protect \endinput

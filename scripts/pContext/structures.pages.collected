@@ -12,6 +12,8 @@ pContextData['structures.pages.collected'] = structures.pages.collected
 
 local function initializer(subDocName, target)
 
+  pprint(pContextTUCData[subDocName]['thirddata.pcontext.subDocs'])
+
   collectedTUC  = pContextTUCData[subDocName][target] or { }
   collected     = pContextData[target]
   nofpages      = pContextStructData.numPages or 0

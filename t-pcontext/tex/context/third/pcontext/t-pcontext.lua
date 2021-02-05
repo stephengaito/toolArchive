@@ -20,18 +20,18 @@ local subDocOrder    = pcontext.subDocOrder
 pcontext.cmdList     = pcontext.cmdList     or { }
 local cmdList        = pcontext.cmdList
 
-local function initializer()
-  print("HELLO FROM PConTeXt initializer!")
-end
+-- local function initializer()
+--   print("HELLO FROM PConTeXt initializer!")
+-- end
 
-local function finalizer()
-  print("GOOD BYE FROM PConTeXt initializer!")
-end
+-- local function finalizer()
+--   print("GOOD BYE FROM PConTeXt initializer!")
+-- end
 
 job.register(
   'thirddata.pcontext.subDocs',
-  'thirddata.pcontext.subDocs',
-  initializer, finalizer
+  'thirddata.pcontext.subDocs'
+--  initializer, finalizer
 )
 
 -- Consider using `job.loadother` and using tables.accesstable to retrieve 
@@ -84,6 +84,7 @@ local function recordSubDocument(subDocumentName)
   end
   subDocs[subDocInstanceName] = {
     ["firstPage"] = 0,
+    ["lastPage"] = 0,
     ["numPages"]  = 0,
     ["document"]  = subDocumentName
   }
@@ -128,3 +129,25 @@ luatex.registerstopactions(function()
 end)
 
 ----------------------------------------------------------------------
+
+local function firstPage(subDocName)
+  print(">>>>> firstPage", subDocName)
+  subDocs[subDocName] = subDocs[subDocName] or { }
+  pprint(subDocs[subDocName])
+  subDocs[subDocName].firstPage = tex.getcount('realpageno')
+end
+
+pcontext.firstPage = firstPage
+
+local function lastPage(subDocName)
+  print(">>>>>> lastPage", subDocName)
+  subDocs[subDocName] = subDocs[subDocName] or { }
+  pprint(subDocs[subDocName])
+  subDocs[subDocName].lastPage = tex.getcount('realpageno')
+  subDocs[subDocName].numPages = 
+    subDocs[subDocName].lastPage -
+    subDocs[subDocName].firstPage + 1
+
+end
+
+pcontext.lastPage = lastPage

@@ -1,0 +1,14 @@
+
+-- the pcontext.subDocs is a third party collection of data 
+-- managed by the t-pcontext module
+
+local function initializer(subDocName, target)
+  pContextTUCData[subDocName][target] =
+    pContextTUCData[subDocName][target] or { }
+end
+
+job.register(
+  'thirddata.pcontext.subDocs',
+  'thirddata.pcontext.subDocs',
+  initializer
+)
