@@ -70,6 +70,7 @@ end
 
 local function mimicSubDocTo(subDocName, f)
   local subDoc = pContextStructData.subDocs[subDocName]
+  pprint(subDoc)
   f:write("\n%% \\startcomponent "..subDocName.."\n")
   for i = 1, subDoc.numPages do
     f:write("\\pagebreak[dummy]\n")

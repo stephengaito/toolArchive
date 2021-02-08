@@ -22,6 +22,7 @@ pcontextDir = homeDir..'/.config/pcontext'
 pprint = require('pprint')
 
 pContextStructData = dofile(jobName..".plua")
+currentPageOffset  = 0
 pContextTUCData    = { }
 pContextData       = { }
 

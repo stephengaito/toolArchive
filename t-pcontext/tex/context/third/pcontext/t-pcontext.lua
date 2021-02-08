@@ -146,7 +146,7 @@ local function lastPage(subDocName)
   subDocs[subDocName].lastPage = tex.getcount('realpageno')
   subDocs[subDocName].numPages = 
     subDocs[subDocName].lastPage -
-    subDocs[subDocName].firstPage + 1
+    subDocs[subDocName].firstPage -- + 1
 
 end
 
