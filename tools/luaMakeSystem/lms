@@ -1,0 +1,1201 @@
+#!/usr/bin/env texlua
+
+-- Start with some local convenience functions
+
+tConcat = table.concat
+tInsert = table.insert
+tRemove = table.remove
+tSort   = table.sort
+toStr   = tostring
+getEnv  = os.getenv
+lfs     = require 'lfs'
+
+-- Now update the require search paths to ensure lms standard paths will 
+-- be searched 
+
+directorySeparator = package.config:sub(1,1)
+
+local function compareKeyValues(a, b)
+  return (a[1] < b[1])
+end
+
+function prettyPrint(anObj, indent)
+  local result = ""
+  indent = indent or ""
+  if type(anObj) == 'nil' then
+    result = 'nil'
+  elseif type(anObj) == 'boolean' then
+    if anObj then result = 'true' else result = 'false' end
+  elseif type(anObj) == 'number' then
+    result = toStr(anObj)
+  elseif type(anObj) == 'string' then
+    result = '"'..anObj..'"'
+  elseif type(anObj) == 'function' then
+    result = toStr(anObj)
+  elseif type(anObj) == 'userdata' then
+    result = toStr(anObj)
+  elseif type(anObj) == 'thread' then
+    result = toStr(anObj)
+  elseif type(anObj) == 'table' then
+    local origIndent = indent
+    indent = indent..'  '
+    result = '{\n'
+    for i, aValue in ipairs(anObj) do
+      result = result..indent..prettyPrint(aValue, indent)..',\n'
+    end
+    local theKeyValues = { }
+    for aKey, aValue in pairs(anObj) do
+      if type(aKey) ~= 'number' or aKey < 1 or #anObj < aKey then
+        tInsert(theKeyValues,
+          { prettyPrint(aKey), aKey, prettyPrint(aValue, indent) })
+      end
+    end
+    tSort(theKeyValues, compareKeyValues)
+    for i, aKeyValue in ipairs(theKeyValues) do
+      result = result..indent..'['..aKeyValue[1]..'] = '..aKeyValue[3]..',\n'
+    end
+    result = result..origIndent..'}'
+  else
+    result = 'UNKNOWN TYPE: ['..toStr(anObj)..']'
+  end
+  return result
+end
+
+function tCopy(origTable)
+  if type(origTable) ~= 'table' then return origTable end
+  
+  local newTable = {}
+  for i, aValue in ipairs(origTable) do
+    tInsert(newTable, aValue)
+  end
+  for aKey, aValue in pairs(origTable) do
+    newTable[aKey] = aValue
+  end
+  return newTable
+end
+
+-- merge a sequence of hash tables in order...
+function hMerge(...)
+  local newHash = { }
+  for i, aHash in ipairs{...} do
+    if type(aHash) == 'table' then
+      for aKey, aValue in pairs(aHash) do
+        if type(aValue) == 'table' then
+          newHash[aKey] = tCopy(aValue)
+        else
+          newHash[aKey] = aValue
+        end
+      end
+    end
+  end
+  return newHash
+end
+
+-- merge a sequence of arrays in order...
+function aAppend(...)
+  local newArray = { }
+  for i, anArray in ipairs{...} do
+    if type(anArray) == 'table' then
+      for j, aValue in ipairs(anArray) do
+        if type(aValue) == 'table' then
+          tInsert(newArray, tCopy(aValue))
+        else
+          tInsert(newArray, aValue)
+        end
+      end
+    end
+  end
+  return newArray
+end
+
+function aHasValue(anArray, aValue)
+    for index, value in ipairs(anArray) do
+        if value == aValue then
+            return true
+        end
+    end
+    return false
+end
+
+function aInsertOnce(anArray, aValue)
+  if not aHasValue(anArray, aValue) then
+    tInsert(anArray, aValue)
+  end
+end
+
+function setEnvironment(envKey, envValue)
+  os.setenv(envKey, envValue)
+end
+
+function setEnvironmentDefault(envKey, envValue)
+  if type(os.getenv(envKey)) == 'nil' then
+    os.setenv(envKey, envValue)
+  end
+end
+
+function clearEnvironment(envKey)
+  os.setenv(envKey, nil)
+end
+
+function replaceEnvironmentVarsInPath( aPath )
+  aNewPath = aPath:gsub('<([^>]+)>', os.env)
+  return(aNewPath)
+end
+
+function makePath(pathTable)
+--  print(prettyPrint(pathTable))
+  local newPathTable = { }
+  for i, aPath in ipairs(pathTable) do
+    if not aPath:match('^%.?$') then
+      tInsert(newPathTable, aPath)
+    end
+  end
+  return tConcat(newPathTable, directorySeparator)
+end
+
+luaMakeSystemDir = makePath{ getEnv('HOME'), '.luaMakeSystem'}
+
+function makeAbsPath(pathTable)
+  return directorySeparator..makePath(pathTable)
+end
+
+function makeDirPath(pathTable)
+  return makePath(pathTable)..directorySeparator
+end
+
+function makeAbsDirPath(pathTable)
+  return directorySeparator..makePath(pathTable)..directorySeparator
+end
+
+function getBaseDirPath(aPath)
+  basePath = aPath:gsub('[^/\\]*$', '')
+  basePath = basePath:gsub('[/\\]$', '')
+  return basePath
+end
+
+function changeFileExtension(aPath, newExt)
+  newPath = aPath:gsub('%.[^%.]+$', newExt)
+  return newPath
+end
+
+package.path = tConcat({
+  makePath{'.', '?'},
+  makePath{'.', 'lib', '?'},
+  makePath{'.', 'lib', '?.lua'},
+  makePath{luaMakeSystemDir, '?'},
+  makePath{luaMakeSystemDir,'?.lua'},
+  package.path
+},';')
+
+package.cpath = tConcat({
+  makePath{'.', 'luaLibs', '?.so'},
+  makePath{luaMakeSystemDir, '?.so'},
+  package.cpath
+}, ';')
+
+-- Now load any user's local lms configuration
+
+-- The following conditional require is adapted from: shuva's answer to 
+--  "How to check if a module exists in Lua?"
+-- see: http://stackoverflow.com/a/22686090
+
+local hasLmsConfig, lmsConfig = pcall(require, "lmsConfig")
+if not hasLmsConfig then lmsConfig = { } end
+lms = lmsConfig
+
+-- Now see if we can load the lua libuv bindings (luv)
+
+local hasluv, luvLocal = pcall(require, "luv")
+if not hasluv then luvLocal = { } end
+luv = luvLocal
+
+-- Now define some functions to help communicate with the user 
+
+-- compute this project's directory name
+projectDir  = lfs.currentdir()
+projectName = projectDir:gsub('(.*[/\\])', '')
+
+clearScreen    = lms.clearScreen or true
+verbose        = lms.verbose     or 0
+recurse        = lms.recurse     or true
+dirPrefix      = lms.dirPrefix   or '.'
+buildDir       = lms.buildDir    or makePath{ lfs.currentdir(), 'buildDir' }
+logDir         = lms.logDir      or '/tmp'
+local aTmpName = os.tmpname()
+logPrefix      = lms.logPrefix   or
+  aTmpName:gsub(
+    '%/tmp%/lua_',
+    logDir..'/lms_'..os.date('%Y-%m-%d_%H-%M-%S')..'_'..projectName..'_'
+  )
+os.remove(aTmpName)
+useLUV         = lms.useLUV      or false
+
+function lmsError(aMessage)
+  print('ERROR: '..aMessage)
+  saveFileInfo()
+  os.exit(-1)
+end
+
+function lmsMessage(...)
+  if 0 < verbose then
+    local messages = ...
+    if type(messages) ~= 'table' then
+      messages = { messages }
+    end
+    print('---------------------------------------')
+    for i, aMessage in ipairs(messages) do
+      print(aMessage)
+    end
+  end
+end
+
+function lmsMessageDetailed(level, ...)
+  if level < verbose then
+    local messages = ...
+    if type(messages) ~= 'table' then
+      messages = { messages }
+    end
+    for i, aMessage in ipairs(messages) do
+      print(aMessage)
+    end
+  end
+end
+
+function lmsMessageCont(...) lmsMessageDetailed(0, ...) end
+function lmsMessageVery(...) lmsMessageDetailed(1, ...) end
+
+-- Now we create a helper tools to be able to deal with options 
+
+lmsOptionHelp     = { }
+lmsLongSwitches   = { }
+lmsOption         = { }
+shouldListTargets = false
+
+function addOption( shortSwitch, longSwitch, description, action)
+  lmsOptionHelp[longSwitch] = { shortSwitch, longSwitch, description, action }
+  tInsert(lmsLongSwitches, longSwitch)
+  lmsOption[shortSwitch] = action
+  lmsOption[longSwitch]  = action
+end
+
+addOption('-h', '--help', 'Provide this list of options', function()
+  print('lms -- Lua Make System\n')
+  print('usage: lms [options] [targets]\n')
+  print('where: targets is a space delimited list of lms targets to be run,')
+  print('and options is one of the following:\n')
+  tSort(lmsLongSwitches)
+  local longestSwitch = 0
+  for i, aSwitch in ipairs(lmsLongSwitches) do
+    if longestSwitch < #aSwitch then longestSwitch = #aSwitch end
+  end
+  longestSwitch = longestSwitch + 1
+  local spaces = '                                                       '
+  for i, aSwitch in ipairs(lmsLongSwitches) do
+    local anOption = lmsOptionHelp[aSwitch]
+    local pad      = spaces:sub(1, (longestSwitch - #anOption[2]))
+    print(anOption[1]..'  '..anOption[2]..pad..anOption[3])
+  end
+  print("\nif no target is specified then the 'default' target will be run\n")
+--  print("lms.os = "..lms.os)
+  os.exit(0)
+end)
+
+addOption('-l', '--log-prefix', 'A prefix for all logFile paths', 
+  function(key, value)
+    if value then
+      logPrefix = value
+    end
+  end
+)
+
+--addOption('-d', '--directory-prefix', 'The current directory prefix',
+--  function(key, value)
+--    dirPrefix = value
+--  end
+--)
+
+addOption('-c', '--no-clear-screen', 'Do not clear screen', function()
+  clearScreen = false
+end)
+
+addOption('-C', '--clear-screen', 'Clear screen', function()
+  clearScreen = true
+  os.execute('reset')
+end)
+
+addOption('-r', '--no-recurse', 'Do not recurse into sub-directories', function()
+  recurse = false
+end)
+
+addOption('-R', '--recurse', 'Recurse into sub-directories', function()
+  recurse = true
+end)
+
+addOption('-v', '--verbose', 'Provide extra output',
+  function(key, value)
+    value = tonumber(value)
+    if type(value) ~= 'number' then value = 1 end
+    verbose = value
+  end
+)
+
+addOption('-V', '--Verbose', 'Provide extra output and clear screen',
+  function(key, value)
+    value = tonumber(value)
+    if type(value) ~= 'number' then value = 1 end
+    verbose = value
+    os.execute('reset')
+  end
+)
+
+addOption('-vv', '--veryVerbose', 'Provide even more output',
+  function(key, value)
+    value = tonumber(value)
+    if type(value) ~= 'number' then value = 1 end
+    verbose = 2
+  end
+)
+
+addOption('-T', '--targets', 'List all known targets', function()
+  shouldListTargets = true
+end)
+
+addOption('-p', '--parallel', 'Run external commands in parallel if at all possible (requires "luarocks install luv")', function()
+  if luv.spawn then 
+    useLUV = true
+  else
+    lmsMessage{
+      'Sorry... external commands can only be run in parallel',
+      ' IF the luv luarock is installed',
+    }
+    useLUV = false
+  end
+end)
+
+addOption('-s', '--sequential', 'Run external commands sequentially (one at a time)', function()
+  useLUV = false
+end)
+
+targetsToRun = { }
+
+local function parseArguments()
+  for i, anArg in ipairs(arg) do
+    local key    = anArg:gsub('=.*$', '')
+    local value  = anArg:gsub('^[^=]*=', '')
+    if key == value then value = nil end
+    optionAction = lmsOption[key]
+    if optionAction and type(optionAction) == 'function' then
+      optionAction(key, value)
+    else
+      aInsertOnce(targetsToRun, anArg)
+    end
+  end
+end
+
+parseArguments()
+
+if clearScreen then os.execute('reset') end
+
+-- Now check if we can actually use LUV
+
+if useLUV and not luv.spawn then
+  lmsMessage{
+    'Sorry... external commands can only be run in parallel',
+    '         IF the luv luarock is installed'
+  }
+  useLUV = false
+end
+
+lms.dmucsServer = ' -s '..lms.dmucsServer or ''
+lms.dmucsRunner = lms.dmucsRunner or 
+  makePath{ luaMakeSystemDir, 'lmsDMUCSrun' }
+if 0 < verbose then
+  lms.dmucsRunner = lms.dmucsRunner..' -V '..verbose
+end
+lms.dmucsRunner = lms.dmucsRunner..lms.dmucsServer
+
+local dmucsRunnerCheckCMD = '( '..lms.dmucsRunner..' --check 2>&1 ) > /dev/null'
+local dmucsRunnerCheck = os.execute(dmucsRunnerCheckCMD)
+local foundDMUCSserver =
+  (dmucsRunnerCheck == 0) or (dmucsRunnerCheck == true)
+if useLUV and not foundDMUCSserver then
+  lmsMessage{
+    'Sorry... external commands can only be run in parallel',
+    '         IF the DMUCS server is running'
+  }
+  useLUV = false
+end
+
+-- Now compute the OS (which can be used to require different versions of 
+-- the lms modules) 
+
+function getOutputFromCmd(aCmd)
+  lmsMessageVery('getting output from: ['..aCmd..']')
+  local proc = io.popen(aCmd..' 2>&1', 'r')
+  if not proc then return '' end
+  local result = proc:read('*a')
+  proc:close()
+  local result = result:gsub('\n$','')
+  return result
+end
+
+if package.config:sub(1,1) == '\\' then
+  lms.os = 'Windows'
+else
+  lms.os = getOutputFromCmd('uname -s')
+end
+
+-- Now create a collection of global functions to act as a DSL 
+
+targets    = {}
+targetList = {}
+
+sha2 = require 'lms.sha2'
+
+function computeSha256(aFilePath)
+  local fileIO    = io.open(aFilePath, 'rb')
+  if not fileIO then
+    return nil
+  end
+  local appendSha = sha2.sha256()
+  repeat
+    local someBytes = fileIO:read(2^12)
+    appendSha(someBytes)
+  until not someBytes
+  return appendSha()
+end
+
+function executeCmdIn(aTarget, aCmd, subDir, onExit)
+  if useLUV then
+    lmsMessage('running: ['..aCmd..']')
+    lmsMessageCont('in: ['..subDir..']')
+    lmsMessageCont('using luv.spawn')
+    local cmdLogFile = logPrefix..'/'..aTarget:gsub('%/','_')
+    lfs.mkdir(getParentPath(cmdLogFile))
+    lmsMessageVery('logFile: ['..cmdLogFile..']')
+    local wrappedCmd = lms.dmucsRunner..
+      ' -l '..cmdLogFile..
+      ' -d '..subDir..
+      ' -c '..aCmd
+    lmsMessageVery('using: ['..wrappedCmd..']')
+    local spawnArguments = { }
+    for anArg in wrappedCmd:gmatch("[^%s]+") do
+      -- unprotect any protected quotes since we are not running in the shell 
+      anArg = anArg:gsub('\\"', '"')
+      tInsert(spawnArguments, anArg)
+    end
+    lmsMessageVery('spawnComandArguments: '..prettyPrint(spawnArguments))
+    local handle, pid = luv.spawn(
+      spawnArguments[1],
+      { args = spawnArguments },
+      function(code, signal)
+        if (0 < verbose) then
+          lmsMessage('output from ['..aTarget..']')
+          lmsMessageCont{
+            'can be found in:',
+            'less -r '..cmdLogFile
+          }
+        end
+
+        lms.newFileInfo[aTarget] = computeSha256(aTarget)
+
+        if code == 0 then
+          targets[aTarget].targetChanged = true
+        else
+          print('FAILED to run ['..aTarget..']')
+          print('  less -r '..cmdLogFile)
+          targets[aTarget].targetFailed   = true
+          targets[aTarget].logFile        = cmdLogFile
+          targets[aTarget].failureMessage = "FAILED to run"
+        end
+        luv.async_send(asyncCheckTargets)
+        onExit(code, signal)
+      end
+    )
+  else
+    executeLocalCmdIn(aTarget, aCmd, subDir, onExit)
+  end
+end
+
+function executeLocalCmdIn(aTarget, aCmd, subDir, onExit)
+  lmsMessage('running: ['..aCmd..']')
+  lmsMessageCont('in: ['..subDir..']')
+  lmsMessageCont('using os.execute (local)')
+  
+  local curDir = lfs.currentdir()
+  lfs.chdir(subDir)
+  
+  local result, resultType, code = os.execute(aCmd)
+    -- texlua does not follow the official return values...
+    -- so we map the texlua result into the lua return values
+    
+  lfs.chdir(curDir)
+
+  lms.newFileInfo[aTarget] = computeSha256(aTarget)
+  
+  if type(result) == 'number' then
+    resultType = 'exit'
+    if result == 0 then
+      code = 0
+      result = true
+    else
+      code = result
+      result = false        
+    end
+  end
+  if result then
+    lmsMessageVery('onExit result true')
+    targets[aTarget].targetChanged = true
+    onExit(0, 0)
+  elseif resultType == 'exit' then
+    lmsMessageVery('onExit result false (code: '..toStr(code)..')')
+    if code ~= 0 then
+      lmsError('FAILED to run ['..aCmd..']')
+      targets[aTarget].failureMessage = "FAILED to run"
+    end
+    onExit(code, 0)
+  else
+    lmsMessageVery('onExit result false (signal: '..toStr(code)..')')
+    onExit(0, code)
+  end
+end
+
+function chDir(aNewDir)
+  if not lfs.chdir(aNewDir) then 
+    lmsMessageCont('current directory: ['..lfs.currentdir()..']')
+    lmsError('could not change directory to: ['..aNewDir..']')
+  end
+end
+
+function collectSubDirectories(ignoredDirs)
+  subDirs = { }
+  for entry in lfs.dir('.') do
+    if not entry:match('^%..*$') and
+      (lfs.attributes(entry, 'mode') == 'directory') and
+      not ignoredDirs:match(entry) then
+      tInsert(subDirs, entry)
+    end
+  end
+  tSort(subDirs)
+  return subDirs
+end
+
+function addDependency(aTarget, aDependency)
+  if not targets[aTarget] then
+    targets[aTarget] = {
+      dependencies = { },
+      target       = aTarget
+    }
+    tInsert(targetList, aTarget)
+  end
+  if not aHasValue(targets[aTarget]['dependencies'], aDependency) then
+    aInsertOnce(targets[aTarget]['dependencies'], aDependency)
+  end
+end
+
+function target(tDef)
+  if 0 < #tDef then tDef.target       = tRemove(tDef, 1) end
+  if 0 < #tDef then tDef.dependencies = tRemove(tDef, 1) end
+  if 0 < #tDef then tDef.command      = tRemove(tDef, 1) end
+  if 0 < #tDef then tDef.commandName  = tRemove(tDef, 1) end
+  if not tDef.target or tDef.target:match('^%s*$') then 
+    lmsError(debug.traceback('target method did not supply a target ['..toStr(tDef.target)..']')) 
+  end
+  if targets[tDef.target] then -- first definition wins!
+    print('Sorry the target: ['..tDef.target..'] already exists -- ignored!')
+    showTarget(tDef.target)
+    print("The NEW target is:")
+    print(prettyPrint(tDef))
+    print("=======================================")
+  else
+    tDef.targetRunning   = false
+    tDef.targetCompleted = false
+    tDef.targetChanged   = false
+    tDef.checkMissingDependencies = true
+    targets[tDef.target] = tDef
+    tInsert(targetList, tDef.target)
+  end
+  return tDef.target
+end
+
+function getTargetFor(aTarget)
+  return targets[aTarget]
+end
+
+function doNotCheckMissingDependencies(aTarget)
+  targets[aTarget].checkMissingDependencies = false
+end
+
+function createNewTarget(targetName, targetVarName, targetCommand, targetCommandName)
+  if not targetName then
+    lmsError("CreateNewTarget: No targetName provided")
+  end
+  if not targetVarName then
+    targetVarName = targetName.."Targets"
+  end
+  if not targetCommandName then
+    targetCommandName = 'LMS::createNewTarget::targetCommand'
+  end
+  _G[targetVarName] = _G[targetVarName] or { }
+  if not targets[targetName] then
+    target{
+      target       = targetName,
+      dependencies = _G[targetVarName],
+      noOutput     = true,
+      mustBuild    = true,
+      command      = targetCommand,
+      commandName  = targetCommandName,
+      creator      = 'createNewTarget'
+    }
+  end
+end
+
+function appendToMainTarget(aNewTarget, mainTargetName, mainTargetVarName)
+  if not mainTargetName then
+    lmsError("AppendToMainTarget: no main target name provided")
+  end
+  if not mainTargetVarName then
+    mainTargetVarName = mainTargetName.."Targets"
+  end
+  if not _G[mainTargetVarName] then
+    createNewTarget(mainTargetName, mainTragetVarName)
+  end
+  aInsertOnce(_G[mainTargetVarName], aNewTarget)
+end
+
+function needsToBuildAt(aTargetDef, parentTime)
+  local aTarget = aTargetDef.target
+
+  if aTargetDef.mustBuild then
+    lmsMessageCont('  must build '..aTarget)
+    return true
+  end
+
+  if aTargetDef.targetChanged then
+    lmsMessageCont('  must build due to artefact changed: '..aTarget)
+    return true
+  end
+
+  local tTime = parentTime
+  if aTargetDef.noOutput then
+    -- we do not expect some file output...
+    -- so we use the (default) parent's time
+  else
+    -- we expect some file output...
+    tTime = lfs.attributes(aTarget, 'modification')
+    if not tTime then 
+      lmsMessageCont{
+        '  need to build ['..aTargetDef.target..']',
+        '  since target does not exist'
+      }
+      return true
+    end
+  end
+  
+  lmsMessageVery(
+    '  recursively checking need to build ['..aTarget..']'
+  )
+  for i, aDependency in ipairs(aTargetDef.dependencies) do
+    -- recursively check the dependencies of this dependency
+    -- (do a deep dive first)
+    local depTargetDef = targets[aDependency]
+    if depTargetDef then
+      if needsToBuildAt(depTargetDef, tTime) then
+        return true
+      end
+    end
+    -- there is no need to build this target
+    -- because of this dependant's dependents
+  end
+  
+  -- now check this target's sha256s
+  if not aTarget.noOutput then
+    lms.newFileInfo[aTarget] =
+      lms.newFileInfo[aTarget] or computeSha256(aTarget)
+    local newFileSha256 = lms.newFileInfo[aTarget]
+    local oldFileSha256 = lms.oldFileInfo[aTarget] or ""
+    if newFileSha256 ~= oldFileSha256 then
+      lmsMessageVery{
+        '  the '..aTarget..' sha256s do not match so we need to rebuild',
+        '    new: '..newFileSha256,
+        '    old: '..oldFileSha256
+      }
+      return true
+    end
+  end
+  
+  -- the sha256's match so check the modification times of all dependents
+    
+  for i, aDependency in ipairs(aTargetDef.dependencies) do
+    -- recursively check the dependencies of this dependency
+    -- (do a deep dive first)
+    local depTargetDef = targets[aDependency]
+    if (depTargetDef and not depTargetDef.noOutput) or
+        not depTargetDef then
+      local dTime = lfs.attributes(aDependency, 'modification')
+      if dTime and dTime > tTime then
+        lmsMessageCont{
+          '  need to build ['..aTarget..']',
+          '  since ['..aDependency..']',
+          '  is newer ('..os.date('%Y/%m/%d %H:%M:%S', dTime)..')['..dTime..']',
+          '  than the target ('..os.date('%Y/%m/%d %H:%M:%S', tTime)..')['..tTime..']'
+          }
+        return true
+      end
+    end
+  end
+  
+  lmsMessageVery(
+    '  all dependencies older than the ['..aTarget..'] target'
+  )
+  return false
+end
+
+function saveFileInfo()
+  local fileInfo = hMerge(lms.oldFileInfo, lms.newFileInfo)
+  fileInfoFile = io.open('lmsfileInfo', 'w')
+  fileInfoFile:write('-- This is a automatically generated lua module\n')
+  fileInfoFile:write('-- it is NOT wise to make any changes\n\n')
+  fileInfoFile:write('local M = {}\n')
+  for key, value in pairs(fileInfo) do
+    fileInfoFile:write('  M["'..key..'"] = "'..value..'"\n')
+  end
+  fileInfoFile:write('return M\n')
+  fileInfoFile:close()
+end
+
+function showTarget(targetToRun)
+  print("=======================================")
+  print("The target for: ["..targetToRun.."]")
+  print(prettyPrint(targets[targetToRun]))
+  print("=======================================")
+end
+
+function mustHaveTarget(targetToRun)
+  local aTarget = targets[targetToRun]
+  if not aTarget then
+    lmsError(' no target found for ['..targetToRun..']')
+  end
+end
+
+function runTarget(targetToRun)  
+  lmsMessage('checking: '..targetToRun)
+  
+  local aTarget = targets[targetToRun]
+  if not aTarget then
+    lmsMessageCont('  ['..targetToRun..'] no target to run... nothing to do')
+    return
+  end
+ 
+  if aTarget.targetFailed then
+    lmsMessageCont('  FAILED target: '..targetToRun)
+    return
+  end
+  
+  if aTarget.targetCompleted then 
+    lmsMessageCont('  already run '..targetToRun)
+    return
+  end
+  
+  if aTarget.targetRunning and not aTarget.targetCompleted then 
+    lmsMessageCont('  already running '..targetToRun)
+    return
+  end
+
+  if not aTarget.targetRunning then
+    if not needsToBuildAt(aTarget, 0) then
+      lmsMessageCont('  no need to rebuild ['..targetToRun..']')
+      aTarget.targetCompleted = true
+      return
+    end
+  end
+
+  local dependenciesCompleted = true
+  if aTarget.dependencies then
+    for i, aDependency in ipairs(aTarget.dependencies) do
+      local depTargetDef = targets[aDependency]
+      if depTargetDef then
+--        if depTargetDef.targetFailed then
+--          aTarget.targetFailed    = true
+--          aTarget.targetCompleted = true
+--          aTarget.failureMessage  = "Dependency FAILED"
+--          lmsMessageCont('  FAILED dependency: ['..aDependency..'] of ['..targetToRun..']')
+--          return
+--        end
+        if not targets[aDependency].targetCompleted then
+          runTarget(aDependency)
+--          if depTargetDef.targetFailed then
+--            aTarget.targetFailed    = true
+--            aTarget.targetCompleted = true
+--            aTarget.failureMessage  = "Dependency FAILED"
+--            lmsMessageCont('  FAILED dependency: ['..aDependency..'] of ['..targetToRun..']')
+--            return
+--          end
+        end
+        -- IF we are running in sequential mode this is useful
+        if not targets[aDependency].targetCompleted then
+          dependenciesCompleted = false
+        end
+      else
+        -- there is no target information for this dependency
+        -- so check that it exists...
+        local dTime = lfs.attributes(aDependency, 'modification')
+        if aTarget.checkMissingDependencies and not dTime then
+          aTarget.targetFailed    = true
+          aTarget.targetCompleted = true
+          aTarget.failureMessage  = "Missing Dependency: ["..aDependency.."]"
+          lmsMessageCont('  FAILED missing dependency: ['..aDependency..']')
+          return
+        end
+      end
+    end
+  else
+    lmsMessageCont('no dependencies key found')
+  end
+  
+  if not dependenciesCompleted then
+    lmsMessageVery('waiting for dependencies of '..targetToRun)
+    return
+  end
+
+  aTarget.targetRunning = true
+  
+  lmsMessage('checking for '..targetToRun..' command:')
+  if aTarget.command then
+    lmsMessageCont('  has command ('..toStr(aTarget.command)..')')
+    lmsMessageCont('              ('..aTarget.commandName..')')
+    if type(aTarget.command) == 'string' then
+      lmsMessage('starting to build ['..aTarget.target..']')
+      executeCmdIn(
+        aTarget.target,
+        aTarget.command,
+        aTarget.commandDir or projectDir,
+        function(code, signal)
+          lmsMessage('finished building ['..aTarget.target..']')
+          aTarget.targetCompleted = true
+        end
+      )
+    elseif type(aTarget.command) == 'function' then
+      lmsMessage('starting to build ['..aTarget.target..']')
+      aTarget.command(aTarget, function(code, signal)
+       if code == 0 then
+          aTarget.targetChanged = true
+        end
+        lmsMessage('finished building ['..aTarget.target..']')
+        aTarget.targetCompleted = true
+      end)
+    else
+      lmsError(
+        'the command for target ['..
+        aTarget.target..
+        '] MUST be either a string or a function.'
+      )
+    end
+  else -- no command to run...
+    lmsMessageCont('  has NO command')
+    aTarget.targetCompleted = true
+  end
+end
+
+-- Now we create some general helper tools
+
+function getParentPath(aPath)
+  local parentPath =
+    aPath:gsub(directorySeparator..'?[^'..directorySeparator..']*$', '')
+  if #parentPath < 1 then parentPath = nil end
+  return parentPath
+end
+
+local function createPath(aTarget, onExit)
+  lfs.mkdir(aTarget.target)
+  lmsMessageVery('running onExit')
+  onExit(0,0)
+end
+
+function ensurePathExists(aPath)
+  if not aPath then return '' end
+  local paths = { }
+  local parentPath = getParentPath(aPath)
+  if parentPath then
+    ensurePathExists(parentPath)
+    paths = { parentPath }
+  end
+  pathTarget = getTargetFor(aPath)
+  if not pathTarget then
+    pathTarget = target({
+      dependencies = paths,
+      target       = aPath,
+      command      = createPath,
+      commandName  = 'LMS::createPath',
+      creator      = 'ensurePathExists'
+    })
+  end
+  return pathTarget
+end
+
+-- find documents
+
+function findDocumentsIn(aDef, docKey, findRegexp, subDirs)
+--  print("findDocumentsIn in: ["..lfs.currentdir().."]")
+--  print("aDef: "..prettyPrint(aDef))
+--  print("docKey: ["..docKey.."]")
+--  print("findRegexp: ["..findRegexp.."]")
+--  print("subDir: "..prettyPrint(subDirs))
+  if type(aDef[docKey]) ~= 'nil' then return end
+
+  local docFiles = { }
+  for i, aDir in ipairs(subDirs) do
+    local findCmd  = 'find '..aDir..' -iregex "'..findRegexp..'"'
+    lmsMessageVery('Dynamically finding documents using ['..findCmd..']')
+    local texFileList = io.popen(findCmd)
+    for docTexFilePath in texFileList:lines('*l') do
+      table.insert(docFiles, docTexFilePath)
+    end
+  end
+  
+  aDef.dependencies = { }
+  for i, aDocFile in ipairs(docFiles) do
+    tInsert(aDef.dependencies, makePath{ dirPrefix, aDocFile })
+  end
+
+  aDef[docKey] = docFiles
+end
+
+-- Deal with sub-directory recursion
+
+function loadLmsfileIn(aSubDir)
+  local curDir = lfs.currentdir()
+  lmsMessageVery('loadLmsfileIn: original dir = '..curDir)
+  lmsMessageVery("loadLmsfileIn: loading lmsfile in ["..aSubDir.."]")
+  lfs.chdir(aSubDir)
+    
+  local fileType = lfs.attributes('lmsfile', 'mode')
+  if fileType == 'file' then
+    local lmsfileChunk, aMesg = loadfile('lmsfile')
+    if lmsfileChunk then
+      local oldDirPrefix = dirPrefix
+      dirPrefix = makePath{ dirPrefix, aSubDir }
+      lmsMessageVery('loadLmsfileIn: dirPrefix: ['..dirPrefix..']')
+      lmsfileChunk()
+      dirPrefix = oldDirPrefix
+    else
+      print("WARNING: could not load lmsfile in ["..aSubDir.."]")
+      print("  "..aMesg)
+    end
+  end
+  lfs.chdir(curDir)
+end
+
+function recurseTargets(aDef)
+  if not recurse then return end
+  
+  lmsMessageVery('recurseTargets: dirPrefix = '..dirPrefix)
+  lmsMessageVery('recurseTargets: buildDir = '..buildDir)
+--  lmsMessageVery('recurseTargets: '..prettyPrint(aDef))
+
+  aDef.lmsfileSubDirs = aDef.lmsfileSubDirs or { }
+  for i, aSubDir in ipairs(aDef.lmsfileSubDirs) do
+    loadLmsfileIn(aSubDir)
+  end
+end
+
+-- Create the standard targets
+
+createNewTarget('mainTarget', 'targetsToRun')
+
+if #targetsToRun < 1 then
+  tInsert(targetsToRun, 'default')
+end
+
+function appendToClean(theTarget)
+  appendToMainTarget('clean-'..theTarget, 'clean')
+end
+
+function cleanAllTargets(cDef, onExit)
+  if cDef.dependencies then
+    for i, aDep in ipairs(cDef.dependencies) do
+        local aCmd = 'rm -rf '..aDep:gsub('^clean%-', '')
+      lmsMessageCont(aCmd)
+      os.execute(aCmd)
+    end
+  end
+  lmsMessageVery('running onExit')
+  onExit(0,0)
+end
+
+createNewTarget('clean', 'cleanTargets', cleanAllTargets, 'LMS::cleanAllTargets')
+doNotCheckMissingDependencies('clean')
+
+function appendToClobber(theTarget)
+  appendToMainTarget('clobber-'..theTarget, 'clobber')
+end
+
+function clobberAllTargets(cDef, onExit)
+  runTarget('clean')
+  lmsMessage('clobbering...')
+  if cDef.dependencies then
+    for i, aDep in ipairs(cDef.dependencies) do
+      local aCmd = 'rm -rf '..aDep:gsub('^clobber%-', '')
+      lmsMessageCont(aCmd)
+      os.execute(aCmd)
+      if aDep:find('lmsfileInfo') then
+        lms.oldFileInfo = {}
+      end
+    end
+  end
+  
+  lmsMessageVery('running onExit')
+  onExit(0,0)
+end
+
+createNewTarget('clobber', 'clobberTargets', clobberAllTargets, 'LMS::clobberAllTargets')
+doNotCheckMissingDependencies('clobber')
+
+appendToClobber('buildDir')
+appendToClobber('installDir')
+appendToClobber('lmsfileInfo')
+
+createNewTarget('doc')
+createNewTarget('bib')
+createNewTarget('code')
+createNewTarget('headers')
+createNewTarget('build')
+createNewTarget('install')
+createNewTarget('diff')
+createNewTarget('tests')
+createNewTarget('default')
+
+function listTargets()
+  lmsMessage{} -- add a message bar if we are verbose
+  tSort(targetList)
+  for i, aTarget in ipairs(targetList) do
+    aTDef = targets[aTarget]
+    if aTDef then
+      print(aTDef.target..':')
+      if aTDef.command then
+        print('      command: ['..prettyPrint(aTDef.command)..']')
+        print('  commandName: ['..prettyPrint(aTDef.commandName)..']')
+      else
+        print('  no command')
+      end
+      if aTDef.dependencies then
+        tSort(aTDef.dependencies)
+        for i, aDependency in ipairs(aTDef.dependencies) do
+          print('  '..aDependency)
+        end
+      else
+        print('  no dependencies')
+      end
+    end
+  end
+  os.exit(0)
+end
+
+function listTargetStatus()
+  tSort(targetList)
+
+  local hasRunningTargets = false
+  local hasFailedTargets  = false
+  
+  print('  completed targets:')
+  for i, aTarget in ipairs(targetList) do
+    local aTDef = targets[aTarget]
+    if aTDef.targetCompleted then
+      print('    '..aTDef.target)
+    end
+    if aTDef.targetRunning and not aTDef.targetCompleted then
+      hasRunningTargets = true
+    end
+    if aTDef.targetFailed then
+      hasFailedTargets = true
+    end
+  end
+  
+  if hasFailedTargets then
+    print('  FAILED targets:')
+    for i, aTarget in ipairs(targetList) do
+      local aTDef = targets[aTarget]
+      if aTDef.targetFailed then
+        print('    '..aTDef.target)
+        if aTDef.logFile then
+          print('      less -r '..aTDef.logFile)
+        else
+          if aTDef.failureMessage then
+            print('      '..aTDef.failureMessage)
+          end
+        end
+      end
+    end
+  end
+  
+  if hasRunningTargets then
+    print('  running targets:')
+    for i, aTarget in ipairs(targetList) do
+      local aTDef = targets[aTarget]
+      if aTDef.targetRunning and not aTDef.targetCompleted then
+        print('    '..aTDef.target)
+     end
+    end
+  end
+end
+
+-- load the user's LMS file
+
+loadLmsfileIn('.')
+
+if shouldListTargets then listTargets() end
+
+-- execute it!
+
+-- The following conditional require is adapted from: shuva's answer to 
+--  "How to check if a module exists in Lua?"
+-- see: http://stackoverflow.com/a/22686090
+
+local hasLmsFileInfo, lmsFileInfo = pcall(require, "lmsfileInfo")
+if not hasLmsFileInfo then
+  if 0 < verbose then print(lmsFileInfo) end
+  lmsFileInfo = { }
+end
+lms.oldFileInfo = lmsFileInfo
+lms.newFileInfo = { }
+
+local function runTargets()
+
+  lmsMessage('STARTING runTargets cycle')
+  runTarget('mainTarget')
+  lmsMessage('FINISHED runTargets cycle')
+  
+  if useLUV then
+    if (0 < verbose) then listTargetStatus() end
+    
+    local noRunningTargets = true
+    for i, aTarget in ipairs(targetList) do
+      local aTDef = targets[aTarget]
+      if aTDef.targetRunning and not aTDef.targetCompleted then
+        noRunningTargets = false
+      end
+    end
+  
+    if noRunningTargets and targets['mainTarget'].targetCompleted then
+      luv.unref(asyncCheckTargets)
+    end
+  end
+end
+
+asyncCheckTargets = function() end
+checkTargets      = function() runTargets() end
+
+if useLUV then
+  lmsMessage('Using luv/libuv/DMUCS to parallelize this build')
+  
+  asyncCheckTargets = luv.new_async(runTargets)
+  
+  checkTargets      = function()
+    luv.async_send(asyncCheckTargets)
+    luv.run()
+  end
+end
+
+checkTargets()
+
+saveFileInfo()

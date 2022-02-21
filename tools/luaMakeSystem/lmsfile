@@ -1,0 +1,33 @@
+-- A lua lmsfile
+
+-- An example lmsfile
+
+-- NOTE that we *EXPLICITLY* use tables as (the only) argument to targets. 
+-- This means that you need to use '{' '}' rather than '(' ')' to surround 
+-- your collection of arguments. The first three arguments (if they exist) 
+-- are automatically promoted to the (hash) table entries 'target', 
+-- 'dependencies', and 'command' in that order. 
+
+-- We begin with the lms description of how to build the lmsDMUCSrun 
+-- binary 
+
+require 'lms.src'
+
+srcTargets = src.targets{
+  handGenerated = {
+    cCodeFiles = {
+      'lmsDMUCSrun.c'
+    }
+  }
+}
+
+require 'lms.c'
+
+c.targets(srcTargets, {
+  programs = {
+    'lmsDMUCSrun'
+  },
+  installDirs = {
+    '<HOME>/.luaMakeSystem'
+  }
+})
