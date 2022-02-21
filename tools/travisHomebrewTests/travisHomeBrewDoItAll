@@ -1,0 +1,98 @@
+#!/bin/bash
+
+# This bash script builds everyting on an TravisCI Mac OSx worker
+
+# See:
+# https://docs.travis-ci.com/user/installing-dependencies/#using-homebrew-without-addon-on-older-macos-images
+# For details on obtaining/using the correct ruby version for homebrew.
+
+
+export PATH="/usr/local/opt/llvm/bin:$PATH"
+
+echo "-------------------------------------------------"
+echo $PATH
+echo $LDFLAGS
+echo $CPPFLAGS
+which clang
+ls -la $(which clang)
+clang --version
+echo "-------------------------------------------------"
+brew tap pdf2htmlEX/homebrew-brewTap
+brew update
+echo "-------------------------------------------------"
+echo $PATH
+echo $LDFLAGS
+echo $CPPFLAGS
+which clang
+ls -la $(which clang)
+clang --version
+echo "-------------------------------------------------"
+brew install llvm
+brew install -v python@2
+brew install jq
+echo "-------------------------------------------------"
+echo $PATH
+echo $LDFLAGS
+echo $CPPFLAGS
+which clang
+ls -la $(which clang)
+clang --version
+$(which clang) --version
+export llvmVersion=$(brew info --json=v1 llvm | jq '.[].installed[].version' | tr -d '"')
+echo "brew llvm version: $llvmVersion"
+export python2Version=$(brew info --json=v1 python@2 | jq '.[].installed[].version' | tr -d '"')
+echo "brew python@2 version: $python2Version"
+echo "-------------------------------------------------"
+brew info llvm
+brew switch llvm $llvmVersion
+brew info python@2
+brew switch python@2 $python2Version
+echo "-------------------------------------------------"
+echo $PATH
+echo $LDFLAGS
+echo $CPPFLAGS
+export CC=/usr/local/Homebrew/Library/Homebrew/shims/mac/super/clang
+export CXX=/usr/local/Homebrew/Library/Homebrew/shims/mac/super/clang++
+export CPP=/usr/local/Homebrew/Library/Homebrew/shims/mac/super/clang++
+which clang
+ls -la $(which clang)
+clang --version
+$(which clang) --version
+which python
+ls -la $(which python)
+python --version
+echo "-------------------------------------------------"
+#brew install -v fontforge@20170731
+brew install -v pdf2htmlex-new
+echo "-------------------------------------------------"
+echo $PATH
+echo $LDFLAGS
+echo $CPPFLAGS
+which clang
+ls -la $(which clang)
+clang --version
+$(which clang) --version
+which python
+ls -la $(which python)
+python --version
+export fontForgeVersion=$(brew info --json=v1 fontforge@20170731 | jq '.[].installed[].version' | tr -d '"')
+echo "fontForge version: $fontForgeVersion"
+brew switch fontforge@20170731 $fontForgeVersion
+ls /usr/local/Cellar/fontforge@20170731/20170731/*
+which fontforge
+fontforge --version
+which pdf2htmlEX
+ls -la $(which pdf2htmlEX)
+otool -L /usr/local/Cellar/fontforge@20170731/20170731/lib/libfontforge.2.dylib
+#pdf2htmlEX --version
+pkg-config --cflags pango
+pkg-config --libs pango
+pkg-config --cflags cairo
+pkg-config --libs cairo
+pkg-config --cflags fontforge
+pkg-config --libs fontforge
+pkg-config --cflags libfontforge
+pkg-config --libs libfontforge
+pkg-config --cflags python
+pkg-config --libs python
+echo "-------------------------------------------------"
