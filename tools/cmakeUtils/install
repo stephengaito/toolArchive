@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# This shell script installs the CMakeLists.txt and CMakeUtils.txt 
+# files into the user's local .cmake directory.
+
+cmakeDir=$HOME/.cmake
+
+# Start by ensuring the .cmake directory exists
+if (! test -d $cmakeDir) then
+  mkdir -p $cmakeDir
+fi
+
+if (! test -f "$cmakeDir/CMakeLists.txt") then
+  cp src/CMakeLists.txt $cmakeDir
+fi
+
+cp src/CMakeUtils.txt $cmakeDir
+cp bin/transformDoxygen $cmakeDir
