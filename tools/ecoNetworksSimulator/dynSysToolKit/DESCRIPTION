@@ -1,0 +1,22 @@
+Package: dynSysToolKit
+Version: 0.1
+Date: 2016-08-14
+Title: Dynamical Systems Tool Kit
+Authors@R: c(person("Stephen", "Gaito", role = c("aut", "cre"),
+		     email = "stephen@perceptisys.co.uk"))
+Author: Stephen Gaito [aut, cre]
+Maintainer: Stephen Gaito <stephen@perceptisys.co.uk>
+Depends:
+    R (>= 3.3.1)
+Suggests:
+    testthat,
+    knitr,
+    rmarkdown
+Description: Provides a number of simple C based utilities to explore 
+    dynamical systems. Includes a number of example systems including
+    the Lorenz model.
+License: MIT + file LICENSE
+URL: https://github.com/stephengaito/ecoNetworksSimulator
+BugReports: https://github.com/stephengaito/ecoNetworksSimulator/issues
+RoxygenNote: 5.0.1
+VignetteBuilder: knitr

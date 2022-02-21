@@ -1,0 +1,176 @@
+---
+title: "Trophic Logistic Models"
+author: "Stephen Gaito"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Trophic Logistic Models}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+# Model equations
+
+We base the equations used for the continuous time integration on two sources, the Rosenzweig-MacArthur multi-species model as discussed McCann[^1], and Predator-Prey models as discussed by Murray[^2]. In our case we are explicitly assuming multiple trophic layers, with multiple species in each "layer".
+
+[^1]: "Food Webs" by Kevin S McCann, published by Princeton University press, 2012. See Chapter 7 "Food Chains and Omnivory", equations 7.2
+
+[^2]: "Mathematical Biology" by J. D. Murray, published by Springer-Verlag, Biomathematics Texts, 1990. See Section 3.3 "Realistic Predator-Prey Models"
+
+For any given species, $S_i$, the rate of change of the (biomass of the) population depends on essentially four terms:
+
+  1. growth terms coming from the consumption of some external energy source,
+  2. growth terms coming from the consumption of some other species,
+  3. decay terms coming from predation by some other species.
+  4. decay terms coming from death by natural causes,
+
+$$
+\frac{dS_i}{dt} = 
+  \text{growth}_{\text{energy}} + \text{growth}_{\text{consumption}} 
+  - \text{decay}_{\text{predation}} - \text{decay}_{\text{natural}} 
+$$
+
+Let $\hat{S}$ denote the collection of all species. Let $\hat{S}^+_i$ and $\hat{S}^-_i$ denote the collection of species which are, respectively, consumed by or consume a given species $S_i$. For any base species, $S_i$, which only consumes some external energy, the set $\hat{S}^+_i$ will be empty. Conversely for a top predator, $S_j$, in any trophic consumption chain, the set $\hat{S}^-_j$ will also be empty. For any other species, these two sets will generally contain one or more species. For a given predator-prey or consumer-resource interaction between species, $S_c$ and $S_r$ respectively, we will have $S_c \in \hat{S}^-_r$ and $S_r \in \hat{S}^+_c$.
+
+Using these symbols, we can state the rate of change for a given species, $S_i$ as:
+
+$$
+\frac{dS_i}{dt} =
+  G_e(S_i) + G_c(S_i, \hat{S}^+_i)
+  - D_p(S_i, \hat{S}) - D_n(S_i)
+$$
+
+In order to perform a unit analysis of the above, we need to agree the fundamental time unit. The most common, terrestrial, multi-trophic level ecological system will typically be based on insects. For these typical insect centric ecologies, the most important time interval will be based upon the time a given instar takes to develop. For example species in the high-arctic might have a large multiple of instars each of which develop over a year. For the, temperate forest, Spruce Budworm, there are essentially two instars, the (non-reproductive) catepillar which over-winters and the adult (reproductive) moth. So for the Spruce Budworm we might consider a "normal" instar to take place over a half year. For complex ecological systems, we need to choose a basic time unit roughly common to each species. For a typical temperate insect based system, this will likely be "months". Having chosen a basic time unit of months, we can then perform a unit analysis as follows:
+
+$$
+\begin{align*}
+\left[ S_i \right] & = & \text{biomass}_i \\
+\left[ \frac{dS_i}{dt} \right]
+& = & \left[ G_e(S_i) \right] \\
+& = & \left[ G_c(S_i, \hat{S}^+_i) \right] \\
+& = & \left[ D_p(S_i, \hat{S}) \right] \\
+& = & \left[ D_n(S_i) \right] \\
+& = & \frac{\text{biomass}_i}{\text{month}}
+\end{align*}
+$$
+
+For the growth from an external energy source, $G_e$, we assume a sigmoidal functional relationship with a time delayed species density.  That is essentially exponential growth at low population densities with saturation at high population densities. We will assume that this sigmoidal functional relationship is given by the logistic growth equations. Hence, for species, $S_i$, we have the following:
+
+$$
+G_e(S_i) = r_i * S_i(t) * \left( 1 - \frac{S_i(t - \tau_i)}{K_i} \right)
+$$
+
+Where $r_i$, $K_i$, and $\tau_i$ are the growth rate, carrying capacity, and time delay for species $S_i$. A units analysis of these parameters yeilds:
+
+$$
+\begin{align*}
+\left[ r_i \right]    & = & \frac{\text{biomass}_i}{\text{biomass}_i * \text{month}} \\
+\left[ \tau_i \right] & = & \text{month} \\
+\left[ K_i \right]    & = & \text{biomass}_i
+\end{align*}
+$$
+
+For decay by natural causes, $D_n$, we will assume simple linear decay. For species, $S_i$, we have the following:
+
+$$
+D_n(S_i) = m_i * S_i(t)
+$$
+
+Where $m_i$ is the mortalitiy rate for species $S_i$. The unit analysis for the mortality rate is:
+
+$$
+\left[ m_i \right] = \frac{\text{biomass}_i}{\text{biomass}_i * \text{month}}
+$$
+
+Note that for a base species, these two terms, $G_e$ and $D_n$, can be amalgamated into a single term by suitable adjustments of the growth rate, mortality rate and carrying capacity parameters.
+
+Now consider a **predator species**, $S_i$. We again assume a sigmoidal functional relationship with species density, but this time we assume the saturation to be dependent upon the total density of the species the predator consumes. That is the preadtor's growth for a given attack saturates the greater the total attacks (over all prey species). We also assume that a given predator may attack its prey with a particular time delay. So for the predator we model the $G_c$ term as:
+
+$$
+G_c(S_i, \hat{S}^+_i) =
+  \left( \sum_{j \in \hat{S}^+_i} e_{i,j} * a_{i,j} * S_j(t - \tau_{i,j}) \right)
+  * \frac{S_i(t)}{ h_i + \sum_{j \in \hat{S}^+_i} a_{i,j} * S_j(t - \tau_{i,j}) }
+$$
+
+Where $h_i$ is the half-saturation parameter for species $S_i$, and $e_{i,j}$, $a_{i,j}$ and $\tau_{i,j}$ are, respectively, the efficiency or conversion and attack rates and time delay of the predation of species $S_i$ on species $S_j$. To perform the unit analysis, we begin by considering the sigmodal functional relationship with species density. Since there are many prey species in this functional relationship, we need the denominator of the term:
+
+$$
+\frac{S_i(t)}{ h_i + \sum_{j \in \hat{S}^+_i} a_{i,j} * S_j(t - \tau_{i,j}) }
+$$
+
+to have units of $\text{biomass}_i$, and hence the whole term to have no units. This is analogous to choosing the units of carrying capacity of species, $S_i$, to be $\text{biomass}_i$. Having made this choice the unit analysis for these parameters is:
+
+$$
+\begin{align*}
+\left[ h_i \right]        & = & \text{biomass}_i \\
+\left[ \tau_{i,j} \right] & = & \text{month} \\
+\left[ a_{i,j} \right]    & = & \frac{\text{biomass}_i}{\text{biomass}_j}
+\end{align*}
+$$
+
+with these choices the terms the $\left[ a_{i,j} * S_j(t - \tau_{i,j}) \right]$ has units of $\text{biomass}_i$. This then forces:
+
+$$
+\left[ e_{i,j} \right]     =  \frac{\text{biomass}_i}{\text{biomass}_i * \text{month}} \\
+$$
+
+Now consider a **prey species**, $S_i$. We assume the decay due to predation, $D_p$, depends upon all predator species which consume $S_i$:
+
+$$
+D_p(S_i, \hat{S}) = \sum_{j \in \hat{S}^-_i} d_{j,i} * a_{j,i} * S_i(t - \tau_{j,i})
+  * \frac{S_j}{h_j + \sum_{k \in \hat{S}^+_j} a_{j,k} * S_k(t - \tau_{j,k})}
+$$
+
+where $d_{j,i}$ is the death rate of species $S_i$ due to predation by species $S_j$. Since the units of the terms, $\left[ a_{j,i} * S_i(t - \tau_{j,i}) \right]$ are $\text{biomass}_j$, the units of $\left[ d_{j,i} \right]$ are $\frac{\text{biomass}_i}{\text{biomass}_j * \text{month}}$. Typically these death rates are assumed to have the value $1$ and are usually ignored. However the unit analysis requires the use of these parameters to ensure the three different uses of the terms, $a_{j,i} * S_i(t - \tau_{j,i})$ in the death, $d_{i,j}$, conversion, $e_{i,j}$ and half saturation, $h_i$, contexts are properly decoupled.
+
+Putting this all together, for a general species, $S_i$, which might be both a predator and a prey, we get:
+
+$$
+\begin{align*}
+\frac{dS_i}{dt}
+  & = & r_i * S_i(t) * \left( 1 - \frac{S_i(t - \tau_i)}{K_i} \right) \\
+  &   &  + \left( \sum_{j \in \hat{S}^+_i} e_{i,j} * a_{i,j} * S_j(t - \tau_{i,j}) \right)
+          * \frac{S_i(t)}{ h_i + \sum_{j \in \hat{S}^+_i} a_{i,j} * S_j(t - \tau_{i,j}) } \\
+  &   &  - \sum_{j \in \hat{S}^-_i} d_{j,i} * a_{j,i} * S_i(t - \tau_{j,i})
+          * \frac{S_j(t)}{h_j + \sum_{k \in \hat{S}^+_j} a_{j,k} * S_k(t - \tau_{j,k})} \\
+  &   &  - m_i * S_i(t)
+\end{align*}
+$$
+
+This equation is usually simplified for three typical cases:
+
+For a **base species**:
+
+$$
+\begin{align*}
+\frac{dS_i}{dt}
+  & = & r_i * S_i(t) * \left( 1 - \frac{S_i(t - \tau_i)}{K_i} \right) \\
+  &   &  - \sum_{j \in \hat{S}^-_i} d_{j,i} * a_{j,i} * S_i(t - \tau_{j,i})
+          * \frac{S_j(t)}{h_j + \sum_{k \in \hat{S}^+_j} a_{j,k} * S_k(t - \tau_{j,k})} 
+\end{align*}
+$$
+
+For an **intermediate species** (both a predator and a prey) we have:
+
+$$
+\begin{align*}
+\frac{dS_i}{dt}
+  & = &  + \left( \sum_{j \in \hat{S}^+_i} e_{i,j} * a_{i,j} * S_j(t - \tau_{i,j}) \right)
+          * \frac{S_i(t)}{ h_i + \sum_{j \in \hat{S}^+_i} a_{i,j} * S_j(t - \tau_{i,j}) } \\
+  &   &  - \sum_{j \in \hat{S}^-_i} d_{j,i} * a_{j,i} * S_i(t - \tau_{j,i})
+          * \frac{S_j(t)}{h_j + \sum_{k \in \hat{S}^+_j} a_{j,k} * S_k(t - \tau_{j,k})} \\
+  &   &  - m_i * S_i(t)
+\end{align*}
+$$
+
+For a **top predator** we have:
+
+$$
+\begin{align*}
+\frac{dS_i}{dt}
+  &   &  + \left( \sum_{j \in \hat{S}^+_i} e_{i,j} * a_{i,j} * S_j(t - \tau_{i,j}) \right)
+          * \frac{S_i(t)}{ h_i + \sum_{j \in \hat{S}^+_i} a_{i,j} * S_j(t - \tau_{i,j}) } \\
+  &   &  - m_i * S_i(t)
+\end{align*}
+$$
+
+

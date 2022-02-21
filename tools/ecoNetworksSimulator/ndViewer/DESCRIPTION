@@ -1,0 +1,21 @@
+Package: ndViewer
+Version: 0.1
+Date: 2016-08-22
+Title: n-Dimensional Viewer
+Authors@R: c(person("Stephen", "Gaito", role = c("aut", "cre"),
+		     email = "stephen@perceptisys.co.uk"))
+Author: Stephen Gaito [aut, cre]
+Maintainer: Stephen Gaito <stephen@perceptisys.co.uk>
+Depends:
+    R (>= 3.3.1)
+Suggests:
+    testthat,
+    knitr,
+    rmarkdown
+Description: Provides a simple n dimensional viewer by simply generalizing 
+  current methods for viewing 3 dimensions.
+License: MIT + file LICENSE
+URL: https://github.com/stephengaito/ecoNetworksSimulator
+BugReports: https://github.com/stephengaito/ecoNetworksSimulator/issues
+RoxygenNote: 5.0.1
+VignetteBuilder: knitr

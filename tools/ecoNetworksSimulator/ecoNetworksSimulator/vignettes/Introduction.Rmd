@@ -1,0 +1,20 @@
+---
+title: "Introduction"
+author: "Stephen Gaito"
+date: "12 July 2016"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Logistic Model}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+The ecoNetworksSimulator R package is an R-extension to integrate spatially extended ecological trophic network models.
+
+The objective is not to explicitly model ecological systems in themselves, but rather to provide a platform with which to synthetically produce large reasonably realistic data sets from which to observe the influence of different underlying assumptions of both network structure and data collection.
+
+We do this as an R-extension ensures that the resulting data can easily be analysed using existing R tools.
+
+Initially we will not implement any spatial extension. To begin with we will only implement integration of simple [Logistic Models](LogisticModels.html) using [Ordinary Differenetial Equations](https://en.wikipedia.org/wiki/Ordinary_differential_equation).
+
+Eventually we aim to implement spatial extention by implementing integration of simple [Logistic Models](LogisticModels.html) using [Partial Differenetial Equations](https://en.wikipedia.org/wiki/Partial_differential_equation) and [Probablistic Cellular Automata (PCA)](https://en.wikipedia.org/wiki/Stochastic_cellular_automaton). In particular we would use the [Diffustion equation](https://en.wikipedia.org/wiki/Diffusion_equation) with sources and sinks based upon the [Logistic Models](LogisticModels.html).
