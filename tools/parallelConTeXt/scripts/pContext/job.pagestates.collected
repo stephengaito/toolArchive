@@ -1,0 +1,26 @@
+
+-- mkiv/core-dat.lua
+
+local collected = allocate()
+
+pContextData['job.pagestates.collected'] = collected
+
+local function initializer(subDocName, target)
+  local docPageOffset = pContextStructData.subDocs[subDocName].firstPage
+  local collectedTUC  = pContextTUCData[subDocName][target] or { }
+  for key, value in pairs(collectedTUC) do
+    if collected[key] == nil then
+      collected[key] = { }
+    end
+    local collectedValue = collected[key]
+    for i = 1, #value do
+      -- 
+      -- PROBLEMS: Not sure the following docPageOffset is correct ;-(
+      --
+      collectedValue[#collectedValue+1] = value[i] + docPageOffset
+    end      
+  end
+end
+
+job.register('job.pagestates.collected', 'job.pagestates.collected', initializer)
+

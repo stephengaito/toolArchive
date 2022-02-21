@@ -1,0 +1,43 @@
+
+-- mkiv/strc-doc.lua
+
+-- This is just a quick way to have access to prefixes and the numbers 
+-- (section entry in a ref) is not the list entry. An alternative is to 
+-- use the list index of the last numbered section. In that case we should 
+-- check a buse of the current structure. 
+
+-- We have to save this mostly redundant list because we can have (rare)
+-- cases with own numbers that don't end up in the list so we get out of
+-- sync when we use (*).
+
+local collected  = allocate()
+local partType   = "frontpart"
+local partNum    = 0
+local chapterNum = 0
+
+pContextData['structures.sections.collected'] = collected
+
+local function initializer(subDocName, target)
+  local fromData = pContextTUCData[subDocName][target] or { }
+  for i = 1,#fromData do
+    local data = fromData[i]
+    if partType ~= data.block then
+      partType = data.block
+      partNum  = partNum + 1
+      chapterNum = 0
+    end
+    local nums = data.numbers
+    if #nums <= 2 then
+      chapterNum = chapterNum + 1
+    end
+    data.numbers[1] = partNum
+    data.numbers[2] = chapterNum
+    collected[#collected+1] = data
+  end
+end
+
+job.register(
+  'structures.sections.collected',
+  'structures.sections.collected',
+  initializer
+)

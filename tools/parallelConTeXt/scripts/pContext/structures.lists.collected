@@ -1,0 +1,21 @@
+
+-- mkiv/strc-lst.lua
+
+local collected = allocate() 
+
+pContextData['structures.lists.collected'] = collected
+
+local function initializer(subDocName, target)
+
+  local collectedTUC  = pContextTUCData[subDocName][target] or { }
+  local collected     = pContextData[target]
+  for i=1,#collectedTUC do
+    collected[#collected+1] = collectedTUC[i]
+  end
+end
+
+job.register(
+  'structures.lists.collected',
+  'structures.lists.collected',
+  initializer
+)

@@ -1,0 +1,18 @@
+
+-- mkiv/grph-fil.lua
+
+local collected = allocate()
+
+pContextData['job.files.collected'] = collected
+
+local function initializer(subDocName, target)
+  local collectedTUC = pContextTUCData[subDocName][target] or { }
+  --
+  -- PROBLEM: not sure what to do here ;-( 
+  --
+  for i = 1, #collectedTUC do
+    collected[#collected+1] = collectedTUC[i]
+  end
+end
+
+job.register('job.files.collected', 'job.files.collected', initializer)

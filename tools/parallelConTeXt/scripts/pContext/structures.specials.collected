@@ -1,0 +1,19 @@
+
+-- mkiv/strc-ini.lua
+
+local collected    = allocate()
+
+pContextData['structures.specials.collected'] = collected
+
+local function initializer(subDocName, target)
+  local collectedTUC = pContextTUCData[subDocName][target] or { }
+  --
+  -- PROBLEM: Not sure what to do here...
+  --
+  for i = 1, #collectedTUC do
+    collected[#collected + 1] = collectedTUC[i]
+  end
+end
+
+job.register('structures.specials.collected', 'structures.specials.collected', initializer)
+

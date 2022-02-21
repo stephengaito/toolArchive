@@ -1,0 +1,109 @@
+
+-- mkiv/file-job.lua
+
+-- PROBLEM: environment components *usually* come before any other 
+--          components. 
+
+-- PROBLEM: the various TUCs tend to have the same environment components 
+--          which we DO NOT want to duplicate. 
+
+-- PROBLEM: we can have the same named component in multiple places in a 
+--          document (which we DO want to duplicate)
+
+-- we do not want metadata so we do not use allocate()
+-- 
+local tobesaved = { 
+  seenEnvironments = { },
+  environments     = { },
+  branches         = { }
+}
+
+pContextData['job.structure.collected'] = collected
+
+local function collectComponents(fromTree, toTree)
+  if toTree.branches == nil then
+    toTree.branches = {
+      seenEnvironments = { },
+      environments     = { },
+      branches         = { }
+    }
+  end
+  local fromBranches = fromTree.branches or { }
+  local toBranches   = toTree.branches
+  for i=1,#fromBranches do
+    local fromBranch = fromBranches[i]
+    if fromBranch.type == 'environment' then
+      if not toTree.seenEnvironments[fromBranch.name] then
+        toTree.seenEnvironments[fromBranch.name] = true
+        local newEnv = {
+          seenEnvironments = { },
+          environments     = { },
+          branches         = { }
+        }
+        collectComponents(fromBranch, newEnv)
+        tInsert(toTree.environments, newEnv)
+      end
+    else
+      local newComp = {
+        seenEnvironments = { },
+        environments     = { },
+        branches         = { }
+      }
+      collectComponents(fromBranch, newComp)
+      tInsert(toTree.branches, newComp)
+    end
+  end
+  toTree.name = fromTree.name
+  toTree.type = fromTree.type
+end
+
+local function initializer(subDocName, target)
+  collectComponents(
+    pContextTUCData[subDocName][target] or { },
+  	tobesaved
+  )
+end
+
+local function assembleComponents(fromTree, toTree)
+  local toBranches   = toTree.branches
+  local fromBranches = fromTree.branches
+  local fromEnvs     = fromTree.environments
+  for i=1,#fromEnvs do
+    local fromEnv = fromEnvs[i]
+    local newEnv = {
+      branches = { }
+    }
+    assembleComponents(fromEnv, newEnv)
+    tInsert(toBranches, newEnv)
+  end
+  for i=1,#fromBranches do
+    local fromBranch = fromBranches[i]
+    local newEnv = {
+      branches = { }
+    }
+    assembleComponents(fromBranch, newEnv)
+    tInsert(toBranches, newEnv)
+  end
+  toTree.name = fromTree.name
+  toTree.type = fromTree.type
+end
+
+local function finalizer(subDocName, target)
+  if pContextData[target] == nil then
+    pContextData[target] = {
+    	branches = { }
+    }
+    assembleComponents(
+      tobesaved,
+      pContextData[target]
+    )
+  end
+end
+
+job.register(
+  'job.structure.collected',
+  'job.structure.collected',
+  initializer,
+  finalizer
+)
+

@@ -1,0 +1,20 @@
+
+-- core-uti.lua
+
+local checksums = allocate()
+
+pContextData['job.variables.checksums'] = checksums
+
+local function initializer(subDocName, target)
+    checksumsTUC = pContextTUCData[subDocName][target] or { }
+    for i = 1,#checksumsTUC do
+      checksums[#checksums+1] = checksumsTUC[i]
+    end
+end
+
+job.register(
+  'job.variables.checksums',
+  'job.variables.checksums',
+  initializer
+)
+

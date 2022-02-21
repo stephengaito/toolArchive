@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# This bash script removes all ancillary files associated with type 
+# setting ConTeXt documents in parallel. 
+
+rm -rf *-parallel*
+rm -rf pContext*
+rm -rf *.plog
+rm -rf *.plua

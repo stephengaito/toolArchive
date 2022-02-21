@@ -1,0 +1,36 @@
+
+-- mkiv/strc-num.lua
+
+local collected = allocate()
+
+pContextData['structures.counters.collected'] = collected
+
+local function initializer(subDocName, target)
+  local collectedTUC = pContextTUCData[subDocName][target] or { }
+  --
+  -- PROBLEM: This *is* wrong (close but wrong) ;-(
+  --
+  for key, value in pairs(collectedTUC) do
+    if collected[key] == nil then
+      collected[key] = { }
+    end
+    local collectedTUCValue = collectedTUC[key]
+    for i = 1,#collectedTUCValue do
+      if collected[key][i] == nil then
+        collected[key][i] = { }
+      end
+      local dataArray    = collected[key][i]
+      local dataTUCArray = collectedTUC[key][i]
+      for j = 1, #dataTUCArray do
+        dataArray[#dataArray+1] = dataTUCArray[j]
+      end
+    end
+  end
+end
+
+job.register(
+  'structures.counters.collected',
+  'structures.counters.collected',
+  initializer
+)
+

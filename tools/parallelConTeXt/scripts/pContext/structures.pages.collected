@@ -1,0 +1,55 @@
+
+-- mkiv/strc-pag.lua
+
+-- Need to append each `collectedTUC` into the overall `collected`
+-- Need to correct each page's number by adding the current nofpages
+
+structures                 = { }
+structures.pages           = { }
+structures.pages.collected = allocate()
+
+pContextData['structures.pages.collected'] = structures.pages.collected
+
+local function initializer(subDocName, target)
+
+  pprint(pContextTUCData[subDocName]['thirddata.pcontext.subDocs'])
+
+  local collectedTUC  = pContextTUCData[subDocName][target] or { }
+  local collected     = pContextData[target]
+  local nofpages      = 0
+  local pData         = pContextTUCData[subDocName]['thirddata.pcontext.subDocs'][subDocName] or { }
+  pprint(pData)
+  local pFirstPage    = pData.firstPage or 0
+  local pLastPage     = pData.lastPage or 0
+  local pNumPages     = pData.numPages or 0
+  print(pFirstPage, pLastPage, pNumPages)
+  
+  -- tricky, with pageinjection we can have holes
+  local n = 0
+  for k in next, collectedTUC do
+    local pageNum = collectedTUC[k].number
+    
+    -- only look at pages inside of pcontext derived page range for this 
+    -- subDoc
+    
+    if pFirstPage <= pageNum and pageNum <= pLastPage then
+      collectedTUC[k].number = collectedTUC[k].number + currentPageOffset
+      collected[#collected+1] = collectedTUC[k]
+    end
+  end
+  
+  pContextData[target]                              = collected
+  pContextStructData.subDocs[subDocName].firstPage  = pFirstPage
+  pContextStructData.subDocs[subDocName].lastPage   = pLastPage
+  pContextStructData.subDocs[subDocName].numPages   = pNumPages
+  
+  pprint(pContextStructData.subDocs[subDocName])
+  
+  currentPageOffset = currentPageOffset + pNumPages
+end
+
+job.register(
+  'structures.pages.collected',
+  'structures.pages.collected',
+  initializer
+)

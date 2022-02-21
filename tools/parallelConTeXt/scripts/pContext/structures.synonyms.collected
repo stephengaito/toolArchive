@@ -1,0 +1,54 @@
+
+-- mkiv/strc-syn.lua
+
+-- The structures.synonyms.collected table seems to be a hash whos values 
+-- are arrays.
+
+-- PROBLEM: luametatex document does not *use* synonyms ;-(
+
+-- PROBLEM: we use the *first* examplar of each of the hash key/values
+--          subsequent TUC examplars will be ignored ;-(
+
+local collected    = allocate()
+
+-- A hash lookup table containing the index of any synonyms already seen
+local seen         = { }
+
+pContextData['structures.synonyms.collected'] = collected
+
+local function collectSynonyms(fromArray, toArray)
+  for i, value in ipairs(fromArray) do
+    tag = value.definition.tag
+    alreadySeen = seen[tag]
+    if alreadySeen then
+      -- propogate TRUE for shown and/or used
+      alreadySeen.definition.shown = 
+        alreadySeen.definition.shown or value.definition.shown
+      alreadySeen.definition.used  = 
+        alreadySeen.definition.used  or value.definition.used
+    else
+      seen[tag] = value
+      toArray[#toArray+1] = seen[tag]
+    end
+  end
+end
+
+local function initializer(subDocName, target)
+  collectedTUC = pContextTUCData[subDocName][target] or { }
+  for key, value in pairs(collectedTUC) do
+    fromArray = value.entries
+    if collected[key] == nil then
+      collected[key] = value
+      collected[key].entries = { }
+    end
+    toArray = collected[key].entries
+    collectSynonyms(fromArray, toArray)
+  end
+end
+
+job.register(
+  'structures.synonyms.collected',
+  'structures.synonyms.collected',
+  initializer
+)
+

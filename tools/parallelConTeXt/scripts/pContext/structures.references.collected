@@ -1,0 +1,50 @@
+
+-- strc-ref.lua
+
+local collected = allocate()
+local internal  = { }
+
+structures_references_internal = internal
+
+pContextData['structures.references.collected'] = collected
+
+local function initializer(subDocName, target)
+  local docPageOffset = pContextStructData.subDocs[subDocName].firstPage
+  local collectedTUC  = pContextTUCData[subDocName][target] or { }
+
+  -- collect all references into internalTUC 
+  -- so that we can sort by the (non-continguous) internal values
+  --
+  local internalTUC = { }
+  for prefix, list in pairs(collectedTUC) do
+    for ref, data in pairs(list) do
+      local refData = data.references
+      if refData.realpage then
+        refData.realpage = refData.realpage + docPageOffset
+      end
+      internalTUC[refData.internal] = data
+    end
+  end
+
+  -- now add each reference to our synthetic "internals" array
+  -- and update the reference.internal value using our "internals" array
+  --
+  local sortedInternalTUCs = sortedkeys(internalTUC)
+  for i = 1,#sortedInternalTUCs do
+    local nextInternal = #internal + 1
+    local data    = internalTUC[sortedInternalTUCs[i]]
+    local refData = data.references
+    refData.internal = nextInternal
+    internal[nextInternal] = data
+    if collected[refData.prefix] == nil then
+      collected[refData.prefix] = { }
+    end
+    collected[refData.prefix][refData.reference] = data
+  end
+end
+
+job.register(
+  'structures.references.collected',
+  'structures.references.collected',
+  initializer
+)

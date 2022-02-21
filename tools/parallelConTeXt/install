@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# This bash script does the initial installation of the t-pcontext ConTeXt 
+# module. 
+
+srcDir=$(pwd)
+#tpcontextDir=$(dirname $(dirname $(dirname $(dirname $srcDir))))
+tpcontextDir=$srcDir/t-pcontext
+texmfLocalDir=$(mtxrun --resolve-path TEXMFLOCAL)
+
+ln -t $texmfLocalDir -fs $tpcontextDir
+
+mtxrun --generate
+
+./setup
